@@ -1,0 +1,135 @@
+import { Link } from 'react-router-dom';
+import { X, Minus, Plus, Trash2 } from 'lucide-react';
+import { motion } from 'motion/react';
+import { useCart } from '../contexts/CartContext';
+
+interface CartOverlayProps {
+  onClose: () => void;
+}
+
+export const CartOverlay = ({ onClose }: CartOverlayProps) => {
+  const { items, removeFromCart, updateQuantity, total } = useCart();
+
+  return (
+    <>
+      {/* Backdrop */}
+      <motion.div
+        className="fixed inset-0 bg-black/50 z-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <motion.div
+        className="fixed top-0 right-0 bottom-0 w-full sm:w-[400px] md:w-[500px] bg-white z-50 overflow-y-auto flex flex-col"
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+      >
+        {/* Header */}
+        <div className="p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg sm:text-xl">PANIER ({items.length})</h3>
+            <button
+              onClick={onClose}
+              className="hover:text-[#007B8A] transition-colors duration-300"
+              aria-label="Fermer"
+            >
+              <X size={22} className="sm:hidden" />
+              <X size={24} className="hidden sm:block" />
+            </button>
+          </div>
+        </div>
+
+        {/* Items */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {items.length === 0 ? (
+            <div className="text-center py-8 sm:py-12">
+              <p className="text-sm sm:text-base text-gray-600 mb-6">Votre panier est vide</p>
+              <button
+                onClick={onClose}
+                className="bg-[#007B8A] text-white px-6 sm:px-8 py-3 text-sm sm:text-base hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              >
+                CONTINUER VOS ACHATS
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4 sm:space-y-6">
+              {items.map((item, index) => (
+                <div key={`${item.id}-${item.selectedSize}-${item.selectedColor}-${index}`} className="flex gap-3 sm:gap-4">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={`/produit/${item.id}`}
+                      onClick={onClose}
+                      className="hover:text-[#007B8A] transition-colors duration-300"
+                    >
+                      <h4 className="text-xs sm:text-sm mb-1 line-clamp-2">{item.name}</h4>
+                    </Link>
+                    <p className="text-[10px] sm:text-xs text-gray-600 mb-2">
+                      Taille: {item.selectedSize} | Couleur: {item.selectedColor}
+                    </p>
+                    <p className="text-sm sm:text-base mb-2 sm:mb-3">{item.price.toLocaleString('fr-FR')} FC</p>
+
+                    {/* Quantity Controls */}
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="flex items-center border border-gray-300">
+                        <button
+                          onClick={() => updateQuantity(item.id, item.selectedSize, item.selectedColor, item.quantity - 1)}
+                          className="p-1.5 sm:p-2 hover:bg-gray-100 transition-colors duration-300"
+                          aria-label="Diminuer la quantité"
+                        >
+                          <Minus size={12} className="sm:hidden" />
+                          <Minus size={14} className="hidden sm:block" />
+                        </button>
+                        <span className="px-2 sm:px-4 text-xs sm:text-sm">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.id, item.selectedSize, item.selectedColor, item.quantity + 1)}
+                          className="p-1.5 sm:p-2 hover:bg-gray-100 transition-colors duration-300"
+                          aria-label="Augmenter la quantité"
+                        >
+                          <Plus size={12} className="sm:hidden" />
+                          <Plus size={14} className="hidden sm:block" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => removeFromCart(item.id, item.selectedSize, item.selectedColor)}
+                        className="text-gray-400 hover:text-red-600 transition-colors duration-300"
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 size={14} className="sm:hidden" />
+                        <Trash2 size={16} className="hidden sm:block" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {items.length > 0 && (
+          <div className="border-t border-gray-200 p-4 sm:p-6">
+            <div className="flex justify-between mb-4 sm:mb-6 text-sm sm:text-base">
+              <span>TOTAL</span>
+              <span>{total.toLocaleString('fr-FR')} FC</span>
+            </div>
+            <button className="w-full bg-[#007B8A] text-white py-3 sm:py-4 text-sm sm:text-base mb-2 sm:mb-3 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg">
+              PASSER LA COMMANDE
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full border border-black py-3 sm:py-4 text-sm sm:text-base hover:bg-black hover:text-white transition-all duration-300"
+            >
+              CONTINUER VOS ACHATS
+            </button>
+          </div>
+        )}
+      </motion.div>
+    </>
+  );
+};
