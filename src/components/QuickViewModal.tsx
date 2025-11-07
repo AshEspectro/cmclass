@@ -1,10 +1,11 @@
-import { useState, type JSXElementConstructor, type Key, type ReactElement, type ReactNode, type ReactPortal } from 'react';
+import { useState } from 'react';
 import { X, Heart, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { Product } from '../data/products';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { Link } from 'react-router-dom';
+
 
 interface QuickViewModalProps {
   product: Product;
@@ -18,6 +19,8 @@ export const QuickViewModal = ({ product, onClose }: QuickViewModalProps) => {
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const inWishlist = isInWishlist(product.id);
+  void quantity;
+void setQuantity;
 
   const handleAddToCart = () => {
     if (selectedSize && selectedColor) {
@@ -66,7 +69,7 @@ export const QuickViewModal = ({ product, onClose }: QuickViewModalProps) => {
 
             <div className="grid md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 p-4 sm:p-6 md:p-8 lg:p-12">
               {/* Image */}
-              <div className="aspect-[3/4] bg-gray-100" />
+              <div className="aspect-3/4 bg-gray-100" />
 
               {/* Details */}
               <div>
@@ -102,9 +105,9 @@ export const QuickViewModal = ({ product, onClose }: QuickViewModalProps) => {
                   <div className="mb-6 sm:mb-8">
                     <label className="block text-xs sm:text-sm mb-2 sm:mb-3">COULEUR</label>
                     <div className="flex flex-wrap gap-2">
-                      {product.colors.map((color: boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | Key | null | undefined) => (
+                      {product.colors.map((color: string) => (
                         <button
-                          key={color}
+                          key={String(color)}
                           onClick={() => setSelectedColor(color)}
                           className={`px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base border transition-all duration-300 ${
                             selectedColor === color

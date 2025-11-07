@@ -40,14 +40,14 @@ export default function Coming_soon() {
       </motion.header>
 
       {/* Main Hero Section */}
-      <main className="flex-1 flex items-center justify-center px-6 py-12">
+      <main className="flex-1 flex items-center justify-center px-6 py-8">
         <div className="max-w-2xl w-full text-center">
           {/* H1 Title with fade-in animation */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-5xl md:text-5xl mb-8 mt-12 px-12 md:px-24"
+            className="text-5xl md:text-5xl mb-8 mt-12 px-12 md:px-24 text-transform: uppercase leading-[1.2]"
             style={{
               fontFamily: "Merriweather, serif",
               fontWeight: 700,

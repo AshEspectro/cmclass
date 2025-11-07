@@ -18,6 +18,8 @@ export const Navbar = () => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const { itemCount } = useCart();
   const { items: wishlistItems } = useWishlist();
+  void showMobileSearch;
+  void setShowMobileSearch;
 
   useEffect(() => {
     const handleScroll = () => {

@@ -5,7 +5,7 @@ import { Hero } from '../components/Hero';
 import { ProductCard } from '../components/ProductCard';
 import { QuickViewModal } from '../components/QuickViewModal';
 import { Newsletter } from '../components/Newsletter';
-import { products, collections } from '../data/products';
+import { products } from '../data/products';
 import type { Product } from '../data/products';
 
 const heroImage = 'https://images.unsplash.com/photo-1761522002366-870191e79f2a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxibGFjayUyMG1hbGUlMjBtb2RlbCUyMHdoaXRlJTIwYmFja2dyb3VuZCUyMGZhc2hpb258ZW58MXx8fHwxNzYyMjU1NzQ1fDA&ixlib=rb-4.1.0&q=80&w=1080';
@@ -53,7 +53,7 @@ export const Home = () => {
               transition={{ duration: 0.5, delay: 0 }}
             >
               <Link to="/homme" className="block">
-                <div className="aspect-[3/4] bg-gray-100 overflow-hidden">
+                <div className="aspect-3/4 bg-gray-100 overflow-hidden">
                   <img
                     src={collectionImage1}
                     alt="Collection Homme"
@@ -77,7 +77,7 @@ export const Home = () => {
               transition={{ duration: 0.5, delay: 0.1 }}
             >
               <Link to="/femme" className="block">
-                <div className="aspect-[3/4] bg-gray-100 overflow-hidden">
+                <div className="aspect-3/4 bg-gray-100 overflow-hidden">
                   <img
                     src={collectionImage2}
                     alt="Collection Femme"
@@ -101,7 +101,7 @@ export const Home = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <Link to="/accessoires" className="block">
-                <div className="aspect-[3/4] bg-gray-100 overflow-hidden" />
+                <div className="aspect-3/4 bg-gray-100 overflow-hidden" />
                 <div className="mt-4 text-center">
                   <h3 className="mb-2 group-hover:text-[#007B8A] transition-colors duration-300">
                     ACCESSOIRES
@@ -119,7 +119,7 @@ export const Home = () => {
               transition={{ duration: 0.5, delay: 0.3 }}
             >
               <Link to="/nouveautes" className="block">
-                <div className="aspect-[3/4] bg-gray-100 overflow-hidden" />
+                <div className="aspect-3/4 bg-gray-100 overflow-hidden" />
                 <div className="mt-4 text-center">
                   <h3 className="mb-2 group-hover:text-[#007B8A] transition-colors duration-300">
                     NOUVEAUTÉS
@@ -142,7 +142,7 @@ export const Home = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <div className="aspect-[4/5] bg-gray-200 overflow-hidden">
+              <div className="aspect-4/5 bg-gray-200 overflow-hidden">
                 <img
                   src={editorialImage}
                   alt="Editorial"
@@ -193,7 +193,7 @@ export const Home = () => {
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 lg:gap-8">
-            {featuredProducts.map((product, index) => (
+            {featuredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
