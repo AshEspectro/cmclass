@@ -24,7 +24,7 @@ export default function Coming_soon() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="pt-16 pb-4 px-6 flex justify-center"
+        className="pt-16 px-6 flex justify-center"
       >
         <img src="/cmclass.svg" alt="CM Class" className="h-14 md:h-20" />
       </motion.header>
