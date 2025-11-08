@@ -43,7 +43,7 @@ export default function Coming_soon() {
               fontWeight: 700,
             }}
           >
-            Le site web arrive bientôt
+           fgfhhjffyfy Le site web arrive bientôt
           </motion.h1>
 
           {/* Paragraph */}
