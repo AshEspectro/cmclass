@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { Mail, Linkedin, Instagram, Facebook } from "lucide-react";
+import { Mail, Instagram, Facebook, Twitter, Link } from "lucide-react";
 
 export default function Coming_soon() {
   const [email, setEmail] = useState("");
@@ -20,13 +20,14 @@ export default function Coming_soon() {
   return (
     <div className="min-h-screen flex flex-col bg-white text-black overflow-x-hidden">
       {/* Logo */}
+      
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="pt-16 px-6 flex justify-center"
-      >
-        <img src="/cmclass.svg" alt="CM Class" className="h-14 md:h-20" />
+      ><a href="/home">
+        <img src="/cmclass.svg" alt="CM Class" className="h-14 md:h-20"  /></a>
       </motion.header>
 
       {/* Main Content */}
@@ -37,13 +38,13 @@ export default function Coming_soon() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-3xl sm:text-4xl md:text-5xl mb-8 mt-12 px-4 sm:px-8 md:px-12 leading-tight uppercase"
+            className="text-3xl sm:text-4xl md:text-5xl mb-8 mt-8 px-4 sm:px-8 md:px-12 leading-tight uppercase"
             style={{
               fontFamily: "Merriweather, serif",
               fontWeight: 700,
             }}
           >
-           fgfhhjffyfy Le site web arrive bientôt
+          Le site web arrive bientôt
           </motion.h1>
 
           {/* Paragraph */}
@@ -136,9 +137,9 @@ export default function Coming_soon() {
           className="flex justify-center gap-6 flex-wrap"
         >
           <SocialIcon icon={<Mail size={20} />} href="#" label="Email" />
-          <SocialIcon icon={<Linkedin size={20} />} href="#" label="LinkedIn" />
-          <SocialIcon icon={<Instagram size={20} />} href="#" label="Instagram" />
-          <SocialIcon icon={<Facebook size={20} />} href="#" label="Facebook" />
+          <SocialIcon icon={<Twitter size={20} />} href="https://x.com/CMclass243" label="X(twitter)" />
+          <SocialIcon icon={<Instagram size={20} />} href="https://www.instagram.com/cm_class_officiel/" label="Instagram" />
+          <SocialIcon icon={<Facebook size={20} />} href="https://www.facebook.com/cmclassdrc/" label="Facebook" />
         </motion.div>
       </footer>
     </div>

@@ -26,7 +26,6 @@ export const Navbar = () => {
       setIsScrolled(window.scrollY > 50);
       setIsPastHero(window.scrollY > 600);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -43,43 +42,38 @@ export const Navbar = () => {
     <>
       <motion.nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'bg-white shadow-sm py-3 md:py-6' : 'bg-white/95 backdrop-blur-sm py-4 md:py-6'
+          isScrolled
+            ? 'bg-white shadow-sm py-6 lg:py-8'
+            : 'bg-white  backdrop-blur-md pt-4 lg:py-8'
         }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="max-w-[1440px] mx-auto px-2 sm:px-6 lg:px-9">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-2 xl:px-12 bg-white">
           <div className="flex items-center justify-between">
-            {/* Left Section - Desktop: Menu text + Search icon + placeholder */}
-            <div className="hidden lg:flex items-center gap-6">
+            {/* LEFT SECTION */}
+            <div className="hidden md:flex items-center gap-6 xl:gap-8">
               <button
                 onClick={() => setIsMegaMenuOpen(true)}
-                className="flex items-center gap-2 hover:text-[#556f73] transition-colors duration-300 group"
+                className="flex items-center gap-2 hover:text-[#007B8A] transition-colors duration-300 group"
                 aria-label="Menu"
               >
                 <Menu size={24} />
-                <span className="text-sm tracking-wider">MENU</span>
+                <span className="text-sm tracking-wider font-medium">Menu</span>
               </button>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsSearchOpen(true)}
-                  className="hover:text-[#007B8A] transition-colors duration-300"
-                  aria-label="Rechercher"
-                >
-                  <Search size={22} />
-                </button>
-                <button
-                  onClick={() => setIsSearchOpen(true)}
-                  className="text-sm text-gray-500 hover:text-[#007B8A] transition-colors duration-300"
-                >
-                  Que cherchez-vous ?
-                </button>
-              </div>
+
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="flex items-center gap-3 text-gray-600 hover:text-[#007B8A] transition-colors duration-300"
+              >
+                <Search size={22} />
+                <span className="text-sm">Que cherchez-vous ?</span>
+              </button>
             </div>
 
-            {/* Left Section - Mobile & Tablet: Hamburger only */}
-            <div className="lg:hidden flex items-center">
+            {/* MOBILE MENU BUTTON */}
+            <div className="md:hidden flex items-center">
               <button
                 onClick={() => setIsMegaMenuOpen(true)}
                 className="hover:text-[#007B8A] transition-colors duration-300"
@@ -89,28 +83,34 @@ export const Navbar = () => {
               </button>
             </div>
 
-            {/* Center: Logo */}
-            <Link to="/" className="absolute left-1/2 -translate-x-1/2">
+            {/* CENTER LOGO */}
+            <Link to="/home" className="absolute left-1/2 -translate-x-1/2  justify-center">
               <motion.div
-                className={`text-center transition-all duration-300 ${
-                  isScrolled ? 'scale-50' : 'scale-30'
+                className={`text-center transition-transform duration-300 align-middle   ${
+                  isScrolled ? 'scale-30' : 'scale-30'
                 }`}
               >
-              
                 <img
-                  src="/cmclass@.svg"
+                   src={isScrolled ? '/cmclass.svg' : '/cmclass.svg'}
                   alt="CM CLASS Logo"
                   className={`mx-auto transition-all duration-300 ${
-                    isScrolled ? 'w-24 sm:w-28 md:w-32' : 'w-28 sm:w-36 md:w-44'
+                    isScrolled
+                      ? 'w-28 sm:w-32 md:w-36 xl:w-40'
+                      : 'w-32 sm:w-36 md:w-40 xl:w-48'
                   }`}
                 />
-           
               </motion.div>
             </Link>
 
-            {/* Right Section: Wishlist → Account → Cart */}
-            <div className="flex items-center gap-4 md:gap-6">
-              {/* Wishlist */}
+            {/* RIGHT SECTION */}
+            <div className="flex items-center  gap-4 sm:gap-6 xl:gap-8">
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="text-sm text-gray-500 hover:text-[#007B8A] transition-colors duration-300 hidden md:block"
+              >
+                Contactez-nous
+              </button>
+
               <Link
                 to="/wishlist"
                 className="relative hover:text-[#007B8A] transition-colors duration-300 hidden sm:block"
@@ -124,7 +124,6 @@ export const Navbar = () => {
                 )}
               </Link>
 
-              {/* Account */}
               <Link
                 to="/compte"
                 className="hover:text-[#007B8A] transition-colors duration-300"
@@ -133,10 +132,9 @@ export const Navbar = () => {
                 <User size={22} />
               </Link>
 
-              {/* Cart */}
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="relative hover:text-[#007B8A] transition-colors duration-300"
+                className="relative hover:text-[#007B8A] transition-colors duration-300  hidden sm:block"
                 aria-label="Panier"
               >
                 <ShoppingBag size={22} />
@@ -149,11 +147,11 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Mobile Search Field - Shows when not past hero */}
+          {/* MOBILE SEARCH */}
           <AnimatePresence>
             {!isPastHero && (
               <motion.div
-                className="lg:hidden mt-4 pt-4 border-t border-gray-200"
+                className="md:hidden py-3 pt-5  "
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
@@ -162,13 +160,15 @@ export const Navbar = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Rechercher (ex. Costumes Homme)"
+                    placeholder="Rechercher "
                     value={mobileSearchQuery}
                     onChange={(e) => setMobileSearchQuery(e.target.value)}
-                    onFocus={() => setShowMobileSearch(true)}
-                    className="w-full border border-gray-300 py-2 px-4 pr-10 text-sm focus:outline-none focus:border-[#007B8A] transition-colors duration-300"
+                    className="w-full border border-gray-300 py-3 px-6 pr-10 text-sm rounded-4xl focus:outline-none focus:border-[#007B8A] transition-colors duration-300"
                   />
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <Search
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
                 </div>
               </motion.div>
             )}
@@ -176,17 +176,15 @@ export const Navbar = () => {
         </div>
       </motion.nav>
 
-      {/* Mega Menu */}
+      {/* PANELS */}
       <AnimatePresence>
         {isMegaMenuOpen && <MegaMenu onClose={() => setIsMegaMenuOpen(false)} />}
       </AnimatePresence>
 
-      {/* Search Panel */}
       <AnimatePresence>
         {isSearchOpen && <SearchPanel onClose={() => setIsSearchOpen(false)} />}
       </AnimatePresence>
 
-      {/* Cart Overlay */}
       <AnimatePresence>
         {isCartOpen && <CartOverlay onClose={() => setIsCartOpen(false)} />}
       </AnimatePresence>
