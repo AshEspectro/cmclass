@@ -43,15 +43,14 @@ export const Navbar = () => {
       <motion.nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? 'bg-white shadow-sm py-6 lg:py-8'
+            ? 'bg-white shadow-sm py-6 lg:py-8 '
             : 'bg-white  backdrop-blur-md pt-4 lg:py-8'
         }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6 }}
-      >
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-2 xl:px-12 bg-white">
-          <div className="flex items-center justify-between">
+      ><div className="max-w-[1440px] mx-auto w-full overflow-x-hidden px-4 sm:px-6 lg:px-12 bg-white">
+ <div className="flex items-center justify-between">
             {/* LEFT SECTION */}
             <div className="hidden md:flex items-center gap-6 xl:gap-8">
               <button

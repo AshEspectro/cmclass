@@ -7,6 +7,7 @@ import { QuickViewModal } from '../components/QuickViewModal';
 import { Newsletter } from '../components/Newsletter';
 import { products } from '../data/products';
 import type { Product } from '../data/products';
+import { CategoryHero } from '../components/CollectionHero';
 
 // Video for hero (Pexels free download)
 const heroVideo = '/videos/homme-hero1.mp4';
@@ -42,20 +43,24 @@ export const Home = () => {
 
 
       {/* Featured Collections*/}
-      <section className="  py-8 lg:py-12 ">
+      <section className="  py-8 lg:py-8 ">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
-          <motion.h2
-            className="text-center  mb-8 sm:mb-12 md:mb-16"
+          <motion.h3
+            className="text-center  lg:px-60 mb-4 sm:mb-8 md:mb-8"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            COLLECTIONS
-          </motion.h2>
+            Explorer une sélection de créations de la marque
+          </motion.h3>
 
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
             {[{ img: collectionImage1, title: 'HOMME', desc: 'Collection moderne et artisanale', link: '/homme' },
+              { img: collectionImage2, title: 'FEMME', desc: 'Prochainement', link: '/femme' },
+              { img: '', title: 'ACCESSOIRES', desc: 'Sacs et ceintures artisanaux', link: '/accessoires' },
+              { img: '', title: 'NOUVEAUTÉS', desc: 'Dernières créations', link: '/nouveautes' },
+            { img: collectionImage1, title: 'HOMME', desc: 'Collection moderne et artisanale', link: '/homme' },
               { img: collectionImage2, title: 'FEMME', desc: 'Prochainement', link: '/femme' },
               { img: '', title: 'ACCESSOIRES', desc: 'Sacs et ceintures artisanaux', link: '/accessoires' },
               { img: '', title: 'NOUVEAUTÉS', desc: 'Dernières créations', link: '/nouveautes' }
@@ -69,7 +74,7 @@ export const Home = () => {
                 transition={{ duration: 0.5, delay: 0.1 * i }}
               >
                 <Link to={col.link} className="block">
-                  <div className="aspect-3/4 bg-gray-100 overflow-hidden">
+                  <div className="aspect-4/5 bg-gray-100 overflow-hidden">
                     {col.img && (
                       <img
                         src={col.img}
@@ -78,11 +83,9 @@ export const Home = () => {
                       />
                     )}
                   </div>
-                  <div className="mt-3 sm:mt-4 text-center">
-                    <h3 className="mb-1 sm:mb-2 text-sm sm:text-base md:text-lg group-hover:text-[#007B8A] transition-colors duration-300">
-                      {col.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-gray-600 px-2">{col.desc}</p>
+                  <div className="my-4 sm:mt-4 text-center">
+                    
+                    <p className="text-lg sm:text-sm text-black lg:font-bold group-hover:text-[#007B8A] transition-colors duration-300">{col.desc}</p>
                   </div>
                 </Link>
               </motion.div>
@@ -90,6 +93,7 @@ export const Home = () => {
           </div>
         </div>
       </section>
+    
 
       {/* Editorial Section */}
       <section className="py-12 sm:py-16 md:py-20 lg:py-32 bg-gray-50">
@@ -130,6 +134,9 @@ export const Home = () => {
           </div>
         </div>
       </section>
+      <CategoryHero categoryTitle="Homme" subCategoryIndex={2} />
+      
+
 
       {/* Men's Products Grid */}
       <section className="py-12 sm:py-16 md:py-20 lg:py-32">
@@ -140,9 +147,9 @@ export const Home = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-          >
+          ><p className="text-sm sm:text-base text-gray-600 px-4">Pièces essentielles pour l'homme contemporain</p>
             <h2 className="mb-3 sm:mb-4">COLLECTION HOMME</h2>
-            <p className="text-sm sm:text-base text-gray-600 px-4">Pièces essentielles pour l'homme contemporain</p>
+            
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 lg:gap-8">
@@ -160,9 +167,9 @@ export const Home = () => {
           >
             <Link
               to="/homme"
-              className="inline-block bg-[#007B8A] text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 text-sm sm:text-base hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base  transition-all duration-300  rounded-4xl"
             >
-              VOIR TOUTE LA COLLECTION
+              Découvrir la collection
             </Link>
           </motion.div>
         </div>

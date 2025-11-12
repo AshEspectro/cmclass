@@ -36,7 +36,7 @@ export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
     >
       <Link to={`/produit/${product.id}`} className="block relative overflow-hidden">
         {/* Image */}
-        <div className="aspect-[3/4] bg-gray-100 relative">
+        <div className="aspect-3/4 bg-gray-100 relative">
           {/* Hover Overlay */}
           <motion.div
             className="absolute inset-0 bg-[#007B8A]/20 flex items-center justify-center"
@@ -79,25 +79,10 @@ export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
 
         {/* Product Info */}
         <div className="mt-4">
-          <h4 className="mb-1 group-hover:text-[#007B8A] transition-colors duration-300">
-            {product.name}
-          </h4>
-          <p className="text-sm text-gray-600 mb-2">{product.subcategory}</p>
-          <p>{product.price.toLocaleString('fr-FR')} FC</p>
+  <p className="text-sm font-medium">{product.name}</p>
+  <p className="hidden text-cyan-700 text-sm md:block">{product.price.toLocaleString('fr-FR')} FC</p>
+</div>
 
-          {/* Colors */}
-          {product.colors.length > 0 && (
-            <div className="flex gap-2 mt-3">
-              {product.colors.slice(0, 3).map((color, index) => (
-                <div
-                  key={index}
-                  className="w-6 h-6 rounded-full border border-gray-300 bg-gray-100"
-                  title={color}
-                />
-              ))}
-            </div>
-          )}
-        </div>
       </Link>
     </motion.div>
   );

@@ -19,7 +19,7 @@ interface MenuItem {
 }
 
 // Hero content for main categories
-const heroContent: Record<string, { img: string; title: string; text: string }> = {
+export const heroContent: Record<string, { img: string; title: string; text: string }> = {
   Homme: {
     img: "https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=1600&q=80",
     title: "Homme",
@@ -41,12 +41,7 @@ const heroContent: Record<string, { img: string; title: string; text: string }> 
     text: "Une empreinte olfactive, un art de séduire.",
   },
 };
-
-export const MegaMenu = ({ onClose }: MegaMenuProps) => {
-  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
-  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-
-  const mainCategories: MenuItem[] = [
+export   const mainCategories: MenuItem[] = [
     {
       title: "Cadeaux et Personnalisation",
       link: "/cadeaux",
@@ -124,6 +119,11 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
       ],
     },
   ];
+export const MegaMenu = ({ onClose }: MegaMenuProps) => {
+  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+ 
+
 
   return (
     <motion.div
