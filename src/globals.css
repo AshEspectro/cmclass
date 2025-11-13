@@ -174,3 +174,11 @@
     width: 100%;
   }
 }
+/* Cache la scrollbar sans désactiver le scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE et Edge */
+  scrollbar-width: none; /* Firefox */
+}

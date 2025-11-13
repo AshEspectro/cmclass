@@ -21,22 +21,22 @@ interface MenuItem {
 // Hero content for main categories
 export const heroContent: Record<string, { img: string; title: string; text: string }> = {
   Homme: {
-    img: "https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=1600&q=80",
+    img: "/homme.jfif",
     title: "Homme",
     text: "L’élégance masculine repensée — entre distinction et audace.",
   },
   Femme: {
-    img: "https://images.unsplash.com/photo-1520975867597-0af37a22e31d?auto=format&fit=crop&w=1600&q=80",
+    img: "/woman.jfif",
     title: "Femme",
     text: "Féminité contemporaine, allure intemporelle.",
   },
   Joaillerie: {
-    img: "https://images.unsplash.com/photo-1612810806546-d97f4d7b1a69?auto=format&fit=crop&w=1600&q=80",
+    img: "/jewlery.jfif",
     title: "Joaillerie",
     text: "Des pièces d’exception pour raconter votre éclat.",
   },
   "Parfums et Beauté": {
-    img: "https://images.unsplash.com/photo-1612810806546-1f1b4e9b9b77?auto=format&fit=crop&w=1600&q=80",
+    img: "/parfum.jfif",
     title: "Parfums et Beauté",
     text: "Une empreinte olfactive, un art de séduire.",
   },
@@ -68,8 +68,16 @@ export   const mainCategories: MenuItem[] = [
     },
     {
       title: "Femme",
-      link: "/femme",
-      subcategories: [{ name: "Prochainement", link: "/femme" }],
+  link: "/femme",
+  subcategories: [
+    { name: "Robes", link: "/femme/robes" },
+    { name: "Pantalons", link: "/femme/pantalons" },
+    { name: "Vestes", link: "/femme/vestes" },
+    { name: "Chemisiers", link: "/femme/chemisiers" },
+    { name: "Jupes", link: "/femme/jupes" },
+    { name: "Accessoires", link: "/femme/accessoires" },
+    { name: "Tout Voir", link: "/femme" }
+  ]
     },
     {
       title: "Homme",

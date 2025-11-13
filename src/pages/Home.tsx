@@ -8,14 +8,15 @@ import { Newsletter } from '../components/Newsletter';
 import { products } from '../data/products';
 import type { Product } from '../data/products';
 import { CategoryHero } from '../components/CollectionHero';
+import { CategoryShowcase } from '../components/ServiceSection';
 
 // Video for hero (Pexels free download)
 const heroVideo = '/videos/homme-hero1.mp4';
 
-const atelierImage =
-  'https://images.unsplash.com/photo-1704729105381-f579cfcefd63?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwYXRlbGllciUyMHdvcmtzcGFjZSUyMG1pbmltYWx8ZW58MXx8fHwxNzYyMjU1NzQ2fDA&ixlib=rb-4.1.0&q=80&w=1080';
-const editorialImage =
-  'https://images.unsplash.com/photo-1698444056939-ba73e533d006?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhZnJpY2FuJTIwbWFuJTIwZm9ybWFsJTIwd2VhciUyMHN0dWRpb3xlbnwxfHx8fDE3NjIyNTU3NDV8MA&ixlib=rb-4.1.0&q=80&w=1080';
+//const atelierImage =
+ // 'https://images.unsplash.com/photo-1704729105381-f579cfcefd63?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwYXRlbGllciUyMHdvcmtzcGFjZSUyMG1pbmltYWx8ZW58MXx8fHwxNzYyMjU1NzQ2fDA&ixlib=rb-4.1.0&q=80&w=1080';
+//const editorialImage =
+ // 'https://images.unsplash.com/photo-1698444056939-ba73e533d006?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhZnJpY2FuJTIwbWFuJTIwZm9ybWFsJTIwd2VhciUyMHN0dWRpb3xlbnwxfHx8fDE3NjIyNTU3NDV8MA&ixlib=rb-4.1.0&q=80&w=1080';
 const collectionImage1 =
   'https://images.unsplash.com/photo-1596216180471-61379344936c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxibGFjayUyMG1hbiUyMGZhc2hpb24lMjBtaW5pbWFsJTIwd2hpdGV8ZW58MXx8fHwxNzYyMjU1NzQ2fDA&ixlib=rb-4.1.0&q=80&w=1080';
 const collectionImage2 =
@@ -29,7 +30,7 @@ export const Home = () => {
   const featuredProducts = products.filter((p) => p.category === 'HOMME').slice(0, 8);
 
   return (
-    <div className=" pt">
+    <div className="overflow-hidden">
       {/* Hero Section with video */}
       <Hero
         
@@ -95,7 +96,7 @@ export const Home = () => {
       </section>
     
 
-      {/* Editorial Section */}
+      {/* Editorial Section 
       <section className="py-12 sm:py-16 md:py-20 lg:py-32 bg-gray-50">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
           <div className="grid md:grid-cols-2 gap-8 sm:gap-10 md:gap-12 lg:gap-16 items-center">
@@ -134,48 +135,141 @@ export const Home = () => {
           </div>
         </div>
       </section>
-      <CategoryHero categoryTitle="Homme" subCategoryIndex={2} />
+        Men's Products Grid */}
       
+      <section className='mb-32'>
+  <CategoryHero categoryTitle="Homme" subCategoryIndex={0} />
 
+  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-4 md:gap-5 lg:gap-8">
+      {featuredProducts.slice(0, 4).map((product) => (
+        <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
+      ))}
+    </div>
 
-      {/* Men's Products Grid */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-32">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
-          <motion.div
-            className="text-center mb-8 sm:mb-12 md:mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          ><p className="text-sm sm:text-base text-gray-600 px-4">Pièces essentielles pour l'homme contemporain</p>
-            <h2 className="mb-3 sm:mb-4">COLLECTION HOMME</h2>
-            
-          </motion.div>
+    <motion.div
+      className="text-center mt-8 sm:mt-10 md:mt-12"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+    >
+      <Link
+        to="/homme"
+        className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base transition-all duration-300 rounded-4xl"
+      >
+        Découvrir la collection
+      </Link>
+    </motion.div>
+  </div>
+      </section>
+      <section className='mb-32'>
+  <CategoryHero categoryTitle="Parfums et Beauté" subCategoryIndex={0} />
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 lg:gap-8">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
-            ))}
-          </div>
+  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-4 md:gap-5 lg:gap-8">
+      {featuredProducts.slice(0, 4).map((product) => (
+        <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
+      ))}
+    </div>
 
-          <motion.div
-            className="text-center mt-8 sm:mt-10 md:mt-12"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <Link
-              to="/homme"
-              className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base  transition-all duration-300  rounded-4xl"
-            >
-              Découvrir la collection
-            </Link>
-          </motion.div>
-        </div>
+    <motion.div
+      className="text-center mt-8 sm:mt-10 md:mt-12"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+    >
+      <Link
+        to="/homme"
+        className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base transition-all duration-300 rounded-4xl"
+      >
+        Découvrir la collection
+      </Link>
+    </motion.div>
+  </div>
+      </section>
+      <section className='mb-32'>
+  <CategoryHero categoryTitle="Femme" subCategoryIndex={5} />
+
+  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-4 md:gap-5 lg:gap-8">
+      {featuredProducts.slice(0, 4).map((product) => (
+        <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
+      ))}
+    </div>
+
+    <motion.div
+      className="text-center mt-8 sm:mt-10 md:mt-12"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+    >
+      <Link
+        to="/homme"
+        className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base transition-all duration-300 rounded-4xl"
+      >
+        Découvrir la collection
+      </Link>
+    </motion.div>
+  </div>
+      </section>
+      <section className='mb-32 '>
+  <CategoryHero categoryTitle="Joaillerie" subCategoryIndex={0} />
+
+  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-4 md:gap-5 lg:gap-8">
+      {featuredProducts.slice(0, 4).map((product) => (
+        <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
+      ))}
+    </div>
+
+    <motion.div
+      className="text-center mt-8 sm:mt-10 md:mt-12"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+    >
+      <Link
+        to="/homme"
+        className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base transition-all duration-300 rounded-4xl"
+      >
+        Découvrir la collection
+      </Link>
+    </motion.div>
+  </div>
       </section>
 
-      {/* About Section */}
+      <CategoryShowcase
+  title="les services CMClass"
+  description="La marque CMClass offre une mode sur mesure, avec pièces exclusives et services personnalisés.
+Chaque vêtement reflète l’excellence artisanale et un style contemporain affirmé.."
+  items={[
+    {
+      image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80",
+      title: "Sur mesure",
+      description: "explorer",
+      link: "/homme/chemises",
+    },
+    {
+      image: "https://images.unsplash.com/photo-1520975918311-7ce9d52f67e4?auto=format&fit=crop&w=800&q=80",
+      title: "Pantalons",
+      description: "Sobres, élégants et faits pour durer.",
+      link: "/homme/pantalons",
+    },
+    {
+      image: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80",
+      title: "Vestes",
+      description: "Des matières nobles pour affronter les saisons.",
+      link: "/homme/vestes",
+    },
+  ]}
+/>
+
+
+      {/* About Section 
       <section className="relative py-20 sm:py-24 md:py-32 lg:py-40 overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${atelierImage})` }}>
           <div className="absolute inset-0 bg-black/40" />
@@ -202,7 +296,7 @@ export const Home = () => {
             </Link>
           </motion.div>
         </div>
-      </section>
+      </section>*/}
 
       {/* Newsletter */}
       <Newsletter />
