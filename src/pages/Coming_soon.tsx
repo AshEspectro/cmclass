@@ -147,6 +147,7 @@ export default function Coming_soon() {
 }
 
 /* Social Icon Component */
+// eslint-disable-next-line react-refresh/only-export-components
 function SocialIcon({
   icon,
   href,
