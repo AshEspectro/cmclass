@@ -5,16 +5,16 @@ import { Instagram, Facebook, Twitter, Plus } from "lucide-react";
 interface FooterMenuProps {
   title: string;
   links: { name: string; to: string }[];
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
-const FooterMenu = ({ title, links }: FooterMenuProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-
+const FooterMenu = ({ title, links, isOpen, onToggle }: FooterMenuProps) => {
   return (
     <div className="md:block">
       <div
         className="flex justify-between items-center md:block cursor-pointer"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={onToggle}
       >
         <h4 className="text-white mb-2 md:mb-4 text-sm md:text-base">{title}</h4>
         <div className="md:hidden transition-transform duration-300">
@@ -31,7 +31,7 @@ const FooterMenu = ({ title, links }: FooterMenuProps) => {
       <ul
         className={`overflow-hidden transition-all duration-300 ${
           isOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
-        } md:max-h-full md:opacity-100 md:mt-0 space-y-2 md:space-y-3 text-xs md:text-sm`}
+        } md:max-h-full md:opacity-100 md:mt-0 space-y-8 md:space-y-3 text-xs md:text-sm`}
       >
         {links.map((link, i) => (
           <li key={i}>
@@ -49,6 +49,12 @@ const FooterMenu = ({ title, links }: FooterMenuProps) => {
 };
 
 export const Footer = () => {
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  const handleToggle = (menuTitle: string) => {
+    setOpenMenu((prev) => (prev === menuTitle ? null : menuTitle));
+  };
+
   return (
     <footer className="bg-black text-white">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-8 lg:py-12 flex flex-col">
@@ -75,6 +81,8 @@ export const Footer = () => {
               { name: "Retours & échanges", to: "/retours" },
               { name: "Suivi de commande", to: "/suivi" },
             ]}
+            isOpen={openMenu === "AIDE & SUPPORT"}
+            onToggle={() => handleToggle("AIDE & SUPPORT")}
           />
 
           <FooterMenu
@@ -86,6 +94,8 @@ export const Footer = () => {
               { name: "Emballages cadeaux", to: "/cadeaux" },
               { name: "Prendre un rendez-vous", to: "/rdv" },
             ]}
+            isOpen={openMenu === "SERVICES"}
+            onToggle={() => handleToggle("SERVICES")}
           />
 
           <FooterMenu
@@ -98,6 +108,8 @@ export const Footer = () => {
               { name: "Recrutement", to: "/carriere" },
               { name: "Collaborations", to: "/collaborations" },
             ]}
+            isOpen={openMenu === "À PROPOS DE CMCLASS"}
+            onToggle={() => handleToggle("À PROPOS DE CMCLASS")}
           />
 
           {/* Suivez-Nous + Social Icons */}
@@ -110,6 +122,8 @@ export const Footer = () => {
                 { name: "contact@cmclass.cd", to: "mailto:contact@cmclass.cd" },
                 { name: "+243 XXX XXX XXX", to: "tel:+243" },
               ]}
+              isOpen={openMenu === "SUIVEZ-NOUS"}
+              onToggle={() => handleToggle("SUIVEZ-NOUS")}
             />
 
             {/* Social Icons (mobile/tablet only) */}
@@ -141,8 +155,6 @@ export const Footer = () => {
 
           {/* Première ligne : Langue + Liens */}
           <div className="flex flex-col sm:flex-row justify-between  items-center">
-            
-
             <div className="flex items-center gap-2 sm:gap-4 mt-2 sm:mt-0 flex-wrap justify-center sm:justify-end">
               <Link to="/plan-du-site" className="text-gray-400 hover:text-[#007B8A] transition-colors">
                 Plan du Site
@@ -159,7 +171,6 @@ export const Footer = () => {
               <Link to="/cookies" className="text-gray-400 hover:text-[#007B8A] transition-colors">
                 Cookies
               </Link>
-
             </div>
             <div className="flex items-center gap-2 pt-4 sm:gap-4">
               <button className="text-gray-400 hover:text-[#007B8A] transition-colors">
