@@ -58,7 +58,7 @@ export const Footer = () => {
           <img
             src="/cmclass@.svg"
             alt="CMClass Logo"
-            className="h-10 sm:h-12 object-contain"
+            className="h-12 sm:h-12 object-contain"
           />
         </div>
 
@@ -140,7 +140,7 @@ export const Footer = () => {
         <div className="pt-6 sm:pt-8 border-t border-gray-800 flex flex-col gap-4 sm:gap-6 text-xs sm:text-sm">
 
           {/* Première ligne : Langue + Liens */}
-          <div className="flex flex-col sm:flex-row justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between  items-center">
             
 
             <div className="flex items-center gap-2 sm:gap-4 mt-2 sm:mt-0 flex-wrap justify-center sm:justify-end">
@@ -161,7 +161,7 @@ export const Footer = () => {
               </Link>
 
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 pt-4 sm:gap-4">
               <button className="text-gray-400 hover:text-[#007B8A] transition-colors">
                 Français
               </button>
@@ -177,7 +177,7 @@ export const Footer = () => {
             <img
               src="/cmclass@.svg"
               alt="CMClass Logo"
-              className="h-8 sm:h-10 object-contain"
+              className="h-6 sm:h-4 object-contain"
             />
           </div>
         </div>
