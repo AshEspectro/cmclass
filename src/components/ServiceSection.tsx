@@ -7,13 +7,13 @@ interface CardItem {
   link: string;
 }
 
-interface CategoryShowcaseProps {
+interface ServicesProps {
   title: string;
   description: string;
   items: CardItem[];
 }
 
-export const CategoryShowcase = ({ title, description, items }: CategoryShowcaseProps) => {
+export const Services = ({ title, description, items }: ServicesProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
 

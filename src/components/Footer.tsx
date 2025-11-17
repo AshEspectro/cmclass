@@ -1,149 +1,184 @@
-import { Link } from 'react-router-dom';
-import { Instagram, Facebook, Twitter } from 'lucide-react';export const Footer = () => {
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Instagram, Facebook, Twitter, Plus } from "lucide-react";
+
+interface FooterMenuProps {
+  title: string;
+  links: { name: string; to: string }[];
+}
+
+const FooterMenu = ({ title, links }: FooterMenuProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="md:block">
+      <div
+        className="flex justify-between items-center md:block cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <h4 className="text-white mb-2 md:mb-4 text-sm md:text-base">{title}</h4>
+        <div className="md:hidden transition-transform duration-300">
+          <span
+            className={`block transform transition-transform duration-300 ${
+              isOpen ? "rotate-45" : "rotate-0"
+            }`}
+          >
+            <Plus size={20} className="text-gray-400" />
+          </span>
+        </div>
+      </div>
+
+      <ul
+        className={`overflow-hidden transition-all duration-300 ${
+          isOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
+        } md:max-h-full md:opacity-100 md:mt-0 space-y-2 md:space-y-3 text-xs md:text-sm`}
+      >
+        {links.map((link, i) => (
+          <li key={i}>
+            <Link
+              to={link.to}
+              className="text-gray-400 hover:text-[#007B8A] transition-colors"
+            >
+              {link.name}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export const Footer = () => {
   return (
     <footer className="bg-black text-white">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 sm:py-16 lg:py-20">
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 md:gap-12 mb-8 sm:mb-12">
-          {/* Column 1: About */}
-          <div>
-            <h4 className="text-white mb-4 sm:mb-6 text-sm sm:text-base">À PROPOS</h4>
-            <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
-              <li>
-                <Link to="/a-propos" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Notre Histoire
-                </Link>
-              </li>
-              <li>
-                <Link to="/a-propos" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Artisanat
-                </Link>
-              </li>
-              <li>
-                <Link to="/stories" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Stories
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Contact
-                </Link>
-              </li>
-            </ul>
-          </div>
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-8 lg:py-12 flex flex-col">
 
-          {/* Column 2: Shop */}
-          <div>
-            <h4 className="text-white mb-4 sm:mb-6 text-sm sm:text-base">BOUTIQUE</h4>
-            <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
-              <li>
-                <Link to="/homme" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Collection Homme
-                </Link>
-              </li>
-              <li>
-                <Link to="/femme" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Collection Femme
-                </Link>
-              </li>
-              <li>
-                <Link to="/nouveautes" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Nouveautés
-                </Link>
-              </li>
-              <li>
-                <Link to="/accessoires" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Accessoires
-                </Link>
-              </li>
-            </ul>
-          </div>
+        {/* Logo for mobile/tablet */}
+        <div className="flex justify-center mb-8 sm:mb-12 lg:hidden">
+          <img
+            src="/cmclass@.svg"
+            alt="CMClass Logo"
+            className="h-10 sm:h-12 object-contain"
+          />
+        </div>
 
-          {/* Column 3: Help */}
-          <div>
-            <h4 className="text-white mb-4 sm:mb-6 text-sm sm:text-base">AIDE</h4>
-            <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
-              <li>
-                <Link to="/compte" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Mon Compte
-                </Link>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Livraison
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  Retours
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-                  FAQ
-                </a>
-              </li>
-            </ul>
-          </div>
+        {/* GRID 4 COLUMNS */}
+        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-8 sm:gap-10 md:gap-12 mb-12 sm:mb-16">
 
-          {/* Column 4: Contact */}
-          <div className="col-span-2 lg:col-span-1">
-            <h4 className="text-white mb-4 sm:mb-6 text-sm sm:text-base">CONTACT</h4>
-            <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-400">
-              <li>Goma, Nord-Kivu</li>
-              <li>République Démocratique du Congo</li>
-              <li className="pt-2 sm:pt-3">
-                <a href="mailto:contact@cmclass.cd" className="hover:text-[#007B8A] transition-colors duration-300">
-                  contact@cmclass.cd
-                </a>
-              </li>
-              <li>
-                <a href="tel:+243" className="hover:text-[#007B8A] transition-colors duration-300">
-                  +243 XXX XXX XXX
-                </a>
-              </li>
-            </ul>
+          <FooterMenu
+            title="AIDE & SUPPORT"
+            links={[
+              { name: "Service client (7j/7)", to: "/support" },
+              { name: "FAQ", to: "/faq" },
+              { name: "Conseils d’entretien", to: "/entretien" },
+              { name: "Guide des tailles", to: "/tailles" },
+              { name: "Retours & échanges", to: "/retours" },
+              { name: "Suivi de commande", to: "/suivi" },
+            ]}
+          />
 
-            {/* Social Media */}
-            <div className="flex gap-3 sm:gap-4 mt-4 sm:mt-6">
+          <FooterMenu
+            title="SERVICES"
+            links={[
+              { name: "Création sur mesure", to: "/sur-mesure" },
+              { name: "Retouches & ajustements", to: "/retouches" },
+              { name: "Personnalisation", to: "/personnalisation" },
+              { name: "Emballages cadeaux", to: "/cadeaux" },
+              { name: "Prendre un rendez-vous", to: "/rdv" },
+            ]}
+          />
+
+          <FooterMenu
+            title="À PROPOS DE CMCLASS"
+            links={[
+              { name: "Notre histoire", to: "/notre-histoire" },
+              { name: "L’atelier & savoir-faire", to: "/atelier" },
+              { name: "Engagement qualité", to: "/engagement" },
+              { name: "Nouveautés", to: "/nouveautes" },
+              { name: "Recrutement", to: "/carriere" },
+              { name: "Collaborations", to: "/collaborations" },
+            ]}
+          />
+
+          {/* Suivez-Nous + Social Icons */}
+          <div className="md:block">
+            <FooterMenu
+              title="SUIVEZ-NOUS"
+              links={[
+                { name: "Goma, Nord-Kivu", to: "#" },
+                { name: "République Démocratique du Congo", to: "#" },
+                { name: "contact@cmclass.cd", to: "mailto:contact@cmclass.cd" },
+                { name: "+243 XXX XXX XXX", to: "tel:+243" },
+              ]}
+            />
+
+            {/* Social Icons (mobile/tablet only) */}
+            <div className="flex gap-4 sm:gap-8 mt-12 sm:mt-12 md:mt-4 md:gap-2 md:justify-start justify-center lg:hidden">
               <a
                 href="#"
-                className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300"
-                aria-label="Instagram"
+                className="text-gray-400 hover:text-[#007B8A] transition-colors"
               >
-                <Instagram size={18} className="sm:hidden" />
-                <Instagram size={20} className="hidden sm:block" />
+                <Instagram size={20} />
               </a>
               <a
                 href="#"
-                className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300"
-                aria-label="Facebook"
+                className="text-gray-400 hover:text-[#007B8A] transition-colors"
               >
-                <Facebook size={18} className="sm:hidden" />
-                <Facebook size={20} className="hidden sm:block" />
+                <Facebook size={20} />
               </a>
               <a
                 href="#"
-                className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300"
-                aria-label="Twitter"
+                className="text-gray-400 hover:text-[#007B8A] transition-colors"
               >
-                <Twitter size={18} className="sm:hidden" />
-                <Twitter size={20} className="hidden sm:block" />
+                <Twitter size={20} />
               </a>
             </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-6 sm:pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-3 sm:gap-4 text-center md:text-left">
-          <p className="text-gray-400 text-xs sm:text-sm">© 2025 CM CLASS. Tous droits réservés.</p>
-          <div className="flex gap-4 sm:gap-6 text-xs sm:text-sm">
-            <button className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-              Français
-            </button>
-            <span className="text-gray-600">|</span>
-            <button className="text-gray-400 hover:text-[#007B8A] transition-colors duration-300">
-              English
-            </button>
+        <div className="pt-6 sm:pt-8 border-t border-gray-800 flex flex-col gap-4 sm:gap-6 text-xs sm:text-sm">
+
+          {/* Première ligne : Langue + Liens */}
+          <div className="flex flex-col sm:flex-row justify-between items-center">
+            
+
+            <div className="flex items-center gap-2 sm:gap-4 mt-2 sm:mt-0 flex-wrap justify-center sm:justify-end">
+              <Link to="/plan-du-site" className="text-gray-400 hover:text-[#007B8A] transition-colors">
+                Plan du Site
+              </Link>
+              <span className="text-gray-600">|</span>
+              <Link to="/mentions-legales" className="text-gray-400 hover:text-[#007B8A] transition-colors">
+                Mentions légales
+              </Link>
+              <span className="text-gray-600">|</span>
+              <Link to="/accessibilite" className="text-gray-400 hover:text-[#007B8A] transition-colors">
+                Accessibilité
+              </Link>
+              <span className="text-gray-600">|</span>
+              <Link to="/cookies" className="text-gray-400 hover:text-[#007B8A] transition-colors">
+                Cookies
+              </Link>
+
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <button className="text-gray-400 hover:text-[#007B8A] transition-colors">
+                Français
+              </button>
+              <span className="text-gray-600">|</span>
+              <button className="text-gray-400 hover:text-[#007B8A] transition-colors">
+                English
+              </button>
+            </div>
+          </div>
+
+          {/* Logo pour desktop */}
+          <div className="hidden lg:flex justify-center mt-4">
+            <img
+              src="/cmclass@.svg"
+              alt="CMClass Logo"
+              className="h-8 sm:h-10 object-contain"
+            />
           </div>
         </div>
       </div>

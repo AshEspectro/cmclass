@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { Mail, Instagram, Facebook, Twitter, Link } from "lucide-react";
+import { Mail, Instagram, Facebook, Twitter} from "lucide-react";
 
 export default function Coming_soon() {
   const [email, setEmail] = useState("");

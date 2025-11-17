@@ -4,11 +4,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Hero } from '../components/Hero';
 import { ProductCard } from '../components/ProductCard';
 import { QuickViewModal } from '../components/QuickViewModal';
-import { Newsletter } from '../components/Newsletter';
+//import { Newsletter } from '../components/Newsletter';
 import { products } from '../data/products';
 import type { Product } from '../data/products';
 import { CategoryHero } from '../components/CollectionHero';
-import { CategoryShowcase } from '../components/ServiceSection';
+import { Services } from '../components/ServiceSection';
 
 // Video for hero (Pexels free download)
 const heroVideo = '/videos/homme-hero1.mp4';
@@ -242,7 +242,7 @@ export const Home = () => {
   </div>
       </section>
 
-      <CategoryShowcase
+      <Services
   title="les services CMClass"
   description="La marque CMClass offre une mode sur mesure, avec pièces exclusives et services personnalisés.
 Chaque vêtement reflète l’excellence artisanale et un style contemporain affirmé.."
@@ -251,19 +251,19 @@ Chaque vêtement reflète l’excellence artisanale et un style contemporain aff
       image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80",
       title: "Sur mesure",
       description: "explorer",
-      link: "/homme/chemises",
+      link: "/homme",
     },
     {
       image: "https://images.unsplash.com/photo-1520975918311-7ce9d52f67e4?auto=format&fit=crop&w=800&q=80",
-      title: "Pantalons",
-      description: "Sobres, élégants et faits pour durer.",
+      title: "Selection exclusive",
+      description: "Pièces choisis pour vous",
       link: "/homme/pantalons",
     },
     {
       image: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80",
-      title: "Vestes",
-      description: "Des matières nobles pour affronter les saisons.",
-      link: "/homme/vestes",
+      title: "Services",
+      description: "Nous contacter",
+      link: "/pages/Contact",
     },
   ]}
 />
@@ -298,8 +298,8 @@ Chaque vêtement reflète l’excellence artisanale et un style contemporain aff
         </div>
       </section>*/}
 
-      {/* Newsletter */}
-      <Newsletter />
+      {/* Newsletter 
+      <Newsletter />*/}
 
       {/* Quick View Modal */}
       <AnimatePresence>
