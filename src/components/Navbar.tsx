@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Search, User, Heart, ShoppingBag } from 'lucide-react';
+import { Menu, Search, Heart, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { MegaMenu } from './MegaMenu';
 import { SearchPanel } from './SearchPanel';
 import { CartOverlay } from './CartOverlay';
-
+import { UserAccountOverlayWrapper } from "./Account";
 export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isPastHero, setIsPastHero] = useState(false);
@@ -20,6 +20,7 @@ export const Navbar = () => {
   const { items: wishlistItems } = useWishlist();
   void showMobileSearch;
   void setShowMobileSearch;
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -123,13 +124,9 @@ export const Navbar = () => {
                 )}
               </Link>
 
-              <Link
-                to="/compte"
-                className="hover:text-[#007B8A] transition-colors duration-300"
-                aria-label="Compte"
-              >
-                <User size={22} />
-              </Link>
+              {/* User Icon */}
+      <UserAccountOverlayWrapper />
+
 
               <button
                 onClick={() => setIsCartOpen(true)}

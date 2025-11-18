@@ -8,7 +8,7 @@ import { ProductDetail } from './pages/ProductDetail';
 import { Stories } from './pages/Stories';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
-import { Account } from './pages/Account';
+import CreateAccount from './pages/Account_creation';
 import { CartProvider } from './contexts/CartContext';
 import { WishlistProvider } from './contexts/WishlistContext';
 import Coming_soon from './pages/Coming_soon';
@@ -35,7 +35,7 @@ function AppWrapper() {
                 <Route path="/stories" element={<Stories />} />
                 <Route path="/a-propos" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
-                <Route path="/compte" element={<Account />} />
+                <Route path="/compte" element={<CreateAccount />} />
                 <Route path="/femme" element={<MenCategory />} />
                 <Route path="/accessoires" element={<MenCategory />} />
                 <Route path="/nouveautes" element={<MenCategory />} />

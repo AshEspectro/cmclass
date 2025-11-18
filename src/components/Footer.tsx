@@ -188,7 +188,7 @@ export const Footer = () => {
             <img
               src="/cmclass@.svg"
               alt="CMClass Logo"
-              className="h-6 sm:h-4 object-contain"
+              className="h-6 sm:h-4 lg:h-12 object-contain"
             />
           </div>
         </div>
