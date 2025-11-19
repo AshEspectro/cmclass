@@ -16,7 +16,7 @@ const FooterMenu = ({ title, links, isOpen, onToggle }: FooterMenuProps) => {
         className="flex justify-between items-center md:block cursor-pointer"
         onClick={onToggle}
       >
-        <h4 className="text-white mb-2 md:mb-4 text-sm md:text-base">{title}</h4>
+        <h4 className="text-white mb-2 md:mb-4 text-xs md:text-base">{title}</h4>
         <div className="md:hidden transition-transform duration-300">
           <span
             className={`block transform transition-transform duration-300 ${
@@ -69,7 +69,7 @@ export const Footer = () => {
         </div>
 
         {/* GRID 4 COLUMNS */}
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-8 sm:gap-10 md:gap-12 mb-12 sm:mb-16">
+        <div className="grid text-xs grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-8 sm:gap-10 md:gap-12 mb-12 sm:mb-16">
 
           <FooterMenu
             title="AIDE & SUPPORT"
@@ -128,24 +128,24 @@ export const Footer = () => {
 
             {/* Social Icons (mobile/tablet only) */}
             <div className="flex gap-4 sm:gap-8 mt-12 sm:mt-12 md:mt-4 md:gap-2 md:justify-start justify-center lg:hidden">
-              <a
-                href="#"
+              <Link
+                to="#"
                 className="text-gray-400 hover:text-[#007B8A] transition-colors"
               >
                 <Instagram size={20} />
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                to="#"
                 className="text-gray-400 hover:text-[#007B8A] transition-colors"
               >
                 <Facebook size={20} />
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                to="#"
                 className="text-gray-400 hover:text-[#007B8A] transition-colors"
               >
                 <Twitter size={20} />
-              </a>
+              </Link>
             </div>
           </div>
         </div>

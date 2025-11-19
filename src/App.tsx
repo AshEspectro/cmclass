@@ -14,6 +14,8 @@ import { WishlistProvider } from './contexts/WishlistContext';
 import Coming_soon from './pages/Coming_soon';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import './globals.css';
+import LoginPage from './pages/Login';
+import AccountPage from './pages/Login';
 
 function AppWrapper() {
   const location = useLocation();
@@ -34,8 +36,11 @@ function AppWrapper() {
                 <Route path="/produit/:id" element={<ProductDetail />} />
                 <Route path="/stories" element={<Stories />} />
                 <Route path="/a-propos" element={<About />} />
+                <Route path="/LoginPage" element={<AccountPage/>} />
+                
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/compte" element={<CreateAccount />} />
+                <Route path="/login" element={< LoginPage />} />
                 <Route path="/femme" element={<MenCategory />} />
                 <Route path="/accessoires" element={<MenCategory />} />
                 <Route path="/nouveautes" element={<MenCategory />} />

@@ -101,21 +101,22 @@ export const Account = ({ onClose }: AccountProps) => {
           <div>
             {/* Close Button */}
 
-            <button
-              onClick={onClose}
-              className="absolute  right-8 md:right-16 lg:right-32 py-6 text-gray-500 hover:text-black transition"
-              aria-label="Close"
-            >
-             ✕
-            </button>
+           {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute right-8 top-8 text-gray-500 hover:text-black transition"
+          >
+            ✕
+          </button>
+        )}
             <h2 className="t font-medium text-sm py-6">Identification</h2>
             
 
             <p className="py-6 font-medium text-xs">I already have an account.</p>
 
             {/* Google Login */}
-            <button className="w-full bg-gray-100 py-3 rounded-3xl flex text-sm items-center justify-center gap-2 hover:bg-gray-200 transition mb-4">
-              <SiGoogle size={18} />
+            <button className="w-full bg-gray-100 py-4 rounded-3xl flex text-sm items-center justify-center gap-2 hover:bg-gray-200 transition mb-4">
+              <SiGoogle size={22} />
               Sign In With Google
             </button>
 
@@ -194,4 +195,4 @@ export const Account = ({ onClose }: AccountProps) => {
       </motion.div>
     </div>
   );
-};
+};                                                                                                                                                                         
