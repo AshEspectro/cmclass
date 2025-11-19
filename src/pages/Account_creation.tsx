@@ -51,7 +51,7 @@ export default function CreateAccount() {
           </p>
           <p className="text-sm mb-8">
             Vous avez déjà un compte MyLV ?{" "}
-            <Link to="/login" className="text-blue-600 hover:underline">
+            <Link to="/login" className="text-[#007B8A] hover:underline">
               Connectez-vous ici.
             </Link>
           </p>
