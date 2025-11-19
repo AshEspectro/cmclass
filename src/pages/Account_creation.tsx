@@ -195,7 +195,7 @@ export default function CreateAccount() {
                   <input type="checkbox" className="w-4 h-4" />
                   SMS marketing
                 </label>
-                <p className="text-xs text-gray-500 leading-4 pl-6 w-[40%]">
+                <p className="text-xs text-gray-500 leading-4 pl-6 w-full md:w-[40%]">
                   En entrant votre numéro de téléphone, vous acceptez de recevoir des SMS marketing automatisés.
                   La fréquence des messages peut varier. Envoyez STOP pour annuler.
                 </p>
