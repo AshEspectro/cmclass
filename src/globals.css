@@ -182,3 +182,22 @@
   -ms-overflow-style: none; /* IE et Edge */
   scrollbar-width: none; /* Firefox */
 }
+.animated-underline {
+  position: relative;
+  cursor: pointer;
+}
+
+.animated-underline::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  height: 1.5px;
+  width: 0%;
+  background-color: black;
+  transition: width 0.3s ease;
+}
+
+.animated-underline:hover::after {
+  width: 100%;
+}

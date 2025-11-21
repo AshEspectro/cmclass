@@ -18,6 +18,7 @@ import LoginPage from './pages/Login';
 import AccountPage from './pages/Login';
 import AccountPage_A from './pages/EmailIdentifying';
 import ForgotPwd from './pages/forgot-password';
+import BagsPage from './pages/Bags';
 
 function AppWrapper() {
   const location = useLocation();
@@ -40,6 +41,7 @@ function AppWrapper() {
                 <Route path="/alternative-login" element={<AccountPage_A />} />
                 <Route path="/a-propos" element={<About />} />
                 <Route path="/LoginPage" element={<AccountPage/>} />
+                <Route path="/bagsPage" element={<BagsPage/>} />
                 
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/compte" element={<CreateAccount />} />
