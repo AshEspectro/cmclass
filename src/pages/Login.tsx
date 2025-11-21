@@ -10,10 +10,10 @@ export default function AccountPage() {
     e.preventDefault();
   };
 
-  const MyLVInfo = () => (
+  const Info = () => (
     <div className="bg-gray-50 border border-none px-8 py-10 w-full max-w-lg mx-auto">
       <p className="font-regular text-xs tracking-wider uppercase text-gray-700 mb-6">
-        Ce que vous trouverez dans votre compte MyLV
+        Ce que vous trouverez dans votre compte 
       </p>
 
       <ul className="space-y-6 text-gray-700 text-sm leading-relaxed">
@@ -81,31 +81,31 @@ export default function AccountPage() {
                 </button>
               </div>
 
-              <button type="button" className="pt-8 text-[#007B8A] text-sm hover:underline w-fit">
+              <Link to="/forgot-password"><button type="button" className="pt-8 text-[#007B8A] text-sm hover:underline w-fit">
                 Mot de passe oublié ?
-              </button>
+              </button></Link>
             </div>
 
             {/* One-time login */}
             <div className="text-xs text-gray-600 leading-relaxed">
               Ou utilisez un lien de connexion unique pour vous connecter.{" "}
-              <button type="button" className="underline hover:text-black">
+              <Link to="/alternative-login"><button type="button" className="underline hover:text-black">
                 Envoyez-moi le lien
-              </button>
+              </button></Link>
             </div>
 
             {/* Submit */}
-            <div className="flex flex-col items-end space-y-1 mt-4">
+            <div className="flex flex-col items-center md:items-end space-y-1 mt-4">
               <button
                 type="submit"
-                className="bg-black text-white py-3 rounded-3xl px-28 text-sm tracking-wide hover:bg-gray-900 transition"
+                className="bg-[#007B8A]  text-white py-3 rounded-3xl px-28 text-sm tracking-wide hover:bg-gray-900 transition"
               >
                 Se connecter
               </button>
 
               {/* Create Account */}
-              <div className="flex flex-col items-start pr-24 mt-4">
-                <p className="font-medium text-sm">Vous n’avez pas de compte MyLV ?</p>
+              <div className="flex flex-col items-center justify-center md:items-start pr-0 md:pr-32 mt-4">
+                <p className="font-medium text-sm">Vous n’avez pas de compte  ?</p>
                 <Link to="/compte">
                   <span className="font-medium text-sm underline hover:text-black transition">
                     Créer un compte
@@ -118,13 +118,13 @@ export default function AccountPage() {
 
           {/* Mobile Info */}
           <div className="block md:hidden mt-16">
-            <MyLVInfo />
+            <Info />
           </div>
         </main>
 
         {/* RIGHT COLUMN — Desktop Info (1/3) */}
         <div className="hidden md:block mt-24">
-          <MyLVInfo />
+          <Info />
         </div>
 
       </div>

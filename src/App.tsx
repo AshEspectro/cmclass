@@ -16,6 +16,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import './globals.css';
 import LoginPage from './pages/Login';
 import AccountPage from './pages/Login';
+import AccountPage_A from './pages/EmailIdentifying';
+import ForgotPwd from './pages/forgot-password';
 
 function AppWrapper() {
   const location = useLocation();
@@ -35,6 +37,7 @@ function AppWrapper() {
                 <Route path="/homme/:subcategory" element={<MenCategory />} />
                 <Route path="/produit/:id" element={<ProductDetail />} />
                 <Route path="/stories" element={<Stories />} />
+                <Route path="/alternative-login" element={<AccountPage_A />} />
                 <Route path="/a-propos" element={<About />} />
                 <Route path="/LoginPage" element={<AccountPage/>} />
                 
@@ -45,6 +48,7 @@ function AppWrapper() {
                 <Route path="/accessoires" element={<MenCategory />} />
                 <Route path="/nouveautes" element={<MenCategory />} />
                 <Route path="/wishlist" element={<MenCategory />} />
+                <Route path="/forgot-password" element={<ForgotPwd/>} />
                 {/* Catch-all route can redirect to Coming Soon or 404 */}
                 <Route path="*" element={<Home />} />
               </Routes>

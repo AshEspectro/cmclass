@@ -207,12 +207,12 @@ export default function CreateAccount() {
             </div>
 
             {/* CTA */}
-            <div className="flex justify-end mt-6 mb-24">
+            <div className="flex justify-end  mt-6 mb-24">
               <div>
-                <button className="bg-black text-white py-3 px-32 rounded-3xl hover:bg-gray-900 transition">
+                <button className="bg-[#007B8A]  text-white py-3 px-32 rounded-3xl hover:bg-black transition">
                   Suivant
                 </button>
-                <p className="text-xs py-4 leading-6 w-[80%]">
+                <p className="text-xs py-4 leading-6 w-[60%]">
                   Vous recevrez un code d’activation par e-mail pour valider la création de votre compte.
                 </p>
               </div>
