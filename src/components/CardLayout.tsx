@@ -1,6 +1,6 @@
-import { useState, type FC } from "react";
-import { ChevronDown, Settings2, Check } from "lucide-react";
-
+import { useEffect, useState, type FC } from "react";
+import { ChevronDown, Settings2, Check, ChevronRight } from "lucide-react";
+import { ChevronLeft ,} from "lucide-react";
 /** DATA */
 const categoriesData = [
   { category: "Mon Monogram Personalization", image: "/images/monogram.jpg" },
@@ -33,7 +33,7 @@ const FilterNavbar: FC<FilterNavbarProps> = ({ categories, selectedCategory, onS
   };
 
   return (
-    <div className="w-full flex flex-col mt-32 mb-10 pb-4">
+    <div className="w-full border-t  flex flex-col mt-32  py-2">
       <div className="w-full flex justify-between px-6 items-center gap-4">
         {/* Categories Button */}
         <button
@@ -80,6 +80,8 @@ const FilterNavbar: FC<FilterNavbarProps> = ({ categories, selectedCategory, onS
 };
 
 /** CAROUSEL */
+
+
 interface CardData {
   image: string;
   categories: string[];
@@ -91,77 +93,111 @@ interface CarouselSectionProps {
 
 const CarouselSection: FC<CarouselSectionProps> = ({ cards }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [visibleSlides, setVisibleSlides] = useState(4); // default
 
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev === 0 ? cards.length - 1 : prev - 1));
+  // Determine how many cards are visible based on viewport width
+  const getVisibleSlides = () => {
+    if (typeof window === "undefined") return 3;
+    if (window.innerWidth >= 1280) return 5; // xl
+    if (window.innerWidth >= 1024) return 4; // lg
+    if (window.innerWidth >= 768) return 4; // md
+    if (window.innerWidth >= 640) return 4;
+    if (window.innerWidth >= 360) return 3; // sm
+    return 2; // mobile default
   };
 
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev === cards.length - 1 ? 0 : prev + 1));
-  };
+  // Update visibleSlides on resize
+  useEffect(() => {
+    const handleResize = () => setVisibleSlides(getVisibleSlides());
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Clamp currentIndex to valid range
+  const maxIndex = Math.max(0, cards.length - visibleSlides);
+  useEffect(() => {
+    if (currentIndex > maxIndex) setCurrentIndex(maxIndex);
+  }, [visibleSlides, cards.length, maxIndex, currentIndex]);
+
+  // Navigation
+  const prevSlide = () => setCurrentIndex((prev) => Math.max(0, prev - 1));
+  const nextSlide = () => setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
+
+  // Transform calculation
+  const stepPercent = 100 / visibleSlides;
+  const translatePercent = currentIndex * stepPercent;
 
   return (
-    <section className="w-full px-40 ">
-      <div className="max-w-full mx-auto px-4 py-20 sm:px-6 md:px-8 lg:px-12 xl:px-16">
-        <div className="cursor-pointer flex flex-col items-start group">
-    <span>Hola</span><span className="h-[1px] bg-black w-0 transition-all duration-300 group-hover:w-full"></span>
-
-
-    </div>
-
-        <div className="relative flex items-center">
-          {/* Left Arrow */}
+    <section className="w-full md: px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24 bg-black/10">
+      <div className="max-w-full md:w-1/2 mx-auto py-6 relative">
+        {/* Left Arrow */}
+        {currentIndex > 0 && (
           <button
             onClick={prevSlide}
-            className="absolute left-0 z-10  bg-white rounded-full shadow-md hover:bg-gray-100 transition"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 "
+            aria-label="previous"
           >
-            &#8592;
+            <ChevronLeft size={24} />
           </button>
-          
+        )}
 
-          {/* Slides Container */}
-          <div className="overflow-hidden w-full">
-            <div
-              className="flex transition-transform duration-500  ease-in-out"
-              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-            >
-              {cards.map((card, idx) => (
-                <div key={idx} className="flex-shrink-0 w-1/3 md:w-1/4 lg:w-1/5 ">
-                  <div className="bg-white overflow-hidden flex flex-col h-30 transition-transform duration-300">
-                    {/* Image */}
-                    <div className="w-full h-56 relative">
-                      <img src={card.image} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
-                    </div>
+        {/* Slides Container */}
+        <div className="overflow-hidden w-full">
+          <div
+            className="flex transition-transform duration-500 ease-in-out"
+            style={{
+              transform: `translateX(-${translatePercent}%)`,
+            }}
+          >
+            {cards.map((card, idx) => (
+              <div
+                key={idx}
+                className={`flex-shrink-0 bg-black/10 `}
+                style={{ width: `${100 / visibleSlides}%` }}
+              >
+                {/* Image */}
+                <div className="flex flex-col h-full w-24 bg-black/10  transition-transform duration-300">
+                  <div className="w-full h-28 relative flex items-center justify-center overflow-hidden ">
+                    <img
+                      src={card.image}
+                      alt={`Slide ${idx + 1}`}
+                      className="w-full h-full object-cover bg-black/10 transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
 
-                    {/* Categories */}
-                    <div className="px-4 flex flex-wrap cursor-pointer flex flex-col items-start group gap-2">
-                      {card.categories.map((cat, i) => (
-                        <span key={i} className="text-xs px-2 pb-0  ">
-                          {cat}
-                        </span>
-                      ))} <span className="h-[1px] bg-black w-0 pt-0 transition-all duration-300 group-hover:w-full"></span>
-
-
-                    </div>
-                    
+                  {/* Categories */}
+                  <div className="flex flex-col items-start mt-2 cursor-pointer group gap-1">
+                    {card.categories.map((cat, i) => (
+                      <span key={i} className="text-xs w-6 px-1">
+                        {cat}
+                      </span>
+                    ))}
+                    <span className="h-[1px] bg-black w-0 transition-all duration-300 group-hover:w-full" />
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
+        </div>
 
-          {/* Right Arrow */}
+        {/* Right Arrow */}
+        {currentIndex < maxIndex && (
           <button
             onClick={nextSlide}
-            className="absolute right-0 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 "
+            aria-label="next"
           >
-            &#8594;
+            <ChevronRight size={24} />
           </button>
-        </div>
+        )}
       </div>
     </section>
   );
 };
+
+
+
 
 /** PARENT COMPONENT */
 const HandbagsPage: FC = () => {
