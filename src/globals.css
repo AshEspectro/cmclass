@@ -37,7 +37,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: Candara, "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
+    font-family: "Candara", 
       sans-serif;
     font-size: 16px;
     line-height: 1.6;

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FC } from "react";
 import { ChevronDown, Settings2, Check, ChevronRight } from "lucide-react";
 import { ChevronLeft ,} from "lucide-react";
+import ResponsiveFilter from "./Filter_wrapper";
 /** DATA */
 const categoriesData = [
   { category: "Mon Monogram Personalization", image: "/images/monogram.jpg" },
@@ -16,6 +17,23 @@ const categoriesData = [
   { category: "Trunk Bags", image: "/images/trunk.jpg" },
   { category: "Shoulder Straps", image: "/images/shoulderstrap.jpg" },
 ];
+/** FILTER DATA FOR RESPONSIVE FILTER COMPONENT */
+const filtersData = [
+  { label: "Available Online", type: "toggle" },
+  { label: "Iconic", options: ["Classic", "Modern"] },
+  { label: "Collections", options: ["Spring", "Summer"] },
+  { label: "Styles", options: ["Casual", "Formal", "Sport"] },
+  { label: "Materials", options: ["Leather", "Canvas"] },
+  { label: "Colors", options: ["Black", "Red", "White"] },
+  { label: "Sort by", options: ["Price Low → High", "Price High → Low"] },
+  { label: "Price Range", options: ["0-100", "100-200", "200+"] },
+];
+
+
+
+
+
+
 
 /** FILTER NAVBAR */
 interface FilterNavbarProps {
@@ -31,14 +49,17 @@ const FilterNavbar: FC<FilterNavbarProps> = ({ categories, selectedCategory, onS
     onSelect(category === selectedCategory ? null : category);
     setOpen(false);
   };
+const [filterCount, setFilterCount] = useState(0);
 
+  // Filter data for ResponsiveFilter component
+  const [openFilter, setOpenFilter] = useState(false);
   return (
-    <div className="w-full border-t  flex flex-col mt-32  py-2">
+    <div className="w-full border-t  flex flex-col mt-32  py-4">
       <div className="w-full flex justify-between px-6 items-center gap-4">
         {/* Categories Button */}
         <button
           onClick={() => setOpen((prev) => !prev)}
-          className="flex items-center gap-2 text-xs md:text-sm bg-white transition-all duration-300 active:scale-95"
+          className="flex items-center gap-2 text-sm md:text-sm bg-white transition-all duration-300 active:scale-95"
         >
           {selectedCategory || "All Handbags"}
           <ChevronDown
@@ -48,10 +69,27 @@ const FilterNavbar: FC<FilterNavbarProps> = ({ categories, selectedCategory, onS
         </button>
 
         {/* FILTER BUTTON */}
-        <button className="group flex items-center border rounded-3xl py-2 px-4 gap-2 text-xs transition-all duration-300 hover:border-2">
-          Filters
-          <Settings2 size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
-        </button>
+       <button 
+      onClick={() => setOpenFilter(true)}
+      className="group flex items-center border rounded-3xl py-2 pl-4 gap-2 text-sm transition-all duration-300 hover:border-2"
+    >
+      Filtrer
+      {filterCount > 0 && (
+        <span className=" text-black">({filterCount})</span>
+      )}
+      <Settings2 
+        size={16} 
+        className="transition-transform mr-4 duration-300 group-hover:translate-x-1" 
+      />
+    </button>
+
+    <ResponsiveFilter
+      filters={filtersData}
+      open={openFilter}
+      onClose={() => setOpenFilter(false)}
+      onApply={(selected) => console.log("Filters:", selected)}
+      onCountChange={setFilterCount}   // ← UPDATED
+    />
       </div>
 
       {open && (
@@ -129,8 +167,8 @@ const CarouselSection: FC<CarouselSectionProps> = ({ cards }) => {
   const translatePercent = currentIndex * stepPercent;
 
   return (
-    <section className="w-full md: px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24 bg-black/10">
-      <div className="max-w-full md:w-1/2 mx-auto py-6 relative">
+    <section className="w-full md: px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24 ">
+      <div className="max-w-full md:w-1/2 mx-auto py-4 relative">
         {/* Left Arrow */}
         {currentIndex > 0 && (
           <button
@@ -153,11 +191,11 @@ const CarouselSection: FC<CarouselSectionProps> = ({ cards }) => {
             {cards.map((card, idx) => (
               <div
                 key={idx}
-                className={`flex-shrink-0 bg-black/10 `}
+                className={`flex-shrink-0 `}
                 style={{ width: `${100 / visibleSlides}%` }}
               >
                 {/* Image */}
-                <div className="flex flex-col h-full w-24 bg-black/10  transition-transform duration-300">
+                <div className="flex flex-col h-full w-24  transition-transform duration-300">
                   <div className="w-full h-28 relative flex items-center justify-center overflow-hidden ">
                     <img
                       src={card.image}
