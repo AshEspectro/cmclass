@@ -24,7 +24,7 @@ export default function ResponsiveFilter({
 }: ResponsiveFilterProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [selected, setSelected] = useState<Record<string, any>>({});
-
+  
   // checkbox handler
   const toggleOption = (label: string, option: string) => {
     setSelected((prev) => {
@@ -61,25 +61,39 @@ export default function ResponsiveFilter({
   useEffect(() => {
     if (onCountChange) onCountChange(totalSelected);
   }, [totalSelected, onCountChange]);
+  useEffect(() => {
+    if (open) {
+      // Disable page scrolling
+      document.body.style.overflow = "hidden";
+    } else {
+      // Restore scroll
+      document.body.style.overflow = "";
+    }
 
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  if (!open) return null;
   return (
     <>
       {open && (
         <div
-          className="fixed inset-0 bg-black/90 z-40"
+          className="fixed  inset-0 bg-black/90 z-40"
           onClick={handleOverlayClick}
         />
       )}
 
       <div
-        className={`fixed top-0 right-0 h-full bg-white  z-50 
+        className={`fixed top-0 right-0 h-full pb-40 bg-white  z-50 
           transition-transform duration-300  
           w-full sm:w-full md:w-1/2
           ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         
 {/* Header */}
-<div className="flex items-center px-8 md:px-8 lg:px-24 xl:px-32 pt-16 pb-6 justify-between">
+<div className=" flex items-center px-8 md:px-8 lg:px-24 xl:px-32 pt-16 pb-6 justify-between">
   <span className="">
     Voir les filtres
     {totalSelected > 0 && (
@@ -107,7 +121,7 @@ export default function ResponsiveFilter({
 
 
         {/* CONTENT */}
-        <div className="flex flex-col mb-8 md gap-4 overflow-y-auto h-[calc(100%-80px)]">
+        <div className="flex flex-col mb-80 md gap-4 overflow-y-auto h-[calc(100%-80px)]">
           {filters.map((f) => {
 
             // -------------------------
@@ -149,7 +163,7 @@ export default function ResponsiveFilter({
             // COLLAPSIBLE FILTER
             // -------------------------
             return (
-              <div key={f.label} className="px-8 md:px-8 lg:px-24 xl:px-32">
+              <div key={f.label} className="px-8 md:px-8 lg:px-24  xl:px-32">
                 <button
                   className="w-full border-b border-black/10 flex justify-between pb-4 items-center"
                   onClick={() =>
@@ -208,17 +222,19 @@ export default function ResponsiveFilter({
       </div>
 
       {/* APPLY BUTTON */}
-      <div className="w-full md:w-1/2 right-0 flex fixed bottom-0 z-50 justify-center py-6 bg-white shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.1)]">
-        <button
-          className="text-white hover:text-[#007B8A] hover:bg-white hover:border hover:border-[#007B8A] px-36 rounded-full bg-black py-3 text-sm"
-          onClick={() => {
-            onApply(selected);
-            onClose();
-          }}
-        >
-          Voir les produits
-        </button>
-      </div>
+{open && (
+  <div className="w-full md:w-1/2 right-0 flex fixed bottom-0 z-50 justify-center pt-6 md:py-6 bg-white shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.1)]">
+    <button
+      className="text-white hover:text-[#007B8A] mx-4  hover:bg-white hover:border hover:border-[#007B8A] px-24 md:px-32 rounded-full bg-black py-3 text-sm"
+      onClick={() => {
+        onApply(selected);
+        onClose();
+      }}
+    >
+      Voir les produits
+    </button>
+  </div>
+)}
     </>
   );
 }

@@ -176,3 +176,197 @@ export const stories = [
     category: 'CULTURE'
   }
 ];
+
+
+
+export interface Product_cat {
+  id: number;
+  label: string;
+  name: string;
+  price: string;
+  productImage: string;      // main image
+  mannequinImage: string;    // appears on hover
+  colors: { hex: string; images: string[] }[]; // browsable views per color
+}
+
+// ---------------------------------------------------
+// PRODUCT LIST (8 items)
+// ---------------------------------------------------
+
+export const products_cat: Product_cat[] = [
+  {
+    id: 1,
+    label: "Nouveau",
+    name: "Chemise Asymétrique Minimaliste",
+    price: "49.99$",
+    productImage:
+      "https://images.unsplash.com/photo-1543076447-215ad9ba6923?q=80&w=800",
+    mannequinImage:
+      "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?q=80&w=800",
+    colors: [
+      {
+        hex: "#000000",
+        images: [
+          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800",
+          "https://images.unsplash.com/photo-1543076447-215ad9ba6923?q=80&w=800",
+        ],
+      },
+      {
+        hex: "#c7c7c7",
+        images: [
+          "https://images.unsplash.com/photo-1564849444449-0c8f1c2b4aa8?q=80&w=800",
+          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?q=80&w=800",
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 2,
+    label: "Nouveau",
+    name: "Chemise Oversize Texture Lin",
+    price: "59.99$",
+    productImage:
+      "https://images.unsplash.com/photo-1593032465178-3d9730fbd702?q=80&w=800",
+    mannequinImage:
+      "https://images.unsplash.com/photo-1592878893260-ece5095a5f39?q=80&w=800",
+    colors: [
+      {
+        hex: "#4a4a4a",
+        images: [
+          "https://images.unsplash.com/photo-1593032465178-3d9730fbd702?q=80&w=800",
+          "https://images.unsplash.com/photo-1592878893260-ece5095a5f39?q=80&w=800",
+        ],
+      },
+      {
+        hex: "#d9d9d9",
+        images: [
+          "https://images.unsplash.com/photo-1593032465178-3d9730fbd702?q=80&w=800",
+          "https://images.unsplash.com/photo-1592878893260-ece5095a5f39?q=80&w=800",
+        ],
+      },
+    ],
+  },
+
+  // --- 6 MORE PRODUCTS BELOW (duplicate structure, different images) ---
+  {
+    id: 3,
+    label: "Essentiel",
+    name: "T-Shirt Coupe Droite",
+    price: "29.99$",
+    productImage:
+      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?q=80&w=800",
+    mannequinImage:
+      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?q=80&w=800",
+    colors: [
+      {
+        hex: "#ffffff",
+        images: [
+          "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?q=80&w=800",
+          "https://images.unsplash.com/photo-1526170375885-9c4e99a9eed4?q=80&w=800",
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 4,
+    label: "Nouveau",
+    name: "Pull Maille Légère",
+    price: "69.99$",
+    productImage:
+      "https://images.unsplash.com/photo-1520975918314-7529414344d8?q=80&w=800",
+    mannequinImage:
+      "https://images.unsplash.com/photo-1520975918314-7529414344d8?q=80&w=800",
+    colors: [
+      {
+        hex: "#8b634b",
+        images: [
+          "https://images.unsplash.com/photo-1520975918314-7529414344d8?q=80&w=800",
+          "https://images.unsplash.com/photo-1520975918314-brown?q=80&w=800",
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 5,
+    label: "Best Seller",
+    name: "Hoodie Oversize Premium",
+    price: "89.99$",
+    productImage:
+      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=800",
+    mannequinImage:
+      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=800",
+    colors: [
+      {
+        hex: "#222222",
+        images: [
+          "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=800",
+          "https://images.unsplash.com/photo-1512436991641-black?q=80&w=800",
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 6,
+    label: "Nouveau",
+    name: "Robe Lin Minimaliste",
+    price: "79.99$",
+    productImage:
+      "https://images.unsplash.com/photo-1520974735194-3b1db6f3386c?q=80&w=800",
+    mannequinImage:
+      "https://images.unsplash.com/photo-1520974735194-3b1db6f3386c?q=80&w=800",
+    colors: [
+      {
+        hex: "#d8c4a8",
+        images: [
+          "https://images.unsplash.com/photo-1520974735194-3b1db6f3386c?q=80&w=800",
+          "https://images.unsplash.com/photo-1520974735194-beige?q=80&w=800",
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 7,
+    label: "Collection Été",
+    name: "Short Casual Lin",
+    price: "39.99$",
+    productImage:
+      "https://images.unsplash.com/photo-1521120098171-53230f0c13f8?q=80&w=800",
+    mannequinImage:
+      "https://images.unsplash.com/photo-1521120098171-53230f0c13f8?q=80&w=800",
+    colors: [
+      {
+        hex: "#e2e2e2",
+        images: [
+          "https://images.unsplash.com/photo-1521120098171-53230f0c13f8?q=80&w=800",
+          "https://images.unsplash.com/photo-1521120098171-grey?q=80&w=800",
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 8,
+    label: "Essentiel",
+    name: "Pantalon Coupe Droite",
+    price: "69.99$",
+    productImage:
+      "https://images.unsplash.com/photo-1528715471579-d1bd0e5f5f18?q=80&w=800",
+    mannequinImage:
+      "https://images.unsplash.com/photo-1528715471579-d1bd0e5f5f18?q=80&w=800",
+    colors: [
+      {
+        hex: "#444444",
+        images: [
+          "https://images.unsplash.com/photo-1528715471579-d1bd0e5f5f18?q=80&w=800",
+          "https://images.unsplash.com/photo-1528715471579-black?q=80&w=800",
+        ],
+      },
+    ],
+  },
+];
+

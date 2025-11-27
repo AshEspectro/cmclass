@@ -1,5 +1,5 @@
 import HandbagsPage from "../components/CardLayout";
-import HeroSection, { ProductGrid } from "../components/Hero_cat";
+import HeroSection, { HeroProduct, ProductGrid } from "../components/Hero_cat";
 
 export default function BagsPage() {
     return (
@@ -9,8 +9,13 @@ export default function BagsPage() {
   image="/homme.jfif"
   title="Explore Our New Collection"
   description="Évoquant la douceur des fêtes et l’élégance discrète des saisons froides, cette chemise s’impose comme une pièce maîtresse d’un vestiaire pensé pour les instants partagés. Conçue dans une silhouette épurée, elle mêle lignes modernes et tradition réinventée, révélant un tissu à la fois léger, chaleureux et subtilement texturé "
-  ctaLabel="Shop Now"
-  onClick={() => console.log("CTA clicked")}
+  
+/>
+<ProductGrid/>
+<HeroProduct
+  image="/woman.jfif"
+  
+  
 />
 <ProductGrid/>
 

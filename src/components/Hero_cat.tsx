@@ -13,7 +13,7 @@ export default function HeroSection({
   return (
     <section className="w-full">
       {/* IMAGE WRAPPER */}
-      <div className="relative w-full h-[60vh] lg:h-[70vh] xl:h-[80vh]   overflow-hidden">
+      <div className="relative w-full h-[60vh] lg:h-[70vh] xl:h-[100vh]   overflow-hidden">
         <img
           src={image}
           alt={title}
@@ -43,219 +43,230 @@ export default function HeroSection({
     </section>
   );
 }
-import { useState } from "react";
+export  function HeroProduct({
+  image,
+  
+  
+}: {
+  image: string;
+ 
+}) {
+  return (
+    <section className="w-full">
+      {/* IMAGE WRAPPER */}
+      <div className="relative w-full h-[60vh] lg:h-[70vh] xl:h-[100vh]   overflow-hidden">
+        <img
+          src={image}
+          alt={image}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-black/4 to-transparent" />
+
+
+        {/* TEXT INSIDE IMAGE FOR md+ */}
+        <div className="hidden md:flex absolute inset-0  items-end px-16">
+          <div className="text-white max-w-sm">
+            
+            
+          </div>
+        </div>
+      </div>
+
+      
+    </section>
+  );
+}
+import { useEffect, useState } from "react";
 import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
 
-interface Product {
-  id: number;
-  label: string;
-  name: string;
-  price: string;
-  colors: { hex: string; images: string[] }[];
-}
 
-const products: Product[] = [
-  {
-    id: 1,
-    label: "Nouveau",
-    name: "Chemise Asymétrique Minimaliste",
-    price: "49.99$",
-    colors: [
-      {
-        hex: "#000000",
-        images: [
-          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800",
-          "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?q=80&w=800",
-          "https://images.unsplash.com/photo-1543076447-215ad9ba6923?q=80&w=800",
-        ],
-      },
-      {
-        hex: "#c7c7c7",
-        images: [
-          "https://images.unsplash.com/photo-1564849444449-0c8f1c2b4aa8?q=80&w=800",
-          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?q=80&w=800",
-          "https://images.unsplash.com/photo-1541099649105-3f0f13f5c8f0?q=80&w=800",
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
-    label: "Nouveau",
-    name: "Chemise Oversize Texture Lin",
-    price: "59.99$",
-    colors: [
-      {
-        hex: "#4a4a4a",
-        images: [
-          "https://images.unsplash.com/photo-1593032465178-3d9730fbd702?q=80&w=800",
-          "https://images.unsplash.com/photo-1592878893260-ece5095a5f39?q=80&w=800",
-        ],
-      },
-      {
-        hex: "#d9d9d9",
-        images: [
-          "https://images.unsplash.com/photo-1593032465178-3d9730fbd702?q=80&w=800",
-          "https://images.unsplash.com/photo-1592878893260-ece5095a5f39?q=80&w=800",
-        ],
-      },
-    ],
-  },
-  {
-    id: 1,
-    label: "Nouveau",
-    name: "Chemise Asymétrique Minimaliste",
-    price: "49.99$",
-    colors: [
-      {
-        hex: "#000000",
-        images: [
-          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800",
-          "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?q=80&w=800",
-          "https://images.unsplash.com/photo-1543076447-215ad9ba6923?q=80&w=800",
-        ],
-      },
-      {
-        hex: "#c7c7c7",
-        images: [
-          "https://images.unsplash.com/photo-1564849444449-0c8f1c2b4aa8?q=80&w=800",
-          "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?q=80&w=800",
-          "https://images.unsplash.com/photo-1541099649105-3f0f13f5c8f0?q=80&w=800",
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
-    label: "Nouveau",
-    name: "Chemise Oversize Texture Lin",
-    price: "59.99$",
-    colors: [
-      {
-        hex: "#4a4a4a",
-        images: [
-          "https://images.unsplash.com/photo-1593032465178-3d9730fbd702?q=80&w=800",
-          "https://images.unsplash.com/photo-1592878893260-ece5095a5f39?q=80&w=800",
-        ],
-      },
-      {
-        hex: "#d9d9d9",
-        images: [
-          "https://images.unsplash.com/photo-1593032465178-3d9730fbd702?q=80&w=800",
-          "https://images.unsplash.com/photo-1592878893260-ece5095a5f39?q=80&w=800",
-        ],
-      },
-    ],
-  },
-];
+// -------------------------
+// ProductGrid.tsx
+// -------------------------
+
+
+import { products_cat } from "../data/products";
 
 export function ProductGrid() {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 w-full">
-      {products.map((p) => (
-        <ProductCard key={p.id} product={p} />
+    <div className="grid grid-cols-2 md:grid-cols-4  w-full">
+      {products_cat.map((p) => (
+        <ProductCard key={p.id} product_cat={p} />
       ))}
     </div>
   );
 }
-//<div className="absolute inset-0 bg-linear-to-t from-gray-50/40 via-black/10 to-transparent" />
-function ProductCard({ product }: { product: Product }) {
-  const [selectedColor, setSelectedColor] = useState(product.colors[0].hex);
+
+
+
+// -------------------------
+// ProductCard.tsx
+// -------------------------
+
+import { useWishlist } from "../contexts/WishlistContext";
+import type { Product_cat } from "../data/products";
+
+interface ProductCardProps {
+  product_cat: Product_cat;
+}
+
+export function ProductCard({ product_cat }: ProductCardProps) {
+  const [selectedColor, setSelectedColor] = useState(product_cat.colors[0].hex);
   const [index, setIndex] = useState(0);
   const [hoveringImage, setHoveringImage] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
-  const images =
-    product.colors.find((c) => c.hex === selectedColor)?.images || [];
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const inWishlist = isInWishlist(product_cat.id.toString());
+
+  const toggleWishlist = () => {
+    if (inWishlist) {
+      removeFromWishlist(product_cat.id.toString());
+    } else {
+      addToWishlist(product_cat);
+      setShowToast(true); // Show notification
+    }
+  };
+   // Auto-hide toast after 2 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timeout = setTimeout(() => setShowToast(false), 4000);
+      return () => clearTimeout(timeout);
+    }
+  }, [showToast]);
+
+  const colorImages =
+    product_cat.colors.find((c) => c.hex === selectedColor)?.images || [];
 
   const prev = () =>
-    setIndex((i) => (i === 0 ? images.length - 1 : i - 1));
+    setIndex((i) => (i === 0 ? colorImages.length - 1 : i - 1));
   const next = () =>
-    setIndex((i) => (i === images.length - 1 ? 0 : i + 1));
-
-  const handleColorChange = (hex: string) => {
-    setSelectedColor(hex);
-    setIndex(0); // Reset to first image for selected color
-  };
+    setIndex((i) => (i === colorImages.length - 1 ? 0 : i + 1));
 
   return (
-    <div className="relative w-full aspect-4/5 overflow-hidden">
+    <div className="relative w-full aspect-4/5 overflow-hidden group">
       {/* IMAGE AREA */}
       <div
         className="w-full h-full relative"
         onMouseEnter={() => setHoveringImage(true)}
         onMouseLeave={() => setHoveringImage(false)}
       >
+        {/* Default image */}
         <img
-          src={images[index]}
-          className="w-full h-full object-cover transition-all duration-500"
+          src={product_cat.productImage}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+            hoveringImage ? "opacity-0" : "opacity-100"
+          }`}
         />
-        {/* Hover next image effect */}
-        {images.length > 1 && (
+
+        {/* Mannequin image on hover */}
+        <img
+          src={product_cat.mannequinImage}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+            hoveringImage ? "opacity-100" : "opacity-0"
+          }`}
+        />
+
+        {/* Browsable images per color */}
+        {colorImages.length > 0 && (
           <img
-            src={images[(index + 1) % images.length]}
+            src={colorImages[index]}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
               hoveringImage ? "opacity-100" : "opacity-0"
             }`}
           />
         )}
-<div className="absolute inset-0 bg-linear-to-t from-gray-50/40 via-black/10 to-transparent" />
+
+        {/* Top gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-white/50 via-black/5 to-transparent" />
+
         {/* CHEVRONS */}
-        {images.length > 1 && (
+        {colorImages.length > 1 && (
           <>
             <button
               onClick={prev}
-              className={`absolute top-1/2 -translate-y-1/2 left-2 text-black p-1 transition-opacity duration-300 ${
+              className={`absolute top-1/2 -translate-y-1/2 left-2 text-black transition-opacity duration-300 ${
                 hoveringImage ? "opacity-100" : "opacity-0"
               }`}
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={20} />
             </button>
             <button
               onClick={next}
-              className={`absolute top-1/2 -translate-y-1/2 right-2 text-black p-1 transition-opacity duration-300 ${
+              className={`absolute top-1/2 -translate-y-1/2 right-2 text-black transition-opacity duration-300 ${
                 hoveringImage ? "opacity-100" : "opacity-0"
               }`}
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={20} />
             </button>
           </>
         )}
       </div>
-      <div className="absolute hinset-0 bg-linear-to-t from-gray-50/40 via-black/10 to-transparent" />
 
-      {/* BOTTOM INFO (disappears on hover) */}
+      {/* BOTTOM INFO */}
       <div
-        className={`absolute bottom-0 left-0 right-0 w-full px-4 pb-6 text-black transition-opacity duration-300 ${
+        className={`absolute bottom-0 flex justify-between left-0 right-0 px-4 pb-6 text-black transition-opacity duration-300 ${
           hoveringImage ? "opacity-0" : "opacity-100"
         }`}
       >
         <div>
-          <p className="text-xs text-gray-500 tracking-wide">
-            {product.label}
-          </p>
-          <p className="text-sm font-medium mt-1">{product.name}</p>
-          <p className="text-sm mt-1">{product.price}</p>
+          <p className="text-xs text-gray-500">{product_cat.label}</p>
+          <p className="text-sm font-medium ">{product_cat.name}</p>
+          <p className="text-sm">{product_cat.price}</p>
         </div>
 
-        {/* COLOR SWATCHES */}
+        {/* COLOR SELECTOR */}
         <div className="flex items-end gap-1 mt-2">
-          {product.colors.map((c, i) => (
+          {product_cat.colors.map((c, i) => (
             <button
               key={i}
-              className={`w-2 h-2 rounded-full   transition ${
-                selectedColor === c.hex ? "scale-110 border-1 border-gray-500" : ""
+              onClick={() => {
+                setSelectedColor(c.hex);
+                setIndex(0);
+              }}
+              className={`w-3 h-3 rounded-full ${
+                selectedColor === c.hex ? "ring-1 ring-black scale-110" : ""
               }`}
               style={{ backgroundColor: c.hex }}
-              onClick={() => handleColorChange(c.hex)}
-            ></button>
+            />
           ))}
         </div>
       </div>
 
-      {/* WISHLIST */}
-      <button className="absolute top-2 right-2 p-3 opacity-90 hover:opacity-100 transition">
-        <Heart size={16} className="text-black" />
-      </button>
+      {/* WISHLIST BUTTON */}
+      <button
+        onClick={toggleWishlist}
+        className="absolute top-2 right-2 p-2 transition-colors"
+      >
+        <Heart
+          size={18}
+          className={`transition-colors ${
+            inWishlist ? "text-[#007B8A]" : "text-black"
+          }`}
+        />
+      </button>{/* TOAST NOTIFICATION */}
+      {showToast && (
+  <div className="fixed top-10 left-0 right-0 z-50 flex justify-center pointer-events-none">
+    <div className="bg-[#007B8A] mx-4 md:mx-16 text-white rounded-lg shadow-lg flex items-center gap-3 transition-opacity duration-300 pointer-events-auto">
+      {/* Image du produit */}
+      <img
+        src={product_cat.productImage}
+        alt={product_cat.name}
+        className="w-16 md:w-24 h-16 md:h-24 rounded-l-lg object-cover"
+      />
+
+      {/* Texte et lien */}
+      <div className="text-sm pr-4 md:pr-6 flex flex-col p-2">
+        <span>{`L'article ${product_cat.name} a été ajouté à votre wishlist`}</span>
+        <a href="/wishlist" className="underline  font-medium">
+          Voir votre wishlist
+        </a>
+      </div>
+    </div>
+  </div>
+
+)}
+
     </div>
   );
 }
