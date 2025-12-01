@@ -1,41 +1,21 @@
 import { useEffect, useState, type FC } from "react";
 import { ChevronDown, Settings2, Check, ChevronRight } from "lucide-react";
 import { ChevronLeft ,} from "lucide-react";
-import ResponsiveFilter from "./Filter_wrapper";
+
 /** DATA */
-const categoriesData = [
-  { category: "Mon Monogram Personalization", image: "/images/monogram.jpg" },
-  { category: "Crossbody Bags", image: "/images/crossbody.jpg" },
-  { category: "Shoulder Bags", image: "/images/shoulder.jpg" },
-  { category: "Totes", image: "/images/totes.jpg" },
-  { category: "Mini Bags", image: "/images/mini.jpg" },
-  { category: "Hobo Bags", image: "/images/hobo.jpg" },
-  { category: "Bucket Bags", image: "/images/bucket.jpg" },
-  { category: "Bumbags", image: "/images/bumbag.jpg" },
-  { category: "Backpacks", image: "/images/backpack.jpg" },
-  { category: "Top Handles", image: "/images/tophandle.jpg" },
-  { category: "Trunk Bags", image: "/images/trunk.jpg" },
-  { category: "Shoulder Straps", image: "/images/shoulderstrap.jpg" },
-];
-/** FILTER DATA FOR RESPONSIVE FILTER COMPONENT */
-const filtersData = [
-  { label: "Available Online", type: "toggle" },
-  { label: "Iconic", options: ["Classic", "Modern"] },
-  { label: "Collections", options: ["Spring", "Summer"] },
-  { label: "Styles", options: ["Casual", "Formal", "Sport"] },
-  { label: "Materials", options: ["Leather", "Canvas"] },
-  { label: "Colors", options: ["Black", "Red", "White"] },
-  { label: "Sort by", options: ["Price Low → High", "Price High → Low"] },
-  { label: "Price Range", options: ["0-100", "100-200", "200+"] },
-];
+
+/** CATEGORIES DATA FOR FILTER NAVBAR */
+
+
+// pages/HomeWithAltNavbar.tsx
+import { AltNavbarOnScroll } from "./AltNavbarOnScroll";
 
 
 
+import ResponsiveFilter from "./Filter_wrapper";
+import { categoriesData, filtersData } from "../data/products";
+//import { ViewMoreButton } from "./ViewMoreBttn";
 
-
-
-
-/** FILTER NAVBAR */
 interface FilterNavbarProps {
   categories: typeof categoriesData;
   selectedCategory: string | null;
@@ -43,57 +23,59 @@ interface FilterNavbarProps {
 }
 
 const FilterNavbar: FC<FilterNavbarProps> = ({ categories, selectedCategory, onSelect }) => {
-  const [open, setOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterCount, setFilterCount] = useState(0);
 
   const handleCategoryClick = (category: string) => {
     onSelect(category === selectedCategory ? null : category);
-    setOpen(false);
+    setDropdownOpen(false);
   };
-const [filterCount, setFilterCount] = useState(0);
 
-  // Filter data for ResponsiveFilter component
-  const [openFilter, setOpenFilter] = useState(false);
+  // Close dropdown if clicked outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("#filter-navbar")) setDropdownOpen(false);
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
   return (
-    <div className="w-full border-t  flex flex-col mt-32  py-4">
-      <div className="w-full flex justify-between px-6 items-center gap-4">
-        {/* Categories Button */}
+    <div
+      id="filter-navbar"
+      className="w-full bg-white md:px-4 sm:px-6 md:px-12 lg:px-16 xl:px-8 shadow-sm"
+    >
+      <div className="w-full flex justify-between px-6 py-2 items-center gap-4">
+        {/* Categories Dropdown */}
         <button
-          onClick={() => setOpen((prev) => !prev)}
+          onClick={() => setDropdownOpen((prev) => !prev)}
           className="flex items-center gap-2 text-sm md:text-sm bg-white transition-all duration-300 active:scale-95"
         >
           {selectedCategory || "All Handbags"}
           <ChevronDown
             size={16}
-            className={`transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+            className={`transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""}`}
           />
         </button>
 
-        {/* FILTER BUTTON */}
-       <button 
-      onClick={() => setOpenFilter(true)}
-      className="group flex items-center border rounded-3xl py-2 pl-4 gap-2 text-sm transition-all duration-300 hover:border-2"
-    >
-      Filtrer
-      {filterCount > 0 && (
-        <span className=" text-black">({filterCount})</span>
-      )}
-      <Settings2 
-        size={16} 
-        className="transition-transform mr-4 duration-300 group-hover:translate-x-1" 
-      />
-    </button>
-
-    <ResponsiveFilter
-      filters={filtersData}
-      open={openFilter}
-      onClose={() => setOpenFilter(false)}
-      onApply={(selected) => console.log("Filters:", selected)}
-      onCountChange={setFilterCount}   // ← UPDATED
-    />
+        {/* Filter Button */}
+        <button
+          onClick={() => setFilterOpen(true)}
+          className="group flex items-center border rounded-3xl py-2 pl-4 pr-3 gap-2 text-sm transition-all duration-300 hover:border-2"
+        >
+          Filtrer
+          {filterCount > 0 && (
+            <span className="text-black font-medium">({filterCount})</span>
+          )}
+          <Settings2 size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+        </button>
       </div>
 
-      {open && (
-        <div className="w-full md:w-80 bg-white md:shadow-lg md:rounded-b-lg border-t md:border-none border-gray-200 py-4 mt-2 animate-dropdown">
+      {/* Categories Dropdown Menu */}
+      {dropdownOpen && (
+        <div className="w-full md:w-80 bg-white shadow-lg rounded-b-lg border-t border-gray-200 py-2 animate-dropdown">
           <div className="max-w-7xl mx-auto flex flex-col">
             {categories.map((item, idx) => {
               const isSelected = selectedCategory === item.category;
@@ -102,7 +84,7 @@ const [filterCount, setFilterCount] = useState(0);
                   key={idx}
                   onClick={() => handleCategoryClick(item.category)}
                   className={`w-full text-left px-6 py-2 text-sm flex justify-between items-center transition-colors ${
-                    !isSelected ? "hover:bg-gray-100" : ""
+                    !isSelected ? "hover:bg-gray-100" : "bg-gray-50"
                   }`}
                 >
                   <span>{item.category}</span>
@@ -113,9 +95,20 @@ const [filterCount, setFilterCount] = useState(0);
           </div>
         </div>
       )}
+
+      {/* Responsive Filter Modal */}
+      <ResponsiveFilter
+        filters={filtersData}
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        onApply={(selected) => console.log("Filters:", selected)}
+        onCountChange={setFilterCount} // updates filter count badge
+      />
     </div>
   );
 };
+
+
 
 /** CAROUSEL */
 
@@ -168,7 +161,7 @@ const CarouselSection: FC<CarouselSectionProps> = ({ cards }) => {
 
   return (
     <section className="w-full md: px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24 ">
-      <div className="max-w-full md:w-1/2 mx-auto py-4 relative">
+      <div className="max-w-full md:w-1/2 mx-auto py-4 mt-32 relative">
         {/* Left Arrow */}
         {currentIndex > 0 && (
           <button
@@ -250,14 +243,16 @@ const HandbagsPage: FC = () => {
     }));
 
   return (
-    <div>
+    
+       <><AltNavbarOnScroll>
       <FilterNavbar
         categories={categoriesData}
         selectedCategory={selectedCategory}
-        onSelect={setSelectedCategory}
-      />
-      <CarouselSection cards={filteredCards} />
-    </div>
+        onSelect={setSelectedCategory} />
+    </AltNavbarOnScroll><CarouselSection cards={filteredCards} />
+   
+</>
+    
   );
 };
 

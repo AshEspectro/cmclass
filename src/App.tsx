@@ -20,16 +20,44 @@ import AccountPage_A from './pages/EmailIdentifying';
 import ForgotPwd from './pages/forgot-password';
 import BagsPage from './pages/Bags';
 
+import { useConditionalNavbar } from './hooks/useConditionalNavbar';
+
+
+import { useParams } from "react-router-dom";
+import { products_cat } from "./data/products";
+import { SingleProductPage } from "./pages/Single_productpage";
+
+export const SingleProductWrapper = () => {
+  const { id } = useParams();
+  const product = products_cat.find((p) => p.id.toString() === id);
+
+  if (!product) return <div>Product not found</div>;
+
+  return <SingleProductPage product={product} />;
+};
+
+
 function AppWrapper() {
   const location = useLocation();
-  const hideNavAndFooter = location.pathname === '/'; // Coming Soon page
+  const hideNavAndFooter = ['/','/homme', '/bagsPage'].includes(location.pathname);
+ // Coming Soon page
+
+  // Exemple : cacher navbar sur /homme et /bagsPage avec scroll
+  const { hideNavbar } = useConditionalNavbar({
+    routesWithHide: ['/homme', '/bagsPage'],
+    enableScrollHide: true,
+    scrollTrigger: 80,
+  });
 
   return (
     <CartProvider>
       <WishlistProvider>
         <ProtectedRoute>
           <div className="flex flex-col min-h-screen">
-            {!hideNavAndFooter && <Navbar />}
+            {/* Navbar par défaut */}
+            {!hideNavAndFooter && !hideNavbar && <Navbar />}
+
+            {/* Contenu */}
             <main className="flex-1">
               <Routes>
                 <Route path="/" element={<Coming_soon />} />
@@ -42,19 +70,20 @@ function AppWrapper() {
                 <Route path="/a-propos" element={<About />} />
                 <Route path="/LoginPage" element={<AccountPage/>} />
                 <Route path="/bagsPage" element={<BagsPage/>} />
-                
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/compte" element={<CreateAccount />} />
-                <Route path="/login" element={< LoginPage />} />
+                <Route path="/login" element={<LoginPage />} />
                 <Route path="/femme" element={<MenCategory />} />
                 <Route path="/accessoires" element={<MenCategory />} />
                 <Route path="/nouveautes" element={<MenCategory />} />
                 <Route path="/wishlist" element={<MenCategory />} />
                 <Route path="/forgot-password" element={<ForgotPwd/>} />
-                {/* Catch-all route can redirect to Coming Soon or 404 */}
                 <Route path="*" element={<Home />} />
+                <Route path="/product/:id" element={<SingleProductWrapper />} />
               </Routes>
             </main>
+
+            {/* Footer */}
             {!hideNavAndFooter && <Footer />}
           </div>
         </ProtectedRoute>
@@ -62,6 +91,7 @@ function AppWrapper() {
     </CartProvider>
   );
 }
+
 
 export default function App() {
   return (

@@ -13,8 +13,9 @@ export default function HeroSection({
   return (
     <section className="w-full">
       {/* IMAGE WRAPPER */}
-      <div className="relative w-full h-[60vh] lg:h-[70vh] xl:h-[100vh]   overflow-hidden">
+      <div  className="relative w-full h-[60vh] lg:h-[70vh] xl:h-[100vh]   overflow-hidden" >
         <img
+          
           src={image}
           alt={title}
           className="w-full h-full object-cover"
@@ -105,6 +106,7 @@ export function ProductGrid() {
 
 import { useWishlist } from "../contexts/WishlistContext";
 import type { Product_cat } from "../data/products";
+import { Link } from "react-router-dom";
 
 interface ProductCardProps {
   product_cat: Product_cat;
@@ -145,19 +147,19 @@ export function ProductCard({ product_cat }: ProductCardProps) {
 
   return (
     <div className="relative w-full aspect-4/5 overflow-hidden group">
-      {/* IMAGE AREA */}
+     
       <div
         className="w-full h-full relative"
         onMouseEnter={() => setHoveringImage(true)}
         onMouseLeave={() => setHoveringImage(false)}
       >
-        {/* Default image */}
+        {/* Default image */} <Link to={`/product/${product_cat.id}`} >{/* IMAGE AREA */}
         <img
           src={product_cat.productImage}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
             hoveringImage ? "opacity-0" : "opacity-100"
           }`}
-        />
+        /></Link>
 
         {/* Mannequin image on hover */}
         <img
@@ -209,11 +211,12 @@ export function ProductCard({ product_cat }: ProductCardProps) {
           hoveringImage ? "opacity-0" : "opacity-100"
         }`}
       >
-        <div>
+        <Link to={`/product/${product_cat.id}`} >
           <p className="text-xs text-gray-500">{product_cat.label}</p>
-          <p className="text-sm font-medium ">{product_cat.name}</p>
+          {/* IMAGE AREA */}
+<p className="text-sm font-medium ">{product_cat.name}</p>
           <p className="text-sm">{product_cat.price}</p>
-        </div>
+        </Link>
 
         {/* COLOR SELECTOR */}
         <div className="flex items-end gap-1 mt-2">
@@ -232,7 +235,7 @@ export function ProductCard({ product_cat }: ProductCardProps) {
           ))}
         </div>
       </div>
-
+    
       {/* WISHLIST BUTTON */}
       <button
         onClick={toggleWishlist}
@@ -258,9 +261,9 @@ export function ProductCard({ product_cat }: ProductCardProps) {
       {/* Texte et lien */}
       <div className="text-sm pr-4 md:pr-6 flex flex-col p-2">
         <span>{`L'article ${product_cat.name} a été ajouté à votre wishlist`}</span>
-        <a href="/wishlist" className="underline  font-medium">
+        <Link to="/wishlist" className="underline  font-medium">
           Voir votre wishlist
-        </a>
+        </Link>
       </div>
     </div>
   </div>

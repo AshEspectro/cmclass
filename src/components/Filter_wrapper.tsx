@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { X, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface FilterItem {
   label: string;
   options?: string[];
-  type?: "default" | "toggle";
+  type?: "default" | "toggle"  | string;
 }
 
 interface ResponsiveFilterProps {
@@ -27,7 +28,9 @@ export default function ResponsiveFilter({
   
   // checkbox handler
   const toggleOption = (label: string, option: string) => {
-    setSelected((prev) => {
+    setSelected((prev) => {                   
+
+
       const current = prev[label] || [];
       return {
         ...prev,
@@ -223,9 +226,9 @@ export default function ResponsiveFilter({
 
       {/* APPLY BUTTON */}
 {open && (
-  <div className="w-full md:w-1/2 right-0 flex fixed bottom-0 z-50 justify-center pt-6 md:py-6 bg-white shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.1)]">
+  <div className="w-full md:w-1/2 right-0 flex fixed sm:border-b bottom-0 z-50 justify-center pt-6 md:py-6 bg-white shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.1)]">
     <button
-      className="text-white hover:text-[#007B8A] mx-4  hover:bg-white hover:border hover:border-[#007B8A] px-24 md:px-32 rounded-full bg-black py-3 text-sm"
+      className="text-white hover:text-[#007B8A] mx-4  mb-6 hover:bg-white hover:border hover:border-[#007B8A] px-24 md:px-32 rounded-full bg-black py-3 text-sm"
       onClick={() => {
         onApply(selected);
         onClose();

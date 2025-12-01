@@ -12,6 +12,34 @@ export interface Product {
   inStock: boolean;
 }
 
+/** FILTER DATA FOR RESPONSIVE FILTER COMPONENT */
+export const filtersData = [
+  { label: "Available Online", type: "toggle" },
+  { label: "Iconic", options: ["Classic", "Modern"] },
+  { label: "Collections", options: ["Spring", "Summer"] },
+  { label: "Styles", options: ["Casual", "Formal", "Sport"] },
+  { label: "Materials", options: ["Leather", "Canvas"] },
+  { label: "Colors", options: ["Black", "Red", "White"] },
+  { label: "Sort by", options: ["Price Low → High", "Price High → Low"] },
+  { label: "Price Range", options: ["0-100", "100-200", "200+"] },
+];
+
+
+export const categoriesData = [
+  { category: "Mon Monogram Personalization", image: "/images/monogram.jpg" },
+  { category: "Crossbody Bags", image: "/images/crossbody.jpg" },
+  { category: "Shoulder Bags", image: "/images/shoulder.jpg" },
+  { category: "Totes", image: "/images/totes.jpg" },
+  { category: "Mini Bags", image: "/images/mini.jpg" },
+  { category: "Hobo Bags", image: "/images/hobo.jpg" },
+  { category: "Bucket Bags", image: "/images/bucket.jpg" },
+  { category: "Bumbags", image: "/images/bumbag.jpg" },
+  { category: "Backpacks", image: "/images/backpack.jpg" },
+  { category: "Top Handles", image: "/images/tophandle.jpg" },
+  { category: "Trunk Bags", image: "/images/trunk.jpg" },
+  { category: "Shoulder Straps", image: "/images/shoulderstrap.jpg" },
+];
+
 export const products: Product[] = [
   {
     id: '1',
