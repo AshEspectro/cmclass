@@ -1,7 +1,8 @@
 import HandbagsPage from "../components/CardLayout";
 import HeroSection, { HeroProduct, ProductGrid } from "../components/Hero_cat";
+import { ViewMoreButton } from "../components/ViewMoreBttn";
 
-export default function BagsPage() {
+export default function Category() {
     return (
         <div className=" mt-8  ">
             <HandbagsPage/>
@@ -12,13 +13,14 @@ export default function BagsPage() {
   
 />
 <ProductGrid limit={8}/>
-<ProductGrid limit={8}/>
+
 <HeroProduct
   image="/woman.jfif"
   
   
 />
 <ProductGrid/>
+<ViewMoreButton/>
 
         </div>
     );

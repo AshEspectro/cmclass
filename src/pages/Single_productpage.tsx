@@ -1,8 +1,106 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useWishlist } from "../contexts/WishlistContext";
 import type { Product_cat } from "../data/products";
 import { Link } from "react-router";
+
+
+
+
+
+
+
+export function ExpandableText({
+  children,
+  maxLines = 1,
+}: {
+  children: string;
+  maxLines?: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="w-full  text-gray-700">
+
+      {/* TEXT WRAPPER — ONLY THIS PART GETS THE GRADIENT */}
+      <div className="relative">
+        <p
+          className={`text-justify text-sm transition-all duration-300 ${
+            expanded ? "" : `line-clamp-${maxLines}`
+          }`}
+        >
+          {children}
+        </p>
+
+        {/* GRADIENT ONLY WHEN NOT EXPANDED */}
+        {!expanded && (
+          <div className="pointer-events-none absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-gray-200/40 to-transparent"></div>
+        )}
+      </div>
+
+      {/* BUTTON OUTSIDE THE GRADIENT WRAPPER */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="mt-3 text-sm  text-black underline underline-offset-4"
+      >
+        {expanded ? "Voir moins" : "Voir plus"}
+      </button>
+    </div>
+  );
+}
+
+
+import {  type FC } from "react";
+import { Plus, Minus } from "lucide-react";
+import { ProductGrid } from "../components/Hero_cat";
+
+interface ExpandableSectionProps {
+  title: string;
+  children: ReactNode;
+}
+
+export const ExpandableSection: FC<ExpandableSectionProps> = ({
+  title,
+  children,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="border-b border-gray-200 pb-1 pt-4">
+      {/* Header */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex justify-between items-center w-full text-left focus:outline-none"
+      >
+        <span className="text-sm ">{title}</span>
+        <span className="text-black">
+          {isOpen ? <Minus size={14} /> : <Plus size={14} />}
+        </span>
+      </button>
+
+      {/* Content */}
+      <div
+        className={`mt-3 text-gray-700 text-sm transition-all duration-300 overflow-hidden ${
+          isOpen ? "max-h-96" : "max-h-0"
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+
+
+
+
+
+
+
+
+
+
+
 
 interface SingleProductPageProps {
   product: Product_cat;
@@ -35,15 +133,31 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
     }
   };
 
+{/* Sizes handlers functions */}
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [selectedSize, setSelectedSize] = useState(
+  product?.sizes?.[0] || null
+);
+
+  const sizes = product.sizes
+    ? product.sizes.map((size) => ({ size }))
+    : [];
+  const handlesizeClick = (size: string) => {
+    setSelectedSize(size);
+    setDropdownOpen(false);
+  }
+  
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 pt-32 md:pt-24 md:grid-cols-2 gap-6">
-      {/* Product Images */}
-      <div className="relative w-full mb-6 md:flex md:flex-col ">
+ <><div className="max-w-8xl mx-auto px-0 md:px-8  grid grid-cols-1 pt-32 md:pt-24 md:grid-cols-2 gap-6">     {/* Product Images */}
+      <div className="relative  sticky top-0 md:static
+ w-full  md:flex md:flex-col ">
         {/* Image container for mobile: overlap */}
         <div className="relative w-full aspect-[4/5] ">
           <img
       src={product.productImage}
-      className={`absolute inset-0 w-full h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto ${
+      className={`absolute inset-0 w-full bg-black/10 h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto ${
         hoveringImage ? "opacity-0" : "opacity-100"
       }`}
       onMouseEnter={() => setHoveringImage(true)}
@@ -91,8 +205,9 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
 
 
       {/* Product Info */}
-      <div className=" p-6 px-18 flex-row md:gap-8">
-        <div className="   -center gap-2 mb-6">
+      <div className=" md:sticky md:top-24   flex-col items-center h-fit z-20 bg-white flex justify-center">
+      <div className=" px-4 md:px-8   w-full md:w-sm flex-row justify-center md:gap-8">
+        <div className="    gap-2 pt-8 md:pt-0">
           <div className="items-center">
           <div className="flex w-full justify-between pb-6 "><h1 className="text-sm self-center  ">{product.id}</h1>
           {/* Wishlist button */}
@@ -106,9 +221,49 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
             />
           </button></div>
           <p className="text-xs text-gray-500 ">{product.label}</p>
-          <p className="text-lg  ">{product.name}</p>
-          <p className="text-lg font-regular pb-4 mb-4">{product.price}</p>
+          <p className="text-lg text-black ">{product.name}</p>
+          <p className="text-lg text-black/70 pb-4 mb-4">{product.price}</p>
           </div>
+
+          {/* sizes dropdown */}
+
+          <div className="flex w-full justify-between pb-3 border-b mb-4 border-black/5 ">
+          <p>Taille</p>
+          <button
+          onClick={() => setDropdownOpen((prev) => !prev)}
+          className="flex items-center gap-2 flex    text-sm md:text-sm  transition-all duration-300 active:scale-95"
+        >
+          {selectedSize}
+
+          <ChevronDown
+            size={16}
+            className={`transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""}`}
+          />
+        </button></div>
+
+        {/* sizes Dropdown Menu */}
+
+      {dropdownOpen && (
+        <div className="w-full md:w-80 bg-white shadow-lg rounded-b-lg  border-gray-200 pb-2 animate-dropdown">
+          <div className="max-w-7xl mx-auto flex flex-col">
+            {sizes.map((item, idx) => {
+              const isSelected = selectedSize === item.size;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handlesizeClick(item.size)}
+                  className={`w-full text-left px-6 py-2 text-sm flex justify-between items-center transition-colors ${
+                    !isSelected ? "hover:bg-gray-100" : "bg-gray-50"
+                  }`}
+                >
+                  <span>{item.size}</span>
+                  {isSelected && <Check size={18} />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
           {/* Color selector */}
           <div className="mb-6">
   {/* TITLE */}
@@ -118,6 +273,7 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
   <p className="text-sm text-gray-600 mb-3">
     {product.colors.find((c) => c.hex === selectedColor)?.hex}
   </p></div>
+  
 
   {/* COLOR BUTTONS */}
   <div className="flex items-center gap-4">
@@ -128,7 +284,7 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
           setSelectedColor(c.hex);
           setImageIndex(0);
         }}
-        className={`w-12 h-12  rounded-sm ${
+        className={`w-12 h-12 hover:border hover:border-[#007B8A] rounded-sm ${
           selectedColor === c.hex ? "ring-2 ring-[#007B8A]" : "border-gray-300"
         }`}
         style={{ backgroundColor: c.hex }}
@@ -138,26 +294,56 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
 </div>
 
           {/* Add to cart button */}<div className="  flex justify-center  mb-6">
-          <button className="bg-black text-white px-24 md:px-32 py-3 rounded-full hover:bg-white hover:text-[#007B8A] hover:border hover:border-[#007B8A] transition">
+          <button className="bg-black text-white  w-xl py-2 rounded-full hover:bg-white hover:text-[#007B8A] hover:border hover:border-[#007B8A] transition">
             Ajouter au panier
           </button>
           
-          </div><div className="  flex justify-center  mb-6"><Link to='' className="text-xs ">Contacter un conseiller</Link></div>
+          </div>
+          <div className="  flex justify-center  mb-6"><Link to='' className="text-xs underline underline-offset-4 ">Contacter un conseiller</Link></div>
           {/* Optional product description or details */}
-          <div className="  flex justify-center  mb-6">
+          <p className="text-sm leading-relaxed  text-gray-600 pb-12 ">Livraison avant Noël pour toute commande passée avant le 23 décembre à 11h59 selon la disponibilité produit.</p>
+          <div className="  flex justify-center border-b pb-4 border-black/5 ">
           
-          <p className="text-gray-700 w-full text-justify ">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque
-            vulputate, arcu non scelerisque imperdiet, augue purus bibendum
-            sapien, nec luctus justo neque non justo.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque
-            vulputate, arcu non scelerisque imperdiet, augue purus bibendum
-            sapien, nec luctus justo neque non justo
-          </p>
+          <ExpandableText
+    maxLines={2}
+  >
+    
+    {product.longDescription}   </ExpandableText>
+
           </div>
         </div>
 
         
       </div>
+     
+
+  
+<div className="w-full md:w-sm   px-8"><ExpandableSection  title="Caractéristiques environnementales">
+    <p>
+      Traçabilité
+    </p>
+     <ul className=" text-sm mb-2">
+      <li>- Lavage à la main ou en machine à 30°C</li>
+      <li>- Utiliser un détergent doux</li>
+      <li>- Ne pas utiliser d'eau de Javel</li>
+      <li>- Séchage à l'air libre, éviter le sèche-linge</li>
+      <li>- Repassage à basse température si nécessaire</li>
+    </ul>
+  </ExpandableSection>
+  <ExpandableSection  title="Entretien du produit">
+    <div>
+    <p className=" text-sm mb-2">
+      Afin de préserver la qualité de ce vêtement, il est recommandé de respecter les consignes d'entretien :
+    </p>
+    <ul className=" text-sm mb-2">
+      <li>- Lavage à la main ou en machine à 30°C</li>
+      <li>- Utiliser un détergent doux</li>
+      <li>- Ne pas utiliser d'eau de Javel</li>
+      <li>- Séchage à l'air libre, éviter le sèche-linge</li>
+      <li>- Repassage à basse température si nécessaire</li>
+    </ul></div>
+  </ExpandableSection>
+  </div></div> 
 
       {/* Toast */}
       {showToast && (
@@ -178,5 +364,19 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
         </div>
       )}
     </div>
+
+
+    {/* Discovery section */}
+      <div className="  flex-col w-full items-center  ">
+        <div className=" flex justify-center py-8 md:py-16 lg:py-24 ">
+          <Link to='' className="text-xs  text-center underline underline-offset-4 ">
+            À découvrir également
+          </Link>
+        </div>
+        <ProductGrid limit={4} />
+
+      </div>
+    </>
+
   );
 }

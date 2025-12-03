@@ -88,15 +88,22 @@ import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { products_cat } from "../data/products";
 
-export function ProductGrid() {
+interface ProductGridProps {
+  limit?: number; // optional
+}
+
+export function ProductGrid({ limit }: ProductGridProps) {
+  const items = limit ? products_cat.slice(0, limit) : products_cat;
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4  w-full">
-      {products_cat.map((p) => (
+    <div className="grid grid-cols-2 md:grid-cols-4 w-full">
+      {items.map((p) => (
         <ProductCard key={p.id} product_cat={p} />
       ))}
     </div>
   );
 }
+
 
 
 

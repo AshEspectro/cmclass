@@ -8,7 +8,7 @@ import { ChevronLeft ,} from "lucide-react";
 
 
 // pages/HomeWithAltNavbar.tsx
-import { AltNavbarOnScroll } from "./AltNavbarOnScroll";
+//import { AltNavbarOnScroll } from "./AltNavbarOnScroll";
 
 
 
@@ -45,15 +45,15 @@ const FilterNavbar: FC<FilterNavbarProps> = ({ categories, selectedCategory, onS
   return (
     <div
       id="filter-navbar"
-      className="w-full bg-white md:px-4 sm:px-6 md:px-12 lg:px-16 xl:px-8 shadow-sm"
+      className="w-full  z-40 fixed top-12 md:top-18  bg-white md:px-4 sm:px-6 md:px-12 lg:px-16 xl:px-8 shadow-b-sm"
     >
-      <div className="w-full flex justify-between px-6 py-2 items-center gap-4">
+      <div className="w-full flex justify-between px-6 py-4 items-center gap-4">
         {/* Categories Dropdown */}
         <button
           onClick={() => setDropdownOpen((prev) => !prev)}
           className="flex items-center gap-2 text-sm md:text-sm bg-white transition-all duration-300 active:scale-95"
         >
-          {selectedCategory || "All Handbags"}
+          {selectedCategory || "All categories"}
           <ChevronDown
             size={16}
             className={`transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""}`}
@@ -160,7 +160,7 @@ const CarouselSection: FC<CarouselSectionProps> = ({ cards }) => {
   const translatePercent = currentIndex * stepPercent;
 
   return (
-    <section className="w-full md: px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24 ">
+    <section className="w-full px-8 md:px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24 ">
       <div className="max-w-full md:w-1/2 mx-auto py-4 mt-32 relative">
         {/* Left Arrow */}
         {currentIndex > 0 && (
@@ -244,12 +244,12 @@ const HandbagsPage: FC = () => {
 
   return (
     
-       <><AltNavbarOnScroll>
+       <>
       <FilterNavbar
         categories={categoriesData}
         selectedCategory={selectedCategory}
         onSelect={setSelectedCategory} />
-    </AltNavbarOnScroll><CarouselSection cards={filteredCards} />
+    <CarouselSection cards={filteredCards} />
    
 </>
     

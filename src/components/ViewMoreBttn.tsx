@@ -1,27 +1,18 @@
 
 
-interface ViewMoreButtonProps<T> {
-  data: T[];                // The data array to check
-  limit: number;            // Threshold for showing the button
-  onClick: () => void;      // Action when button is clicked
-  className?: string;       // Optional styling
-}
-
-export const ViewMoreButton = <T,>({
-  data,
-  limit,
+export const ViewMoreButton = ({
   onClick,
-  className,
-}: ViewMoreButtonProps<T>) => {
-  if (!data || data.length <= limit) return null; // hide if below limit
+}: {
+  onClick: () => void;
+}) => {
 
   return (
-    <div className={`text-center mt-4 ${className || ""}`}>
+    <div className={`text-center mt-4 ${""}`}>
       <button
         onClick={onClick}
-        className="px-6 py-2 border border-black rounded hover:bg-black hover:text-white transition"
+        className="px-32 mb-8 mt-4 py-2 border border-black rounded-full hover:bg-black hover:text-white transition"
       >
-        View More
+        Voir plus
       </button>
     </div>
   );

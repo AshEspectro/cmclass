@@ -212,6 +212,8 @@ export interface Product_cat {
   label: string;
   name: string;
   price: string;
+  sizes?: string[];
+  longDescription?: string;
   productImage: string;      // main image
   mannequinImage: string;    // appears on hover
   colors: { hex: string; images: string[] }[]; // browsable views per color
@@ -227,6 +229,8 @@ export const products_cat: Product_cat[] = [
     label: "Nouveau",
     name: "Chemise Asymétrique Minimaliste",
     price: "49.99$",
+    longDescription:
+      "Chemise en coton léger avec une coupe asymétrique moderne. Parfaite pour un look épuré et contemporain.",
     productImage:
       "https://images.unsplash.com/photo-1543076447-215ad9ba6923?q=80&w=800",
     mannequinImage:
@@ -247,6 +251,7 @@ export const products_cat: Product_cat[] = [
         ],
       },
     ],
+    sizes: ["S", "M", "L", "XL", "XXL","3XL"],
   },
 
   {
@@ -274,6 +279,7 @@ export const products_cat: Product_cat[] = [
         ],
       },
     ],
+    sizes: ["S", "M", "L", "XL", "XXL","3XL"],
   },
 
   // --- 6 MORE PRODUCTS BELOW (duplicate structure, different images) ---
@@ -282,6 +288,7 @@ export const products_cat: Product_cat[] = [
     label: "Essentiel",
     name: "T-Shirt Coupe Droite",
     price: "29.99$",
+    longDescription:"Pièce emblématique de Louis Vuitton, cette pochette Accessoires en toile Monogram est idéale pour transporter les indispensables du quotidien. Ce modèle chic propose différents styles et options de porté grâce à sa bandoulière en cuir naturel et sa chaîne dorée amovibles. Sa fermeture à glissière s'ouvre pour révéler un compartiment spacieux doté de poches plates et à fermeture à glissière, ainsi que deux fentes pour les cartes.",
     productImage:
       "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?q=80&w=800",
     mannequinImage:
@@ -295,6 +302,7 @@ export const products_cat: Product_cat[] = [
         ],
       },
     ],
+    sizes: ["S", "M", "L", "XL", "XXL","3XL"],
   },
 
   {
@@ -315,6 +323,7 @@ export const products_cat: Product_cat[] = [
         ],
       },
     ],
+    sizes: ["S", "M", "L", "XL", "XXL","3XL"],
   },
 
   {

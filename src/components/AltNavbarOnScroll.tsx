@@ -13,7 +13,7 @@ export function AltNavbarOnScroll({ children, triggerHeight = 40 }: AltNavbarOnS
     const handleScroll = () => {
       // si je descends → alt navbar disparaît
       if (window.scrollY > triggerHeight) {
-        setVisible(false);
+        setVisible(true);
       } else {
         setVisible(true);
       }
@@ -26,7 +26,7 @@ export function AltNavbarOnScroll({ children, triggerHeight = 40 }: AltNavbarOnS
   return (
     <div
       className={`
-        fixed left-0 w-full z-40 transition-transform duration-300
+        fixed left-0 w-full h-full z-40 transition-transform duration-300
         ${visible ? "translate-y-0" : "-translate-y-full"}
       `}
       style={{ top: "52px" }} // hauteur exacte de ton Default Navbar

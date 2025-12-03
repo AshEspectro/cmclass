@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
-import { MenCategory } from './pages/MenCategory';
+//import { MenCategory } from './pages/MenCategory';
 import { ProductDetail } from './pages/ProductDetail';
 import { Stories } from './pages/Stories';
 import { About } from './pages/About';
@@ -20,12 +20,14 @@ import AccountPage_A from './pages/EmailIdentifying';
 import ForgotPwd from './pages/forgot-password';
 import BagsPage from './pages/Bags';
 
-import { useConditionalNavbar } from './hooks/useConditionalNavbar';
+//import { useConditionalNavbar } from './hooks/useConditionalNavbar';
 
 
 import { useParams } from "react-router-dom";
 import { products_cat } from "./data/products";
 import { SingleProductPage } from "./pages/Single_productpage";
+import { useConditionalNavbar } from './hooks/useConditionalNavbar';
+import Category from './pages/categoriesSinglePage';
 
 export const SingleProductWrapper = () => {
   const { id } = useParams();
@@ -39,11 +41,11 @@ export const SingleProductWrapper = () => {
 
 function AppWrapper() {
   const location = useLocation();
-  const hideNavAndFooter = ['/','/homme', '/bagsPage'].includes(location.pathname);
+  const hideNavAndFooter = ['/'].includes(location.pathname);
  // Coming Soon page
 
-  // Exemple : cacher navbar sur /homme et /bagsPage avec scroll
-  const { hideNavbar } = useConditionalNavbar({
+// Exemple : cacher navbar sur /homme et /bagsPage avec scroll
+  useConditionalNavbar({
     routesWithHide: ['/homme', '/bagsPage'],
     enableScrollHide: true,
     scrollTrigger: 80,
@@ -55,15 +57,15 @@ function AppWrapper() {
         <ProtectedRoute>
           <div className="flex flex-col min-h-screen">
             {/* Navbar par défaut */}
-            {!hideNavAndFooter && !hideNavbar && <Navbar />}
+            {!hideNavAndFooter && <Navbar />}
 
             {/* Contenu */}
             <main className="flex-1">
               <Routes>
                 <Route path="/" element={<Coming_soon />} />
                 <Route path="/home" element={<Home />} />
-                <Route path="/homme" element={<MenCategory />} />
-                <Route path="/homme/:subcategory" element={<MenCategory />} />
+                <Route path="/homme" element={<Category />} />
+                <Route path="/homme/:subcategory" element={<BagsPage/>} />
                 <Route path="/produit/:id" element={<ProductDetail />} />
                 <Route path="/stories" element={<Stories />} />
                 <Route path="/alternative-login" element={<AccountPage_A />} />
@@ -73,10 +75,11 @@ function AppWrapper() {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/compte" element={<CreateAccount />} />
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/femme" element={<MenCategory />} />
-                <Route path="/accessoires" element={<MenCategory />} />
-                <Route path="/nouveautes" element={<MenCategory />} />
-                <Route path="/wishlist" element={<MenCategory />} />
+                <Route path="/category" element={<Category/>} />
+                <Route path="/femme" element={<Category />} />
+                <Route path="/accessoires" element={<Category />} />
+                <Route path="/nouveautes" element={<Category />} />
+                <Route path="/wishlist" element={<Category />} />
                 <Route path="/forgot-password" element={<ForgotPwd/>} />
                 <Route path="*" element={<Home />} />
                 <Route path="/product/:id" element={<SingleProductWrapper />} />
