@@ -137,6 +137,9 @@ export const Home = () => {
       </section>
         Men's Products Grid */}
       
+ 
+ 
+ 
       <section className='mb-32'>
   <CategoryHero categoryTitle="Homme" subCategoryIndex={0} />
 
@@ -163,6 +166,11 @@ export const Home = () => {
     </motion.div>
   </div>
       </section>
+  
+  
+  
+  
+  
       <section className='mb-32'>
   <CategoryHero categoryTitle="Parfums et Beauté" subCategoryIndex={0} />
 

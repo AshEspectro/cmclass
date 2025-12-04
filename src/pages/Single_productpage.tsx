@@ -10,6 +10,7 @@ import { Link } from "react-router";
 
 
 
+
 export function ExpandableText({
   children,
   maxLines = 1,
@@ -99,8 +100,9 @@ export const ExpandableSection: FC<ExpandableSectionProps> = ({
 
 
 
+import { useRef } from "react";
 
-
+import { useCart } from '../contexts/CartContext';
 
 interface SingleProductPageProps {
   product: Product_cat;
@@ -111,6 +113,7 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
   const [imageIndex, setImageIndex] = useState(0);
   const [hoveringImage, setHoveringImage] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const { addToCart } = useCart();
 
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const inWishlist = isInWishlist(product.id.toString());
@@ -134,6 +137,7 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
   };
 
 {/* Sizes handlers functions */}
+  const [showCartCard, setShowCartCard] = useState(false);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState(
@@ -147,7 +151,19 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
     setSelectedSize(size);
     setDropdownOpen(false);
   }
+
+  const [quantity, setQuantity] = useState(1);
+
+
+  const handleAddToCart = () => {
+    if (selectedSize && selectedColor) {
+      addToCart(product, selectedSize, selectedColor,quantity);
+      setShowCartCard(true);
+    }
+  };
   
+const cardRef = useRef(null);
+
 
   return (
  <><div className="max-w-8xl mx-auto px-0 md:px-8  grid grid-cols-1 pt-32 md:pt-24 md:grid-cols-2 gap-6">     {/* Product Images */}
@@ -224,47 +240,7 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
           <p className="text-lg text-black ">{product.name}</p>
           <p className="text-lg text-black/70 pb-4 mb-4">{product.price}</p>
           </div>
-
-          {/* sizes dropdown */}
-
-          <div className="flex w-full justify-between pb-3 border-b mb-4 border-black/5 ">
-          <p>Taille</p>
-          <button
-          onClick={() => setDropdownOpen((prev) => !prev)}
-          className="flex items-center gap-2 flex    text-sm md:text-sm  transition-all duration-300 active:scale-95"
-        >
-          {selectedSize}
-
-          <ChevronDown
-            size={16}
-            className={`transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""}`}
-          />
-        </button></div>
-
-        {/* sizes Dropdown Menu */}
-
-      {dropdownOpen && (
-        <div className="w-full md:w-80 bg-white shadow-lg rounded-b-lg  border-gray-200 pb-2 animate-dropdown">
-          <div className="max-w-7xl mx-auto flex flex-col">
-            {sizes.map((item, idx) => {
-              const isSelected = selectedSize === item.size;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => handlesizeClick(item.size)}
-                  className={`w-full text-left px-6 py-2 text-sm flex justify-between items-center transition-colors ${
-                    !isSelected ? "hover:bg-gray-100" : "bg-gray-50"
-                  }`}
-                >
-                  <span>{item.size}</span>
-                  {isSelected && <Check size={18} />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-          {/* Color selector */}
+              {/* Color selector */}
           <div className="mb-6">
   {/* TITLE */}
   <div className="flex w-full justify-between"><p className="text-sm font-medium mb-1">Couleur</p>
@@ -291,12 +267,137 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
       />
     ))}
   </div>
+
+          {/* sizes dropdown */}
+
+          <div className="flex w-full justify-between py-3 border-y my-4 border-black/5 ">
+          <p>Taille</p>
+          <button
+          onClick={() => setDropdownOpen((prev) => !prev)}
+          className="flex items-center gap-2 flex    text-sm md:text-sm  transition-all duration-300 active:scale-95"
+        >
+          {selectedSize}
+
+          <ChevronDown
+            size={16}
+            className={`transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""}`}
+          />
+        </button></div>
+        
+
+        {/* sizes Dropdown Menu */}
+
+      {dropdownOpen && (
+        <div className="w-full md:w-80 bg-white shadow-lg rounded-b-lg  border-gray-200 pb-2 animate-dropdown">
+          <div className="max-w-7xl mx-auto flex flex-col">
+            {sizes.map((item, idx) => {
+              const isSelected = selectedSize === item.size;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handlesizeClick(item.size)}
+                  className={`w-full text-left px-6 py-2 text-sm flex justify-between items-center transition-colors ${
+                    !isSelected ? "hover:bg-gray-100" : "bg-gray-50"
+                  }`}
+                >
+                  <span>{item.size}</span>
+                  {isSelected && <Check size={18} />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      
+ <div className="flex items-center gap-4 my-8">
+  <button
+    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+    className="border w-10 h-10 hover:border-2 rounded"
+  >
+    -
+  </button>
+
+  <span className="w-6 text-center">{quantity}</span>
+
+  <button
+    onClick={() => setQuantity(q => q + 1)}
+    className="border w-10 h-10 rounded hover:border-2"
+  >
+    +
+  </button>
+</div>
+
 </div>
 
           {/* Add to cart button */}<div className="  flex justify-center  mb-6">
-          <button className="bg-black text-white  w-xl py-2 rounded-full hover:bg-white hover:text-[#007B8A] hover:border hover:border-[#007B8A] transition">
+          <button 
+            onClick={handleAddToCart}
+            className="bg-black text-white  w-xl py-2 rounded-full hover:bg-white hover:text-[#007B8A] hover:border hover:border-[#007B8A] transition">
             Ajouter au panier
           </button>
+          {showCartCard && (
+  <div className="fixed inset-0 bg-black/85  flex items-center justify-center w-full  z-50 animate-fadeIn"
+    onClick={(e) => {
+      // close only if clicking directly on overlay (not children)
+      if (e.target === e.currentTarget) {
+        setShowCartCard(false);
+      }
+    }}
+  >
+    <div className='bg-black w-xl  ml-3 md:ml-20 lg:ml-24'>
+    <div className="bg-white w-md top-80 lg max-w-xl absolute shadow-xl p-6 "
+       ref={cardRef}
+       onClick={(e) => e.stopPropagation()} // prevents closing when clicking inside card
+    >
+
+      {/* Close Button */}
+      <button
+        onClick={() => setShowCartCard(false)}
+        className="absolute top-4 right-4 text-black hover:text-black text-4xl"
+      >
+        ×
+      </button>
+
+      {/* Title */}
+      <h3 className="text-sm  mb-4">Produit Ajouté</h3>
+
+      {/* Product Data */}
+      <div className='flex h-28 mb-4 items-center'>
+      <img
+              src={product.productImage}
+              alt={product.name}
+              className="w-28 h-28  object-cover"
+            />
+      <div className=" ml-4 ">
+      <div >
+        <p className="text-xs text-black">{product.id}</p>
+        <p className=" text-black text-xs">{product.name}</p>
+      </div>
+
+      <div className="text-xs text-black  ">
+        <p><span className=" text-xs text-black">Couleurs :</span> {selectedColor}</p>
+        <p><span className=" text-xs text-black">Taille :</span> {selectedSize}</p>
+        <p className="text-xs text-black">{product.price}</p>
+      </div>
+      </div></div>
+
+      {/* Action Buttons */}
+      <div className=" flex-col  w-full">
+        <button className=" bg-black text-white my-3 py-2.5 w-full border rounded-full hover:bg-white  hover:text-black transition">
+          Commander maintenant
+        </button>
+
+        <button
+          onClick={() => setShowCartCard(false)}
+          className=" border border-black py-2.5  w-full  rounded-full hover:border-2 hover:text-black transition"
+        >
+          Continuer mes achats
+        </button>
+      </div>
+    </div></div>
+  </div>
+)}
+
           
           </div>
           <div className="  flex justify-center  mb-6"><Link to='' className="text-xs underline underline-offset-4 ">Contacter un conseiller</Link></div>

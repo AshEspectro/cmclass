@@ -14,7 +14,7 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
     <>
       {/* Backdrop */}
       <motion.div
-        className="fixed inset-0 bg-black/50 z-50"
+        className="fixed inset-0 bg-black/85 z-50"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -23,16 +23,16 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
 
       {/* Panel */}
       <motion.div
-        className="fixed top-0 right-0 bottom-0 w-full sm:w-[400px] md:w-[500px] bg-white z-50 overflow-y-auto flex flex-col"
+        className="fixed top-0 right-0 bottom-0 px-8 w-full md:w-1/2 bg-white z-50 overflow-y-auto flex flex-col"
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
       >
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-gray-200">
+        <div className="py-8 sm:py-6 ">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg sm:text-xl">PANIER ({items.length})</h3>
+            <h3 className="text-lg sm:text-sm">Mon panier ({items.length})</h3>
             <button
               onClick={onClose}
               className="hover:text-[#007B8A] transition-colors duration-300"
@@ -60,7 +60,7 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
             <div className="space-y-4 sm:space-y-6">
               {items.map((item, index) => (
                 <div key={`${item.id}-${item.selectedSize}-${item.selectedColor}-${index}`} className="flex gap-3 sm:gap-4">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 flex-shrink-0" />
+                  <div className="w-20 h-25 sm:w-24 sm:h-24 bg-gray-100 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <Link
                       to={`/produit/${item.id}`}
@@ -118,8 +118,8 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
               <span>TOTAL</span>
               <span>{total.toLocaleString('fr-FR')} FC</span>
             </div>
-            <button className="w-full bg-[#007B8A] text-white py-3 sm:py-4 text-sm sm:text-base mb-2 sm:mb-3 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg">
-              PASSER LA COMMANDE
+            <button className="w-full bg-[#007B8A] text-white py-3 sm:py-4 text-sm sm:text-base rounded-full mb-2 sm:mb-3 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg">
+              Valider la commande
             </button>
             <button
               onClick={onClose}

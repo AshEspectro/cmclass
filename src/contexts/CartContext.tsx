@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 interface CartItem extends Product {
   [x: string]: any;
-  quantity: number;
+  quantity?: number;
   selectedSize: string;
   selectedColor: string;
 }
