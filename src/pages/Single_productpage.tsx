@@ -383,9 +383,9 @@ const cardRef = useRef(null);
 
       {/* Action Buttons */}
       <div className=" flex-col  w-full">
-        <button className=" bg-black text-white my-3 py-2.5 w-full border rounded-full hover:bg-white  hover:text-black transition">
+        <Link to="/selection"><button className=" bg-black text-white my-3 py-2.5 w-full border rounded-full hover:bg-white  hover:text-black transition">
           Commander maintenant
-        </button>
+        </button></Link>
 
         <button
           onClick={() => setShowCartCard(false)}

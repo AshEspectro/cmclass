@@ -28,6 +28,7 @@ import { products_cat } from "./data/products";
 import { SingleProductPage } from "./pages/Single_productpage";
 import { useConditionalNavbar } from './hooks/useConditionalNavbar';
 import Category from './pages/categoriesSinglePage';
+import Cartpage from './pages/Cartpage';
 
 export const SingleProductWrapper = () => {
   const { id } = useParams();
@@ -76,6 +77,7 @@ function AppWrapper() {
                 <Route path="/compte" element={<CreateAccount />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/category" element={<Category/>} />
+                <Route path="/selection" element={<Cartpage />} />
                 <Route path="/femme" element={<Category />} />
                 <Route path="/accessoires" element={<Category />} />
                 <Route path="/nouveautes" element={<Category />} />
