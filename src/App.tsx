@@ -29,6 +29,8 @@ import { SingleProductPage } from "./pages/Single_productpage";
 import { useConditionalNavbar } from './hooks/useConditionalNavbar';
 import Category from './pages/categoriesSinglePage';
 import Cartpage from './pages/Cartpage';
+import WishlistPage from './pages/Wishlist';
+import { AuthProvider } from './contexts/AuthContext';
 
 export const SingleProductWrapper = () => {
   const { id } = useParams();
@@ -54,6 +56,7 @@ function AppWrapper() {
 
   return (
     <CartProvider>
+      <AuthProvider>
       <WishlistProvider>
         <ProtectedRoute>
           <div className="flex flex-col min-h-screen">
@@ -77,11 +80,11 @@ function AppWrapper() {
                 <Route path="/compte" element={<CreateAccount />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/category" element={<Category/>} />
-                <Route path="/selection" element={<Cartpage />} />
+                <Route path="/panier" element={<Cartpage />} />
                 <Route path="/femme" element={<Category />} />
                 <Route path="/accessoires" element={<Category />} />
                 <Route path="/nouveautes" element={<Category />} />
-                <Route path="/wishlist" element={<Category />} />
+                <Route path="/wishlist" element={<WishlistPage />} />
                 <Route path="/forgot-password" element={<ForgotPwd/>} />
                 <Route path="*" element={<Home />} />
                 <Route path="/product/:id" element={<SingleProductWrapper />} />
@@ -93,6 +96,7 @@ function AppWrapper() {
           </div>
         </ProtectedRoute>
       </WishlistProvider>
+      </AuthProvider>
     </CartProvider>
   );
 }

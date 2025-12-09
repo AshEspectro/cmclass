@@ -42,7 +42,7 @@ export const Navbar = () => {
   return (
     <>
       <motion.nav
-        className={`fixed top-0 left-0 right-0 z-30 transition-all duration-300 ${
+        className={`fixed top-0 left-0 border-b border-black/5 right-0 z-30 transition-all duration-300 ${
           isScrolled
             ? 'bg-white shadow-sm py-6 lg:py-8 '
             : 'bg-white  backdrop-blur-md pt-4 lg:py-8'
@@ -96,7 +96,7 @@ export const Navbar = () => {
                   className={`mx-auto transition-all duration-300 ${
                     isScrolled
                       ? 'w-28 sm:w-32 md:w-36 xl:w-40'
-                      : 'w-32 sm:w-36 md:w-40 xl:w-48'
+                      : 'w-32 sm:w-32 md:w-36 xl:w-40'
                   }`}
                 />
               </motion.div>
@@ -113,7 +113,7 @@ export const Navbar = () => {
 
               <Link
                 to="/wishlist"
-                className="relative hover:text-[#007B8A] transition-colors duration-300 hidden sm:block"
+                className="relative hover:text-[#007B8A] my-2 transition-colors duration-300 hidden sm:block"
                 aria-label="Liste de souhaits"
               >
                 <Heart size={22} />
