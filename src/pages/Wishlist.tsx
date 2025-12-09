@@ -53,16 +53,17 @@ export default function WishlistPage() {
 
       {/* --- SI NON VIDE --- */}
       {!wishlistEmpty && (
-        <div className="w-full mt-16 px-4 md:px-8 lg:px-12 xl:px-24">
+        <div className="w-full">
 
           {/* GRID WISHLIST */}
           <div className="
             grid 
-            grid-cols-2 
-            sm:grid-cols-3 
+            grid-cols-2  
             md:grid-cols-4 
-            xl:grid-cols-5 
-            gap-6
+             
+            
+            bg-black/5
+              mt-16  pt-6
           ">
             {items.map(product => (
               <div 
@@ -86,15 +87,14 @@ export default function WishlistPage() {
                   <img
                     src={product.productImage}
                     alt={product.name}
-                    className="w-full h-48 object-cover rounded-md border"
+                    className="w-full h-56 lg:h-96 object-cover  bg-white"
                   />
                 </Link>
 
-                {/* Info */}
-                <div className="mt-3">
-                  <p className="text-xs text-black/70">{product.id}</p>
-                  <p className="text-sm text-black">{product.name}</p>
-                </div>
+                {/* Name */}
+                <h3 className="mt-2 text-sm font-light leading-tight">
+                  {product.name}
+                </h3>
               </div>
             ))}
           </div>
