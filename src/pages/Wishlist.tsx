@@ -3,11 +3,13 @@ import { Link } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { useWishlist } from "../contexts/WishlistContext";
 import { ProductGrid } from "../components/Hero_cat";
-import { X } from "lucide-react";
+import { ShoppingBag, ShoppingCart, X } from "lucide-react";
+import { useCart } from "../contexts/CartContext";
 
 export default function WishlistPage() {
   const { isAuthenticated } = useAuth();
   const { items, removeFromWishlist } = useWishlist();
+  const { addToCart } = useCart();
 
   const wishlistEmpty = items.length === 0;
 
@@ -56,48 +58,77 @@ export default function WishlistPage() {
         <div className="w-full">
 
           {/* GRID WISHLIST */}
-          <div className="
-            grid 
-            grid-cols-2  
-            md:grid-cols-4 
-             
+          <div className=" grid grid-cols-2 md:grid-cols-4 bg-black/5 mt-16  "> {items.map(product => (
+           <div
+        key={product.id}
+        className="relative group w-full aspect-4/5 overflow-hidden"
+      >
+        {/* REMOVE BUTTON (replaces heart) */}
+        <button
+          onClick={() => removeFromWishlist(product.id.toString())}
+          className="
+            absolute top-2 right-2 
+            p-2 rounded-full 
+            opacity-100 
+            transition duration-300 z-20
+
+          "
+        >
+          <X className="w-4 h-4 hover:text-black/50 text-black" />
+        </button>
+
+        {/* IMAGE */}
+        <div >
+          <img
+            src={product.productImage}
+            alt={product.name}
+            className="
+              absolute inset-0 w-full h-full 
+              object-cover transition-opacity duration-500
+            "
+          />
+        </div>
+         <div className="absolute inset-0 bg-gradient-to-t from-white/50 via-black/5 to-transparent" />
+
+        {/* INFO BOTTOM */}
+        <div
+          className="
+            absolute bottom-0 left-0 right-0
+            px-4 pb-4
+            flex flex-col
+            transition-opacity duration-300
             
-            bg-black/5
-              mt-16  pt-6
-          ">
-            {items.map(product => (
-              <div 
-                key={product.id}
-                className="relative group"
-              >
-                {/* Remove button */}
-                <button
-                  onClick={() => removeFromWishlist(product.id.toString())}
-                  className="
-                    absolute top-2 right-2 bg-white/80 backdrop-blur 
-                    p-1 rounded-full shadow 
-                    opacity-0 group-hover:opacity-100 transition
-                  "
-                >
-                  <X className="w-4 h-4 text-black" />
-                </button>
+          "
+        >
+          <p className="text-xs text-gray-500">{product.label}</p>
+          <p className="text-sm font-medium w-36 md:w-40 mt-1">{product.name}</p>
+          <p className="text-sm font-medium mt-1">{product.price}</p>
+        </div>
+        <Link
+  to={`/product/${product.id}`}
+  className="
+    absolute bottom-4 right-4
+    flex items-center
+    border rounded-full 
+    p-2 md:p-2 
+    text-black 
+    hover:border-2 
+    transition-all duration-300
+     
+  "
+>
+  {/* TEXT visible only on md+ */}
+  <span className="hidden md:group-hover:inline-block  text-sm pl-2 mr-3">
+    Commander
+  </span>
 
-                {/* Image */}
-                <Link to={`/product/${product.id}`}>
-                  <img
-                    src={product.productImage}
-                    alt={product.name}
-                    className="w-full h-56 lg:h-96 object-cover  bg-white"
-                  />
-                </Link>
+  <ShoppingBag size={18} className="shrink-0" />
+</Link>
 
-                {/* Name */}
-                <h3 className="mt-2 text-sm font-light leading-tight">
-                  {product.name}
-                </h3>
-              </div>
-            ))}
-          </div>
+            
+      </div>
+    ))}
+  </div>
 
           {/* Consulté récemment */}
           <div className="w-full">

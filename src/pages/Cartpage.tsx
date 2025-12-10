@@ -140,7 +140,7 @@ export default function Cartpage() {
       {/* 2️⃣  NON-EMPTY STATE → CART GRID */}
       {/* ----------------------------------------------------------- */}
       {!cartIsEmpty && (
-        <div className="w-md md:w-3xl lg:w-1/2 flex-col xl:items-start  mx-6 md:mx-16 lg:mx-32 xl:mx-52 my-12">
+        <div className="w-full md:w-3xl px-2  lg:w-1/2 flex-col xl:items-start  mx-6 md:mx-16 lg:mx-32 xl:mx-52 my-12">
 
           <h2 className="text-lg font-light my-6 ml-2">Mon panier({items.length})</h2>
 
@@ -277,7 +277,7 @@ export default function Cartpage() {
       
       <div className="w-full lg:w-1/3   mt-0">
         
-        {!cartIsEmpty && <div className="border-b bg-white  mt-6 mb-2 lg:mb-0 border-black/5 py-6 px-8 md:px-4 lg:px-6 xl:px-18 space-y-4">
+        {!cartIsEmpty && <div className="border-b bg-white  mt-0 mb-2 lg:mb-0 border-black/5 py-6 px-8 md:px-4 lg:px-6 xl:px-18 space-y-4">
           <div className="flex justify-between   text-sm sm:text-base">
             <span>Sous-Total</span>
             <span>{total.toLocaleString('fr-FR')} FC</span>

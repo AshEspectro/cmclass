@@ -344,8 +344,8 @@ const cardRef = useRef(null);
       }
     }}
   >
-    <div className='bg-black w-xl  ml-3 md:ml-20 lg:ml-24'>
-    <div className="bg-white w-md top-80 lg max-w-xl absolute shadow-xl p-6 "
+    <div className='bg-black w-xl  flex items-center justify-center '>
+    <div className="bg-white w-sm  md:w-xl lg:w-2xl absolute  p-6 "
        ref={cardRef}
        onClick={(e) => e.stopPropagation()} // prevents closing when clicking inside card
     >
@@ -383,7 +383,7 @@ const cardRef = useRef(null);
 
       {/* Action Buttons */}
       <div className=" flex-col  w-full">
-        <Link to="/selection"><button className=" bg-black text-white my-3 py-2.5 w-full border rounded-full hover:bg-white  hover:text-black transition">
+        <Link to="/panier"><button className=" bg-black text-white my-3 py-2.5 w-full border rounded-full hover:bg-white  hover:text-black transition">
           Commander maintenant
         </button></Link>
 

@@ -34,7 +34,7 @@ export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link to={`/produit/${product.id}`} className="block relative overflow-hidden">
+      <Link to={`/product/${product.id}`} className="block relative overflow-hidden">
         {/* Image */}
         <div className="aspect-3/4 bg-gray-100 relative">
           {/* Hover Overlay */}
