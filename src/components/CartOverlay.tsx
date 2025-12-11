@@ -80,7 +80,7 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                 
+                
                   <div className="flex-1 h-full w-full md:py-9  flex flex-col justify-between">
                   <div className=''>
                       <div className='flex justify-between  pb-1 '>

@@ -4,6 +4,7 @@ import type { Product } from "../data/products";
 import type { Product_cat } from "../data/products";
 
 interface CartItem {
+  [x: string]: string | undefined;
   id: number | string;
   name: string;
   price: number | string;
