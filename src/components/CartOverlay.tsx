@@ -75,7 +75,7 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
                 <div key={`${item.id}-${item.selectedSize}-${item.selectedColor}-${index}`} className="flex  xl:h-54   justify-center  items-center  gap-3 sm:gap-4">
                   <div className="w-20 h-28 md:h-54 md:w-40 bg-black/5 flex-shrink" >
                     <img
-                      src={item.image}
+                      src={item.productImage ?? item.mannequinImage ?? ""}
                       alt={item.name}
                       className="w-full h-full object-cover"
                     />

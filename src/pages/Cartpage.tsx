@@ -155,7 +155,7 @@ export default function Cartpage() {
                   {/* IMAGE */}
                   <div className="w-36 h-full md:w-48 xl:w-56 bg-black/5 flex-shrink" >
                     <img
-                      src={item.image}
+                      src={item.image as string}
                       alt={item.name}
                       className="w-full h-full object-cover"
                     />

@@ -103,6 +103,7 @@ export const ExpandableSection: FC<ExpandableSectionProps> = ({
 import { useRef } from "react";
 
 import { useCart } from '../contexts/CartContext';
+import type { CartItem } from '../contexts/CartContext';
 
 interface SingleProductPageProps {
   product: Product_cat;
@@ -157,7 +158,9 @@ export function SingleProductPage({ product }: SingleProductPageProps) {
 
   const handleAddToCart = () => {
     if (selectedSize && selectedColor) {
-      addToCart(product, selectedSize, selectedColor,quantity);
+      // Ensure price is a number when adding to cart (product.price may be a formatted string)
+      const parsedPrice = Number(String(product.price).replace(/[^0-9.-]+/g, ""));
+      addToCart({ ...(product as unknown as Partial<CartItem>), price: parsedPrice } as Partial<CartItem>, selectedSize, selectedColor, quantity);
       setShowCartCard(true);
     }
   };

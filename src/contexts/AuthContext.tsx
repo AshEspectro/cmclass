@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // src/contexts/AuthContext.tsx
 import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";

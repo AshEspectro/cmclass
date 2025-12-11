@@ -24,7 +24,10 @@ void setQuantity;
 
   const handleAddToCart = () => {
     if (selectedSize && selectedColor) {
-      addToCart(product, selectedSize, selectedColor, quantity);
+      addToCart({
+        ...product,
+        colors: [{ hex: selectedColor, images: [] }]
+      }, selectedSize, selectedColor, quantity);
       onClose();
     }
   };
