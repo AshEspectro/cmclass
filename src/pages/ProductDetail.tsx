@@ -4,6 +4,7 @@ import { Heart, ShoppingBag, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { products } from '../data/products';
 import { useCart } from '../contexts/CartContext';
+import type { CartItem } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { ProductCard } from '../components/ProductCard';
 import { QuickViewModal } from '../components/QuickViewModal';
@@ -39,7 +40,19 @@ export const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (selectedSize && selectedColor) {
-      addToCart(product, selectedSize, selectedColor, quantity);
+      // Convert Product -> Partial<CartItem> to match addToCart signature
+      const cartProduct: Partial<CartItem> = {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        label: (product as unknown as { label?: string }).label ?? undefined,
+        productImage: product.image ?? product.images?.[0] ?? undefined,
+        mannequinImage: product.images?.[1] ?? undefined,
+        // Map string[] colors to expected { hex, images[] }[] shape
+        colors: product.colors?.map((c) => ({ hex: String(c), images: [] })),
+      };
+
+      addToCart(cartProduct, selectedSize, selectedColor, quantity);
     }
   };
 
