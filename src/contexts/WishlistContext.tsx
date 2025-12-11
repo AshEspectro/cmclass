@@ -1,10 +1,22 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createContext, useContext, useState } from 'react';
-import type { Product_cat } from '../data/products';
 import type { ReactNode } from 'react';
 
+// Unified type for wishlist items
+export interface WishlistItem {
+  id: string | number;
+  name: string;
+  price: string | number;
+  label?: string;
+  productImage?: string;       // main image
+  mannequinImage?: string;     // hover image
+  colors?: { hex: string; images: string[] }[] | string[]; // support both formats
+  [key: string]: any;          // allow other properties from Product or Product_cat
+}
+
 interface WishlistContextType {
-  items: Product_cat[];
-  addToWishlist: (product: Product_cat) => void;
+  items: WishlistItem[];
+  addToWishlist: (product: WishlistItem) => void;
   removeFromWishlist: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
 }
@@ -12,18 +24,19 @@ interface WishlistContextType {
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
 export const WishlistProvider = ({ children }: { children: ReactNode }) => {
-  const [items, setItems] = useState<Product_cat[]>([]);
+  const [items, setItems] = useState<WishlistItem[]>([]);
 
-  const addToWishlist = (product: Product_cat) => {
+  const addToWishlist = (product: WishlistItem) => {
     setItems((currentItems) => {
-      const exists = currentItems.some((item) => item.id === product.id);
-      if (exists) return currentItems;
+      if (currentItems.some((item) => item.id === product.id)) return currentItems;
       return [...currentItems, product];
     });
   };
 
   const removeFromWishlist = (productId: string) => {
-    setItems((currentItems) => currentItems.filter((item) => item.id.toString() !== productId));
+    setItems((currentItems) =>
+      currentItems.filter((item) => item.id.toString() !== productId)
+    );
   };
 
   const isInWishlist = (productId: string) => {
@@ -41,8 +54,6 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
 
 export const useWishlist = () => {
   const context = useContext(WishlistContext);
-  if (!context) {
-    throw new Error('useWishlist must be used within WishlistProvider');
-  }
+  if (!context) throw new Error('useWishlist must be used within WishlistProvider');
   return context;
 };

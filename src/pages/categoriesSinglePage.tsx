@@ -20,7 +20,7 @@ export default function Category() {
   
 />
 <ProductGrid/>
-<ViewMoreButton/>
+<ViewMoreButton />
 
         </div>
     );

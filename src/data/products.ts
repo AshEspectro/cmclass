@@ -10,7 +10,23 @@ export interface Product {
   sizes: string[];
   colors: string[];
   inStock: boolean;
+  
 }
+
+export interface Product_cat {
+  id: number;
+  label: string;
+  name: string;
+  price: string;
+  sizes?: string[];
+  longDescription?: string;
+
+  productImage: string;      // main image
+  mannequinImage: string;    // appears on hover
+  colors: { hex: string; images: string[] }[]; // browsable views per color
+}
+
+
 
 /** FILTER DATA FOR RESPONSIVE FILTER COMPONENT */
 export const filtersData = [
@@ -207,17 +223,6 @@ export const stories = [
 
 
 
-export interface Product_cat {
-  id: number;
-  label: string;
-  name: string;
-  price: string;
-  sizes?: string[];
-  longDescription?: string;
-  productImage: string;      // main image
-  mannequinImage: string;    // appears on hover
-  colors: { hex: string; images: string[] }[]; // browsable views per color
-}
 
 // ---------------------------------------------------
 // PRODUCT LIST (8 items)

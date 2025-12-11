@@ -15,7 +15,7 @@ export function ExpandableText({
   children,
   maxLines = 1,
 }: {
-  children: string;
+  children:  string;
   maxLines?: number;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -405,11 +405,12 @@ const cardRef = useRef(null);
           <p className="text-sm leading-relaxed  text-gray-600 pb-12 ">Livraison avant Noël pour toute commande passée avant le 23 décembre à 11h59 selon la disponibilité produit.</p>
           <div className="  flex justify-center border-b pb-4 border-black/5 ">
           
-          <ExpandableText
-    maxLines={2}
-  >
-    
-    {product.longDescription}   </ExpandableText>
+          {product.longDescription && (
+  <ExpandableText maxLines={2}>
+    {product.longDescription}
+  </ExpandableText>
+)}
+
 
           </div>
         </div>

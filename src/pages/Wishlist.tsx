@@ -3,13 +3,13 @@ import { Link } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { useWishlist } from "../contexts/WishlistContext";
 import { ProductGrid } from "../components/Hero_cat";
-import { ShoppingBag, ShoppingCart, X } from "lucide-react";
-import { useCart } from "../contexts/CartContext";
+import { ShoppingBag,  X } from "lucide-react";
+
 
 export default function WishlistPage() {
   const { isAuthenticated } = useAuth();
   const { items, removeFromWishlist } = useWishlist();
-  const { addToCart } = useCart();
+  
 
   const wishlistEmpty = items.length === 0;
 
