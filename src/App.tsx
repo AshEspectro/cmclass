@@ -19,6 +19,7 @@ import AccountPage from './pages/Login';
 import AccountPage_A from './pages/EmailIdentifying';
 import ForgotPwd from './pages/forgot-password';
 import BagsPage from './pages/Bags';
+import Index from '../admin/Admin';
 
 //import { useConditionalNavbar } from './hooks/useConditionalNavbar';
 
@@ -44,7 +45,7 @@ export const SingleProductWrapper = () => {
 
 function AppWrapper() {
   const location = useLocation();
-  const hideNavAndFooter = ['/'].includes(location.pathname);
+  const hideNavAndFooter = ['/','/admin'].includes(location.pathname);
  // Coming Soon page
 
 // Exemple : cacher navbar sur /homme et /bagsPage avec scroll
@@ -87,6 +88,8 @@ function AppWrapper() {
                 <Route path="/wishlist" element={<WishlistPage />} />
                 <Route path="/forgot-password" element={<ForgotPwd/>} />
                 <Route path="*" element={<Home />} />
+               <Route path="/admin" element={<Index />} />
+
                 <Route path="/product/:id" element={<SingleProductWrapper />} />
               </Routes>
             </main>
