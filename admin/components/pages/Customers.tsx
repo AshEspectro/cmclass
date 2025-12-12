@@ -1,7 +1,6 @@
-import React from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
-import { Search, Filter, Download, Mail, Star } from 'lucide-react';
+import { Search, Filter, Download, Mail } from 'lucide-react';
 
 const customers = [
   { id: 1, name: 'Sophie Dubois', email: 'sophie.d@email.com', orders: 28, spent: '45 230 €', joined: '2023-01-15', segment: 'VIP', lastOrder: '2025-12-09' },

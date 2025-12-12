@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { Eye, Upload, Save, MoveVertical, X } from 'lucide-react';
@@ -14,6 +14,7 @@ export function ContentManager() {
   const [heroText, setHeroText] = useState('Découvrez l\'Essence du Luxe');
   const [heroSubtext, setHeroSubtext] = useState('Explorez notre collection raffinée d\'élégance intemporelle');
   const [selectedBlock, setSelectedBlock] = useState<number | null>(null);
+  const selectedBlockObj = contentBlocks.find(b => b.id === selectedBlock) ?? null;
 
   return (
     <div className="space-y-8">
@@ -176,7 +177,8 @@ export function ContentManager() {
             {contentBlocks.map((block) => (
               <div 
                 key={block.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded hover:border-[#007B8A] transition-colors cursor-move"
+                onClick={() => setSelectedBlock(block.id)}
+                className={`flex items-center justify-between p-4 rounded hover:border-[#007B8A] transition-colors cursor-move ${selectedBlock === block.id ? 'border-[#007B8A] bg-white/50' : 'border-gray-200'}`}
               >
                 <div className="flex items-center gap-4">
                   <MoveVertical size={18} className="text-gray-400" strokeWidth={1.5} />
@@ -194,8 +196,8 @@ export function ContentManager() {
                     />
                     <span className="text-sm text-gray-600">Actif</span>
                   </label>
-                  <Button variant="ghost" size="sm">Modifier</Button>
-                  <button className="p-2 hover:bg-gray-100 rounded-full">
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); /* edit action */ }}>Modifier</Button>
+                  <button className="p-2 hover:bg-gray-100 rounded-full" onClick={(e) => { e.stopPropagation(); setSelectedBlock(null); }}>
                     <X size={16} className="text-gray-400" />
                   </button>
                 </div>
@@ -205,6 +207,40 @@ export function ContentManager() {
           <Button variant="outline" size="sm" className="w-full mt-4">
             Ajouter un Nouveau Bloc
           </Button>
+          {selectedBlockObj && (
+            <div className="mt-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4>Détails du Bloc Sélectionné</h4>
+                      <p className="text-xs text-gray-500">Modifier les propriétés du bloc</p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedBlock(null)}>Fermer</Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm mb-1 text-gray-700">Titre</label>
+                      <input type="text" value={selectedBlockObj.title} readOnly className="w-full px-3 py-2 border border-gray-200 rounded bg-gray-50" />
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-1 text-gray-700">Type</label>
+                      <input type="text" value={selectedBlockObj.type} readOnly className="w-full px-3 py-2 border border-gray-200 rounded bg-gray-50" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={selectedBlockObj.active} readOnly className="w-4 h-4 accent-[#007B8A]" />
+                        <span className="text-sm text-gray-600">Actif</span>
+                      </label>
+                      <Button variant="primary" size="sm">Enregistrer les Modifications</Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

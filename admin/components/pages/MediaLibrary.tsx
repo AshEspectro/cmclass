@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { Upload, Grid3x3, List, Trash2, Download, Search, Filter } from 'lucide-react';

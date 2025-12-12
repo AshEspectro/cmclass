@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { Search, Filter, ExternalLink, Download } from 'lucide-react';
