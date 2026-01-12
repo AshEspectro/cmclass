@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 const logger = new Logger('Bootstrap');
 
@@ -10,10 +12,15 @@ process.on('exit', (code) => console.log('main.ts: process exit', code));
 
 async function bootstrap() {
   try {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+    // parse cookies to support HttpOnly refresh token cookies
+    app.use(require('cookie-parser')());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     app.enableCors();
     app.enableShutdownHooks();
+
+    // serve uploaded assets from /public
+    app.useStaticAssets(join(__dirname, '..', 'public'));
 
     const port = process.env.PORT ? Number(process.env.PORT) : 3000;
     const host = process.env.HOST || '0.0.0.0';

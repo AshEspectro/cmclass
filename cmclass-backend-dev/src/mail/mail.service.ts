@@ -64,4 +64,89 @@ export class MailService {
       return { success: false, error: err };
     }
   }
+
+  async sendSignupNotification(to: string, req: any) {
+    const from = process.env.EMAIL_FROM || 'espectro.ash@gmail.com';
+    const subject = `Nouvelle demande d'inscription: ${req.email}`;
+    const adminUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/admin/team-access`;
+    const text = `Bonjour,\n\nUne nouvelle demande d'inscription a été soumise:\n\nNom: ${req.name}\nEmail: ${req.email}\nRôle demandé: ${req.roleRequested}\n\nMessage: ${req.message || '(aucun)'}\n\nAccédez au tableau de bord pour approuver ou refuser: ${adminUrl}\n\nMerci.`;
+
+    try {
+      if (!this.transporter) {
+        const testAccount = await nodemailer.createTestAccount();
+        this.transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: { user: testAccount.user, pass: testAccount.pass },
+        });
+        this.logger.log(`Using Ethereal test account ${testAccount.user}`);
+      }
+
+      const info = await this.transporter.sendMail({ from, to, subject, text });
+      this.logger.log(`Signup notification email sent to ${to}`);
+      const preview = nodemailer.getTestMessageUrl(info);
+      if (preview) this.logger.log(`Preview email at: ${preview}`);
+      return { success: true, provider: 'smtp', info, preview };
+    } catch (err) {
+      this.logger.error('Failed to send signup notification', err as any);
+      return { success: false, error: err };
+    }
+  }
+
+  async sendApprovalEmail(to: string, username: string, tempPassword: string, role?: string) {
+    const from = process.env.EMAIL_FROM || 'espectro.ash@gmail.com';
+    const subject = "Votre demande d'inscription a été approuvée";
+    const text = `Bonjour ${username},\n\nVotre demande d'inscription a été approuvée. Votre rôle: ${role || 'USER'}. Vous pouvez vous connecter avec :\n\nemail: ${to}\nmot de passe: ${tempPassword}\n\nMerci.`;
+
+    try {
+      if (!this.transporter) {
+        const testAccount = await nodemailer.createTestAccount();
+        this.transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: { user: testAccount.user, pass: testAccount.pass },
+        });
+        this.logger.log(`Using Ethereal test account ${testAccount.user}`);
+      }
+
+      const info = await this.transporter.sendMail({ from, to, subject, text });
+      this.logger.log(`Approval email sent to ${to}`);
+      const preview = nodemailer.getTestMessageUrl(info);
+      if (preview) this.logger.log(`Preview email at: ${preview}`);
+      return { success: true, provider: 'smtp', info, preview };
+    } catch (err) {
+      this.logger.error('Failed to send approval email', err as any);
+      return { success: false, error: err };
+    }
+  }
+
+  async sendDenialEmail(to: string, name: string) {
+    const from = process.env.EMAIL_FROM || 'espectro.ash@gmail.com';
+    const subject = "Votre demande d'inscription a été refusée";
+    const text = `Bonjour ${name},\n\nNous sommes désolés, mais votre demande d'inscription a été refusée. Si vous pensez qu'il s'agit d'une erreur, contactez le support.`;
+
+    try {
+      if (!this.transporter) {
+        const testAccount = await nodemailer.createTestAccount();
+        this.transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: { user: testAccount.user, pass: testAccount.pass },
+        });
+        this.logger.log(`Using Ethereal test account ${testAccount.user}`);
+      }
+
+      const info = await this.transporter.sendMail({ from, to, subject, text });
+      this.logger.log(`Denial email sent to ${to}`);
+      const preview = nodemailer.getTestMessageUrl(info);
+      if (preview) this.logger.log(`Preview email at: ${preview}`);
+      return { success: true, provider: 'smtp', info, preview };
+    } catch (err) {
+      this.logger.error('Failed to send denial email', err as any);
+      return { success: false, error: err };
+    }
+  }
 }
