@@ -66,8 +66,20 @@ export class CategoryController {
 
   @Patch('reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async reorder(@Body() body: Array<{ id: number; order: number }>) {
-    return await this.svc.reorder(body as any);
+  async reorder(@Req() req: any, @Body() body: any) {
+    console.log('admin/reorder raw body:', body);
+    const items = Array.isArray(body) ? body : body?.items;
+    if (!Array.isArray(items)) {
+      console.error('admin/reorder invalid payload:', body);
+      throw new BadRequestException('Invalid payload: expected array');
+    }
+    console.log('admin/reorder payload:', items);
+    try {
+      return await this.svc.reorder(items as any);
+    } catch (err: any) {
+      console.error('admin/reorder error:', err?.message || err);
+      throw new BadRequestException(err?.message || 'Reorder failed');
+    }
   }
 
   @Post('bulk')

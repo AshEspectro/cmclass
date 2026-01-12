@@ -92,8 +92,26 @@ export class CategoryService {
   }
 
   async reorder(items: { id: number; order: number }[]) {
-    if (!Array.isArray(items) || items.length === 0) return { success: true };
-    const ops = items.map((it) => this.prisma.category.update({ where: { id: it.id }, data: { order: it.order } }));
+    if (!Array.isArray(items)) throw new BadRequestException('Invalid payload');
+    if (items.length === 0) return { success: true };
+
+    // Validate and normalize input
+    const ops: any[] = [];
+    const ids: number[] = [];
+    for (const it of items) {
+      const idNum = Number(it?.id);
+      const orderNum = Number(it?.order);
+      if (Number.isNaN(idNum) || !Number.isFinite(idNum)) throw new BadRequestException('Each item must have a numeric id');
+      if (Number.isNaN(orderNum) || !Number.isFinite(orderNum)) throw new BadRequestException('Each item must have a numeric order');
+      ids.push(idNum);
+      ops.push(this.prisma.category.update({ where: { id: idNum }, data: { order: Math.floor(orderNum) } }));
+    }
+
+    // Ensure all ids exist to avoid partial updates or accidental creations
+    const existing = await this.prisma.category.findMany({ where: { id: { in: ids } }, select: { id: true } });
+    const existingIds = new Set(existing.map((e) => e.id));
+    for (const id of ids) if (!existingIds.has(id)) throw new BadRequestException(`Category id not found: ${id}`);
+
     await this.prisma.$transaction(ops);
     return { success: true };
   }

@@ -15,7 +15,7 @@ async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
     // parse cookies to support HttpOnly refresh token cookies
     app.use(require('cookie-parser')());
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     app.enableCors();
     app.enableShutdownHooks();
 
