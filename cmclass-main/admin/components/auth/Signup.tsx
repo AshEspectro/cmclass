@@ -3,11 +3,12 @@ import { Button } from '../Button';
 import { Mail, Lock, User, Eye, EyeOff, Building } from 'lucide-react';
 
 interface SignupProps {
-  onSignup: () => void;
+  brand?: { name?: string; logoUrl?: string } | null;
+  onSignup: (payload: { name: string; email: string; brandName: string; password: string; acceptTerms: boolean }) => void | Promise<void>;
   onSwitchToLogin: () => void;
 }
 
-export function Signup({ onSignup, onSwitchToLogin }: SignupProps) {
+export function Signup({ brand, onSignup, onSwitchToLogin, message }: SignupProps & { message?: { type: 'success' | 'error' | 'info'; text: string } | null }) {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -16,10 +17,11 @@ export function Signup({ onSignup, onSwitchToLogin }: SignupProps) {
     password: '',
     confirmPassword: ''
   });
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSignup();
+    onSignup({ name: formData.name, email: formData.email, brandName: formData.brandName, password: formData.password, acceptTerms });
   };
 
   const handleChange = (field: string, value: string) => {
@@ -50,7 +52,11 @@ export function Signup({ onSignup, onSwitchToLogin }: SignupProps) {
       <div className="w-1/2 flex items-center justify-center px-16 bg-white">
         <div className="w-full max-w-md">
           <div className="mb-12">
-            <h1 className="text-5xl mb-4 tracking-tight">MAISON</h1>
+            {brand?.logoUrl ? (
+              <img src={brand.logoUrl} alt={brand?.name || 'Brand'} className="h-12 mb-4" />
+            ) : (
+              <h1 className="text-5xl mb-4 tracking-tight">CM class</h1>
+            )}
             <p className="text-gray-600">Tableau de Bord Administrateur</p>
           </div>
 
@@ -58,6 +64,12 @@ export function Signup({ onSignup, onSwitchToLogin }: SignupProps) {
             <h2 className="text-3xl mb-2">Créer un Compte</h2>
             <p className="text-gray-600">Commencez à gérer votre marque de luxe aujourd'hui</p>
           </div>
+
+          {message && (
+            <div className={`mb-4 text-sm ${message.type === 'error' ? 'text-red-600' : message.type === 'success' ? 'text-green-600' : 'text-blue-600'}`}>
+              {message.text}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -171,6 +183,8 @@ export function Signup({ onSignup, onSwitchToLogin }: SignupProps) {
                 type="checkbox" 
                 className="w-4 h-4 mt-1 accent-[#007B8A]"
                 required
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
               />
               <label className="text-sm text-gray-600">
                 J'accepte les{' '}

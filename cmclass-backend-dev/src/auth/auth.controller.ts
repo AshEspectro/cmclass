@@ -1,4 +1,4 @@
-import { Body, Controller, Post, BadRequestException, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, BadRequestException, Req, Res, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -6,10 +6,11 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { OAuthDto } from './dto/oauth.dto';
 import { SignupRequestDto } from './dto/signup-request.dto';
 import { Request, Response } from 'express';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private prisma: PrismaService) {}
 
   private getCookieOptions() {
     const oneMonth = 30 * 24 * 60 * 60 * 1000;
@@ -75,5 +76,15 @@ export class AuthController {
   @Post('signup')
   async signupRequest(@Body() dto: SignupRequestDto) {
     return this.authService.createSignupRequest(dto);
+  }
+
+  // Public endpoint to check signup request status by email. Frontend can poll this
+  // to detect when an admin has approved/denied a signup request.
+  @Get('signup-status')
+  async signupStatus(@Query('email') email: string) {
+    if (!email) throw new BadRequestException('email required');
+    const sr = await this.prisma.signupRequest.findUnique({ where: { email } });
+    if (!sr) return { status: 'NOT_FOUND' };
+    return { status: sr.status };
   }
 }

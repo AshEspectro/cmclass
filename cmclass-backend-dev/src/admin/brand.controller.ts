@@ -17,7 +17,7 @@ function filename(req: Request, file: Express.Multer.File, cb: (err: any, name: 
 }
 
 @Controller('admin/brand')
-@Roles('ADMIN')
+@Roles('ADMIN','SUPER_ADMIN')
 export class BrandController {
   constructor(private brandService: BrandService) {}
 

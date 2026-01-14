@@ -183,12 +183,15 @@ export class UsersController {
       if (target.role === 'SUPER_ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
         throw new ForbiddenException('Only SUPER_ADMIN can delete SUPER_ADMIN accounts');
       }
-      await this.prisma.user.delete({ where: { id: parsed } });
+      
+      // Create audit log BEFORE deleting the user to avoid foreign key constraint issues
       try {
         await this.prisma.auditLog.create({ data: { actorId: req.user?.sub ?? null, targetUserId: parsed, action: 'user.delete', meta: {} } });
       } catch (e) {
         console.error('Failed to write audit log', e);
       }
+      
+      await this.prisma.user.delete({ where: { id: parsed } });
       return { success: true };
     } catch (err: any) {
       // Prisma P2025: Record to delete does not exist

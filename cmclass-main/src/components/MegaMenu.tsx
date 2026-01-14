@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { X, ChevronRight, Phone, Leaf, User, MapPin, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -8,8 +8,10 @@ interface MegaMenuProps {
 }
 
 interface SubCategory {
+  id?: number;
   name: string;
   link: string;
+  children?: SubCategory[];
 }
 
 interface MenuItem {
@@ -130,7 +132,43 @@ export   const mainCategories: MenuItem[] = [
 export const MegaMenu = ({ onClose }: MegaMenuProps) => {
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
- 
+  const [categories, setCategories] = useState<MenuItem[]>([]);
+  const [apiHeroContent, setApiHeroContent] = useState<Record<string, { img: string | null; title: string; text: string | null }>>({});
+  const [loading, setLoading] = useState(true);
+
+  // Fetch categories from public API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/categories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const data = await response.json();
+        
+        // Transform API response to match MenuItem structure
+        const transformedCategories = (data.mainCategories || []).map((cat: any) => ({
+          title: cat.title,
+          link: cat.link,
+          subcategories: cat.subcategories?.map((sub: any) => ({
+            id: sub.id,
+            name: sub.name,
+            link: sub.link,
+            children: sub.children || []
+          })) || []
+        }));
+        
+        setCategories(transformedCategories);
+        setApiHeroContent(data.heroContent || {});
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+        // Fallback to hardcoded categories if API fails
+        setCategories(mainCategories);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
 
   return (
@@ -158,7 +196,7 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
 
           {/* Main Categories */}
           <nav className="space-y-0 mb-12">
-            {mainCategories.map((item, index) => (
+            {categories.map((item, index) => (
               <motion.div
                 key={item.title}
                 initial={{ opacity: 0, x: -20 }}
@@ -275,26 +313,26 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
         {activeSubmenu && (
           <motion.div
             className="hidden md:block w-[400px] bg-white border-l border-gray-200 overflow-y-auto"
-            initial={{ x: "100%" }}
+            initial={{ x: "300%" }}
             animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            exit={{ x: "300%" }}
+            transition={{ type: "spring", damping: 80, stiffness: 300 }}
           >
             <div className="p-12">
               {/* Hero Section */}
-              {heroContent[activeSubmenu] && (
+              {(apiHeroContent[activeSubmenu] || heroContent[activeSubmenu]) && (
                 <motion.div className="mb-8 overflow-hidden rounded-xl relative">
                   <img
-                    src={heroContent[activeSubmenu].img}
+                    src={(apiHeroContent[activeSubmenu]?.img || heroContent[activeSubmenu]?.img) || '/placeholder.jpg'}
                     alt={activeSubmenu}
                     className="w-full h-56 object-cover"
                   />
                   <div className="absolute inset-0 bg-black/30 flex flex-col justify-end p-6">
                     <h3 className="text-white text-2xl font-semibold mb-2">
-                      {heroContent[activeSubmenu].title}
+                      {apiHeroContent[activeSubmenu]?.title || heroContent[activeSubmenu]?.title}
                     </h3>
                     <p className="text-white/90 text-sm">
-                      {heroContent[activeSubmenu].text}
+                      {apiHeroContent[activeSubmenu]?.text || heroContent[activeSubmenu]?.text}
                     </p>
                   </div>
                 </motion.div>
@@ -302,7 +340,7 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
 
               {/* Subcategories */}
               <div className="space-y-5">
-                {mainCategories
+                {categories
                   .find((cat) => cat.title === activeSubmenu)
                   ?.subcategories?.map((sub, index) => (
                     <motion.div
@@ -376,7 +414,7 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
 
         {/* Subcategories */}
         <div className="px-6 py-4 space-y-6">
-          {mainCategories
+          {categories
             .find((cat) => cat.title === activeSubmenu)
             ?.subcategories?.map((sub, index) => (
               <motion.div

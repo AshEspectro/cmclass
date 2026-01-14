@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
 
@@ -11,23 +11,40 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!requiredRoles) {
+
+    // If no roles are required, allow access
+    if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
-    const { user } = context.switchToHttp().getRequest();
-    if (!user) return false;
+
+    const request = context.switchToHttp().getRequest();
+    const { user } = request;
+
+    if (!user) {
+      throw new ForbiddenException('User not authenticated');
+    }
+
     // Role hierarchy: USER < SUPPORT < MODERATOR < ADMIN < SUPER_ADMIN
     const rank: Record<string, number> = {
       USER: 0,
       SUPPORT: 1,
       MODERATOR: 2,
       ADMIN: 3,
-      SUPER_ADMIN: 4
+      SUPER_ADMIN: 4,
     };
 
-    const userRank = rank[user.role] ?? 0;
+    const userRank = rank[user.role] ?? -1;
+    if (userRank === -1) {
+      throw new ForbiddenException(`Unknown role: ${user.role}`);
+    }
+
     const requiredRanks = requiredRoles.map((r) => rank[r] ?? 0);
     const minRequired = Math.min(...requiredRanks);
-    return userRank >= minRequired;
+
+    if (userRank >= minRequired) {
+      return true;
+    }
+
+    throw new ForbiddenException(`User role ${user.role} (rank ${userRank}) does not meet minimum required rank ${minRequired}`);
   }
 }

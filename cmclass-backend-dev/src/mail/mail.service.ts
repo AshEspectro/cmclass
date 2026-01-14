@@ -42,16 +42,16 @@ export class MailService {
     const subject = 'Invitation to Cmclass Admin';
     const text = `Bonjour ${username},\n\nVous avez été invité(e) à rejoindre le tableau de bord Cmclass.\n\nUtilisez ces identifiants temporaires pour vous connecter :\n\nemail: ${to}\nmot de passe: ${tempPassword}\n\nMerci.`;
 
+    // Skip email if no transporter configured and not in production
+    if (!this.transporter && process.env.NODE_ENV !== 'production') {
+      this.logger.warn(`Skipping invite email to ${to} (no SMTP configured)`);
+      return { success: true, skipped: true };
+    }
+
     try {
       if (!this.transporter) {
-        const testAccount = await nodemailer.createTestAccount();
-        this.transporter = nodemailer.createTransport({
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: { user: testAccount.user, pass: testAccount.pass },
-        });
-        this.logger.log(`Using Ethereal test account ${testAccount.user}`);
+        this.logger.warn('No email transporter configured');
+        return { success: false, error: 'No email transporter' };
       }
 
       const info = await this.transporter.sendMail({ from, to, subject, text });
@@ -71,16 +71,16 @@ export class MailService {
     const adminUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/admin/team-access`;
     const text = `Bonjour,\n\nUne nouvelle demande d'inscription a été soumise:\n\nNom: ${req.name}\nEmail: ${req.email}\nRôle demandé: ${req.roleRequested}\n\nMessage: ${req.message || '(aucun)'}\n\nAccédez au tableau de bord pour approuver ou refuser: ${adminUrl}\n\nMerci.`;
 
+    // Skip email if no transporter configured and not in production
+    if (!this.transporter && process.env.NODE_ENV !== 'production') {
+      this.logger.warn(`Skipping signup notification email to ${to} (no SMTP configured)`);
+      return { success: true, skipped: true };
+    }
+
     try {
       if (!this.transporter) {
-        const testAccount = await nodemailer.createTestAccount();
-        this.transporter = nodemailer.createTransport({
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: { user: testAccount.user, pass: testAccount.pass },
-        });
-        this.logger.log(`Using Ethereal test account ${testAccount.user}`);
+        this.logger.warn('No email transporter configured');
+        return { success: false, error: 'No email transporter' };
       }
 
       const info = await this.transporter.sendMail({ from, to, subject, text });
@@ -99,16 +99,16 @@ export class MailService {
     const subject = "Votre demande d'inscription a été approuvée";
     const text = `Bonjour ${username},\n\nVotre demande d'inscription a été approuvée. Votre rôle: ${role || 'USER'}. Vous pouvez vous connecter avec :\n\nemail: ${to}\nmot de passe: ${tempPassword}\n\nMerci.`;
 
+    // Skip email if no transporter configured and not in production
+    if (!this.transporter && process.env.NODE_ENV !== 'production') {
+      this.logger.warn(`Skipping approval email to ${to} (no SMTP configured)`);
+      return { success: true, skipped: true };
+    }
+
     try {
       if (!this.transporter) {
-        const testAccount = await nodemailer.createTestAccount();
-        this.transporter = nodemailer.createTransport({
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: { user: testAccount.user, pass: testAccount.pass },
-        });
-        this.logger.log(`Using Ethereal test account ${testAccount.user}`);
+        this.logger.warn('No email transporter configured');
+        return { success: false, error: 'No email transporter' };
       }
 
       const info = await this.transporter.sendMail({ from, to, subject, text });
@@ -127,16 +127,16 @@ export class MailService {
     const subject = "Votre demande d'inscription a été refusée";
     const text = `Bonjour ${name},\n\nNous sommes désolés, mais votre demande d'inscription a été refusée. Si vous pensez qu'il s'agit d'une erreur, contactez le support.`;
 
+    // Skip email if no transporter configured and not in production
+    if (!this.transporter && process.env.NODE_ENV !== 'production') {
+      this.logger.warn(`Skipping denial email to ${to} (no SMTP configured)`);
+      return { success: true, skipped: true };
+    }
+
     try {
       if (!this.transporter) {
-        const testAccount = await nodemailer.createTestAccount();
-        this.transporter = nodemailer.createTransport({
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: { user: testAccount.user, pass: testAccount.pass },
-        });
-        this.logger.log(`Using Ethereal test account ${testAccount.user}`);
+        this.logger.warn('No email transporter configured');
+        return { success: false, error: 'No email transporter' };
       }
 
       const info = await this.transporter.sendMail({ from, to, subject, text });

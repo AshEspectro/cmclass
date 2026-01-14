@@ -8,11 +8,15 @@ export class PublicBrandController {
   @Get()
   async getPublic() {
     const brand = await this.brandService.get()
+    const base = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3000}`;
+
+    const logo = brand.logoUrl && brand.logoUrl.startsWith('/') ? `${base}${brand.logoUrl}` : brand.logoUrl;
+    const favicon = brand.faviconUrl && brand.faviconUrl.startsWith('/') ? `${base}${brand.faviconUrl}` : brand.faviconUrl;
 
     return {
       name: brand.name,
-      logoUrl: brand.logoUrl,
-      faviconUrl: brand.faviconUrl,
+      logoUrl: logo,
+      faviconUrl: favicon,
     }
   }
 }

@@ -16,7 +16,11 @@ async function bootstrap() {
     // parse cookies to support HttpOnly refresh token cookies
     app.use(require('cookie-parser')());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-    app.enableCors();
+    app.enableCors({
+      origin: process.env.FRONTEND_URL,
+      credentials: true,
+    });
+
     app.enableShutdownHooks();
 
     // serve uploaded assets from /public

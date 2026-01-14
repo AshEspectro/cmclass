@@ -20,7 +20,7 @@ function filename(req: Request, file: any, cb: (err: any, name: string) => void)
 }
 
 @Controller('admin/categories')
-@Roles('ADMIN')
+@Roles('ADMIN','SUPER_ADMIN')
 export class CategoryController {
   constructor(private svc: CategoryService) {}
 
@@ -31,31 +31,11 @@ export class CategoryController {
     return res;
   }
 
-  @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  async get(@Param('id', ParseIntPipe) id: number) {
-    return { data: await this.svc.get(id) };
-  }
-
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   async create(@Body() body: CreateCategoryDto) {
     const c = await this.svc.create(body as any);
     return { data: c };
-  }
-
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  async update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateCategoryDto) {
-    const c = await this.svc.update(id, body as any);
-    return { data: c };
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  async remove(@Param('id') id: string) {
-    await this.svc.delete(Number(id));
-    return { success: true };
   }
 
   @Post('merge')
@@ -93,5 +73,25 @@ export class CategoryController {
     if (!file) throw new BadRequestException('No file uploaded');
     const url = `${req.protocol}://${req.get('host')}/uploads/categories/${file.filename}`;
     return { url };
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async get(@Param('id', ParseIntPipe) id: number) {
+    return { data: await this.svc.get(id) };
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateCategoryDto) {
+    const c = await this.svc.update(id, body as any);
+    return { data: c };
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async remove(@Param('id') id: string) {
+    await this.svc.delete(Number(id));
+    return { success: true };
   }
 }

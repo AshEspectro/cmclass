@@ -16,10 +16,30 @@ export const Navbar = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [mobileSearchQuery, setMobileSearchQuery] = useState('');
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [brandLogo, setBrandLogo] = useState<string>('');
   const { itemCount } = useCart();
   const { items: wishlistItems } = useWishlist();
   void showMobileSearch;
   void setShowMobileSearch;
+
+  // Fetch brand logo from API
+  useEffect(() => {
+    const fetchBrandLogo = async () => {
+      try {
+        const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/brand');
+        if (!response.ok) throw new Error('Failed to fetch brand');
+        const data = await response.json();
+        if (data.logoUrl) {
+          setBrandLogo(data.logoUrl);
+        }
+      } catch (err) {
+        console.error('Failed to fetch brand logo:', err);
+        // Keep default fallback
+      }
+    };
+
+    fetchBrandLogo();
+  }, []);
 
 
   useEffect(() => {
@@ -91,7 +111,7 @@ export const Navbar = () => {
                 }`}
               >
                 <img
-                   src={isScrolled ? '/cmclass.svg' : '/cmclass.svg'}
+                   src={brandLogo}
                   alt="CM CLASS Logo"
                   className={`mx-auto transition-all duration-300 ${
                     isScrolled

@@ -3,18 +3,20 @@ import { Button } from '../Button';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: () => void;
+  brand?: { name?: string; logoUrl?: string } | null;
+  onLogin: (payload: { email: string; password: string; remember: boolean }) => void | Promise<void>;
   onSwitchToSignup: () => void;
 }
 
-export function Login({ onLogin, onSwitchToSignup }: LoginProps) {
+export function Login({ brand, onLogin, onSwitchToSignup, message }: LoginProps & { message?: { type: 'success' | 'error' | 'info'; text: string } | null }) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin();
+    onLogin({ email, password, remember });
   };
 
   return (
@@ -23,7 +25,11 @@ export function Login({ onLogin, onSwitchToSignup }: LoginProps) {
       <div className="w-1/2 flex items-center justify-center px-16 bg-white">
         <div className="w-full max-w-md">
           <div className="mb-12">
-            <h1 className="text-5xl mb-4 tracking-tight">MAISON</h1>
+            {brand?.logoUrl ? (
+              <img src={brand.logoUrl} alt={brand?.name || 'Brand'} className="h-12 mb-4" />
+            ) : (
+              <h1 className="text-5xl mb-4 tracking-tight">MAISON</h1>
+            )}
             <p className="text-gray-600">Tableau de Bord Administrateur</p>
           </div>
 
@@ -31,6 +37,12 @@ export function Login({ onLogin, onSwitchToSignup }: LoginProps) {
             <h2 className="text-3xl mb-2">Bon Retour</h2>
             <p className="text-gray-600">Connectez-vous pour accéder à votre tableau de bord</p>
           </div>
+
+          {message && (
+            <div className={`mb-4 text-sm ${message.type === 'error' ? 'text-red-600' : message.type === 'success' ? 'text-green-600' : 'text-blue-600'}`}>
+              {message.text}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -45,7 +57,7 @@ export function Login({ onLogin, onSwitchToSignup }: LoginProps) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@maison.com"
+                  placeholder="admin@info.com"
                   className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
                   required
                 />
@@ -87,6 +99,8 @@ export function Login({ onLogin, onSwitchToSignup }: LoginProps) {
                 <input 
                   type="checkbox" 
                   className="w-4 h-4 accent-[#007B8A]"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
                 />
                 <span className="text-sm text-gray-600">Se souvenir de moi</span>
               </label>
