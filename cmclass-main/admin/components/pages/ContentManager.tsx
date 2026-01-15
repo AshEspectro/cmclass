@@ -197,9 +197,9 @@ export function ContentManager() {
                     <span className="text-sm text-gray-600">Actif</span>
                   </label>
                   <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); /* edit action */ }}>Modifier</Button>
-                  <button className="p-2 hover:bg-gray-100 rounded-full" onClick={(e) => { e.stopPropagation(); setSelectedBlock(null); }}>
+                  <Button className="p-2 hover:bg-gray-100 rounded-full" onClick={(e) => { e.stopPropagation(); setSelectedBlock(null); }}>
                     <X size={16} className="text-gray-400" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
