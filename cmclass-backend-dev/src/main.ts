@@ -17,8 +17,10 @@ async function bootstrap() {
     app.use(require('cookie-parser')());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     app.enableCors({
-      origin: process.env.FRONTEND_URL,
+      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
       credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     });
 
     app.enableShutdownHooks();

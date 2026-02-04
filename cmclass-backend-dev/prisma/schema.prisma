@@ -71,6 +71,8 @@ model Brand {
   name           String?
   slogan         String?
   description    String?
+  servicesHeaderTitle String?
+  servicesHeaderDescription String?
   contactEmail   String?
   primaryColor   String?  @default("#007B8A")
   secondaryColor String?
@@ -102,20 +104,63 @@ model Category {
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  name        String
-  slug        String   @unique
-  description String?
-  imageUrl    String?
-  priceCents  Int      @default(0)
-  stock       Int      @default(0)
-  status      String   @default("ACTIVE")
-  colors      String[] @default([])
-  sizes       String[] @default([])
-  categoryId  Int
-  category    Category @relation(fields: [categoryId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  name             String
+  slug             String   @unique
+  description      String?
+  productImage     String?  // main product image
+  priceCents       Int      @default(0)
+  stock            Int      @default(0)
+  status           String   @default("ACTIVE")
+  label            String?  // e.g., "Best Seller", "Nouveau", "Collection Été"
+  images           String[] @default([])
+  inStock          Boolean  @default(true)
+  longDescription  String?
+  mannequinImage   String   // appears on hover
+  colors           Json     // Array of { name: string; hex: string; images: string[] }
+  sizes            String[] @default([]) // Array of available sizes (e.g., ["S", "M", "L", "XL"])
+  categoryId       Int
+  category         Category @relation(fields: [categoryId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
+model HeroSection {
+  id                    Int     @id @default(autoincrement())
+  mainText              String
+  subtext               String
+  backgroundImageUrl    String?
+  backgroundVideoUrl    String?
+  mediaType             String  @default("image")
+  ctaButtonText         String
+  ctaButtonUrl          String
+  isActive              Boolean @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Campaign {
+  id                    Int     @id @default(autoincrement())
+  title                 String
+  genreText             String?
+  imageUrl              String?
+  buttonText            String?
+  status                String  @default("Brouillon")
+  selectedCategories    Int[]   @default([])
+  selectedProductIds    Int[]   @default([])
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Service {
+  id        Int      @id @default(autoincrement())
+  title     String
+  description String?
+  imageUrl  String?
+  link      String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 

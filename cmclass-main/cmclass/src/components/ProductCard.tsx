@@ -5,6 +5,13 @@ import { motion } from 'motion/react';
 import type { Product } from '../data/products';
 import { useWishlist } from '../contexts/WishlistContext';
 
+const normalizeAssetUrl = (url?: string | null) => {
+  if (!url) return '';
+  const doubleHttpMatch = url.match(/^(https?:\/\/[^/]+)(https?:\/\/.*)$/);
+  if (doubleHttpMatch) return doubleHttpMatch[2];
+  return url;
+};
+
 interface ProductCardProps {
   product: Product;
   onQuickView: (product: Product) => void;
@@ -24,6 +31,12 @@ export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
     }
   };
 
+  const imageSrc = normalizeAssetUrl(
+    (product as unknown as { productImage?: string }).productImage ||
+      product.image ||
+      product.images?.[0]
+  );
+
   return (
     <motion.div
       className="group relative"
@@ -37,6 +50,13 @@ export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
       <Link to={`/product/${product.id}`} className="block relative overflow-hidden">
         {/* Image */}
         <div className="aspect-3/4 bg-gray-100 relative">
+          {imageSrc && (
+            <img
+              src={imageSrc}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+          )}
           {/* Hover Overlay */}
           <motion.div
             className="absolute inset-0 bg-[#007B8A]/20 flex items-center justify-center"

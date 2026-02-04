@@ -27,5 +27,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "tailwindcss.config.js", "src/declarations.d.ts"]
+  "include": ["src", "admin", "vite-env.d.ts", "tailwindcss.config.js", "src/declarations.d.ts"]
 }

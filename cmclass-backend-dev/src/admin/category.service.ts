@@ -29,6 +29,16 @@ export class CategoryService {
   async create(dto: CreateCategoryDto) {
     const desiredSlug = dto.slug || this.slugify(dto.name);
     const data: any = { ...dto };
+    
+    // If parentId is provided, generate hierarchical slug
+    let finalSlug = desiredSlug;
+    if (dto.parentId) {
+      finalSlug = await this.makeSubcategorySlug(dto.parentId, dto.name);
+    } else {
+      // For top-level categories, ensure slug uniqueness
+      finalSlug = await this.makeUniqueSlug(finalSlug || this.slugify(dto.name || 'category'));
+    }
+
     // Prepare nested children create if provided
     let childrenCreate: any[] | undefined = undefined;
     if (dto.subcategories && dto.subcategories.length > 0) {
@@ -41,14 +51,9 @@ export class CategoryService {
       }));
     }
 
-    // Create parent category with nested children in one query
-    // Ensure slugs are valid and unique. Normalize provided slugs and generate from names when missing.
-    const parentSlugBase = this.slugify(desiredSlug || this.slugify(dto.name || 'category'));
-    const parentSlug = await this.makeUniqueSlug(parentSlugBase);
-
     // Track assigned slugs within this request to avoid sibling collisions
     const assignedSlugs = new Set<string>();
-    assignedSlugs.add(parentSlug);
+    assignedSlugs.add(finalSlug);
 
     const normalizedChildren = [] as any[];
     if (childrenCreate) {
@@ -65,8 +70,9 @@ export class CategoryService {
       }
     }
 
-    const { subcategories, ...restCreate } = data;
-    const createData: any = { ...restCreate, slug: parentSlug };
+    const { subcategories, parentId, ...restCreate } = data;
+    const createData: any = { ...restCreate, slug: finalSlug };
+    if (parentId) createData.parentId = parentId;
     if (normalizedChildren.length) createData.children = { create: normalizedChildren };
 
     const cat = await this.prisma.category.create({ data: createData });
@@ -76,19 +82,47 @@ export class CategoryService {
   async update(id: number, dto: UpdateCategoryDto) {
     if (typeof id !== 'number' || Number.isNaN(id)) throw new BadRequestException('Invalid category id');
     const data: any = { ...dto };
-    if (dto.name && !dto.slug) data.slug = this.slugify(dto.name);
-    // For edits we DO NOT modify subcategories here. Subcategories are separate categories with parentId.
-    const { subcategories, ...rest } = data;
+    
+    const currentCategory = await this.prisma.category.findUnique({ where: { id } });
+    if (!currentCategory) throw new BadRequestException('Category not found');
 
-    // ensure slug uniqueness for parent if provided
-    if (rest.slug) {
-      rest.slug = await this.makeUniqueSlug(rest.slug, id);
+    // If parentId is being set or changed, generate hierarchical slug
+    if (dto.parentId !== undefined) {
+      if (dto.parentId) {
+        // Category is being set as a subcategory - generate hierarchical slug
+        data.slug = await this.makeSubcategorySlug(dto.parentId, dto.name || currentCategory.name);
+      } else if (currentCategory.parentId) {
+        // Category is being changed from subcategory to top-level - generate non-hierarchical slug
+        const baseSlug = this.slugify(dto.name || currentCategory.name);
+        data.slug = await this.makeUniqueSlug(baseSlug, id);
+      }
+    } else if (dto.name && !dto.slug && currentCategory.parentId) {
+      // Name is being changed but parentId stays the same (and category is a subcategory) - regenerate hierarchical slug
+      data.slug = await this.makeSubcategorySlug(currentCategory.parentId, dto.name);
+    } else if (dto.name && !dto.slug) {
+      // Top-level category name change
+      data.slug = await this.makeUniqueSlug(this.slugify(dto.name), id);
+    } else if (dto.slug) {
+      // Custom slug provided - ensure uniqueness
+      data.slug = await this.makeUniqueSlug(dto.slug, id);
     }
 
-    const updateData: any = { ...rest };
-
-    const cat = await this.prisma.category.update({ where: { id }, data: updateData, include: { children: true } });
+    const { subcategories, ...rest } = data;
+    const cat = await this.prisma.category.update({ where: { id }, data: rest, include: { children: true } });
     return cat;
+  }
+
+  async makeSubcategorySlug(parentId: number, subcategoryName: string, excludeId?: number): Promise<string> {
+    // Get parent category to include its slug
+    const parent = await this.prisma.category.findUnique({ where: { id: parentId } });
+    if (!parent) throw new BadRequestException('Parent category not found');
+
+    // Generate slug: "subcategoryname-parentslug"
+    const subSlug = this.slugify(subcategoryName);
+    const hierarchicalBase = `${subSlug} ${parent.slug}`;
+    
+    // Make it unique
+    return this.makeUniqueSlug(hierarchicalBase, excludeId);
   }
 
   async reorder(items: { id: number; order: number }[]) {
@@ -139,8 +173,14 @@ export class CategoryService {
   }
 
   private slugify(s: string) {
-    return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-  }
+  const slug = s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+
+  return slug.charAt(0).toUpperCase() + slug.slice(1);
+}
+
 
   private async makeUniqueSlug(base: string, excludeId?: number): Promise<string> {
     let candidate = (base || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');

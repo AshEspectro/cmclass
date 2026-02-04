@@ -110,15 +110,17 @@ export const Navbar = () => {
                   isScrolled ? 'scale-30' : 'scale-30'
                 }`}
               >
-                <img
-                   src={brandLogo}
-                  alt="CM CLASS Logo"
-                  className={`mx-auto transition-all duration-300 ${
-                    isScrolled
-                      ? 'w-28 sm:w-32 md:w-36 xl:w-40'
-                      : 'w-32 sm:w-32 md:w-36 xl:w-40'
-                  }`}
-                />
+                {brandLogo && (
+                  <img
+                     src={brandLogo}
+                    alt="CM CLASS Logo"
+                    className={`mx-auto transition-all duration-300 ${
+                      isScrolled
+                        ? 'w-28 sm:w-32 md:w-36 xl:w-40'
+                        : 'w-32 sm:w-32 md:w-36 xl:w-40'
+                    }`}
+                  />
+                )}
               </motion.div>
             </Link>
 

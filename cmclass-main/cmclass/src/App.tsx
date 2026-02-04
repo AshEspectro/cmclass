@@ -5,7 +5,6 @@ import { BrandProvider } from '../admin/context/BrandContext';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
 //import { MenCategory } from './pages/MenCategory';
-import { ProductDetail } from './pages/ProductDetail';
 import { Stories } from './pages/Stories';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
@@ -25,8 +24,6 @@ import Index from '../admin/Admin';
 //import { useConditionalNavbar } from './hooks/useConditionalNavbar';
 
 
-import { useParams } from "react-router-dom";
-import { products_cat } from "./data/products";
 import { SingleProductPage } from "./pages/Single_productpage";
 import { useConditionalNavbar } from './hooks/useConditionalNavbar';
 import Category from './pages/categoriesSinglePage';
@@ -34,16 +31,7 @@ import Cartpage from './pages/Cartpage';
 import WishlistPage from './pages/Wishlist';
 import { AuthProvider } from './contexts/AuthContext';
 import UsersDemo from './components/UsersDemo';
-
-export const SingleProductWrapper = () => {
-  const { id } = useParams();
-  const product = products_cat.find((p) => p.id.toString() === id);
-
-  if (!product) return <div>Product not found</div>;
-
-  return <SingleProductPage product={product} />;
-};
-
+import { CampaignPage } from './pages/CampaignPage';
 
 function AppWrapper() {
   const location = useLocation();
@@ -74,7 +62,7 @@ function AppWrapper() {
                 <Route path="/home" element={<Home />} />
                 <Route path="/homme" element={<Category />} />
                 <Route path="/homme/:subcategory" element={<BagsPage/>} />
-                <Route path="/produit/:id" element={<ProductDetail />} />
+                <Route path="/produit/:id" element={<SingleProductPage />} />
                 <Route path="/stories" element={<Stories />} />
                 <Route path="/alternative-login" element={<AccountPage_A />} />
                 <Route path="/a-propos" element={<About />} />
@@ -90,11 +78,13 @@ function AppWrapper() {
                 <Route path="/nouveautes" element={<Category />} />
                 <Route path="/wishlist" element={<WishlistPage />} />
                 <Route path="/forgot-password" element={<ForgotPwd/>} />
+                <Route path="/campaigns" element={<CampaignPage />} />
                 <Route path="*" element={<Home />} />
+                
                <Route path="/admin" element={<Index />} />
                 <Route path="/users-test" element={<UsersDemo />} />
 
-                <Route path="/product/:id" element={<SingleProductWrapper />} />
+                <Route path="/product/:id" element={<SingleProductPage />} />
               </Routes>
             </main>
 

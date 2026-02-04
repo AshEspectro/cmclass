@@ -1,26 +1,52 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Eye } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { Product } from '../data/products';
 import { useWishlist } from '../contexts/WishlistContext';
 
-interface ProductCardProps {
-  product: Product;
-  onQuickView: (product: Product) => void;
+const normalizeAssetUrl = (url?: string | null) => {
+  if (!url) return '';
+  const doubleHttpMatch = url.match(/^(https?:\/\/[^/]+)(https?:\/\/.*)$/);
+  if (doubleHttpMatch) return doubleHttpMatch[2];
+  return url;
+};
+
+export interface ApiProduct {
+  id: number | string;
+  name: string;
+  price?: number;
+  priceCents?: number;
+  productImage?: string;
+  mannequinImage?: string;
+  label?: string;
+  description?: string;
+  colors?: Array<{ name: string; hex: string; images?: string[] }> | string[];
+  sizes?: string[];
+  stock?: number;
+  inStock?: boolean;
+  categoryId?: number;
+  images?: string[];
+  [key: string]: unknown;
 }
 
-export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+interface ProductCardProps {
+  product: ApiProduct;
+  onQuickView?: (product: ApiProduct) => void;
+}
+
+export const ProductCard = ({ product }: ProductCardProps) => {
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
-  const inWishlist = isInWishlist(product.id);
+  const inWishlist = isInWishlist(product.id as string | number);
+  const imageSrc = normalizeAssetUrl(
+    product.productImage || (Array.isArray(product.images) ? product.images[0] : undefined)
+  );
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (inWishlist) {
-      removeFromWishlist(product.id);
+      removeFromWishlist(product.id as string | number);
     } else {
-      addToWishlist(product);
+      addToWishlist(product as any);
     }
   };
 
@@ -31,31 +57,18 @@ export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <Link to={`/product/${product.id}`} className="block relative overflow-hidden">
         {/* Image */}
         <div className="aspect-3/4 bg-gray-100 relative">
-          {/* Hover Overlay */}
-          <motion.div
-            className="absolute inset-0 bg-[#007B8A]/20 flex items-center justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                onQuickView(product);
-              }}
-              className="bg-white text-black px-6 py-3 flex items-center gap-2 hover:bg-[#007B8A] hover:text-white transition-all duration-300 hover:scale-105"
-            >
-              <Eye size={18} />
-              <span className="text-sm">APERÇU RAPIDE</span>
-            </button>
-          </motion.div>
-
+          {imageSrc && (
+            <img
+              src={imageSrc}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+          )}
+          
           {/* Wishlist Button */}
           <button
             onClick={handleWishlistClick}
@@ -80,7 +93,7 @@ export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
         {/* Product Info */}
         <div className="mt-4">
   <p className="text-sm font-medium">{product.name}</p>
-  <p className="hidden text-cyan-700 text-sm md:block">{product.price.toLocaleString('fr-FR')} FC</p>
+  <p className="hidden text-cyan-700 text-sm md:block">{((product.price || product.priceCents) ? (product.price || (product.priceCents as number) / 100) : 0).toLocaleString('fr-FR')} FC</p>
 </div>
 
       </Link>

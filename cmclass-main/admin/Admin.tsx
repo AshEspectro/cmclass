@@ -24,6 +24,12 @@ function Index() {
   const lastSignupRef = useRef<{ email: string; password: string } | null>(null);
 
   useEffect(() => {
+    // Check if token exists in storage on mount (page refresh persistence)
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    if (token) {
+      setIsAuthenticated(true);
+    }
+
     // fetch public brand data (logo/name)
     fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/brand')
       .then(r => r.json())
@@ -100,8 +106,19 @@ function Index() {
 
               const token = data?.access_token;
               if (token) {
-                if (payload.remember) localStorage.setItem('access_token', token);
-                else sessionStorage.setItem('access_token', token);
+                console.log('✓ Token received from backend:', token.substring(0, 20) + '...');
+                if (payload.remember) {
+                  localStorage.setItem('access_token', token);
+                  console.log('✓ Token stored in localStorage');
+                } else {
+                  sessionStorage.setItem('access_token', token);
+                  console.log('✓ Token stored in sessionStorage');
+                }
+                // Verify it was stored
+                const stored = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+                console.log('✓ Token verification:', !!stored);
+              } else {
+                console.warn('✗ No access_token in response:', data);
               }
               setMessage({ type: 'success', text: 'Connecté avec succès' });
               setIsAuthenticated(true);

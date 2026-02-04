@@ -36,4 +36,12 @@ export class UpdateBrandDto {
   @IsOptional()
   @IsString()
   faviconUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  servicesHeaderTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  servicesHeaderDescription?: string;
 }

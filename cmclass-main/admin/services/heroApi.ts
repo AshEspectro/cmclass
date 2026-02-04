@@ -1,6 +1,6 @@
 // Hero section API service
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const BACKEND_URL = (import.meta as any).env.VITE_BACKEND_URL || 'http://localhost:3000';
+const BACKEND_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3000';
 
 export interface HeroData {
   id?: number;
@@ -16,15 +16,34 @@ export interface HeroData {
   updatedAt?: string;
 }
 
+// Helper to get token from various storage locations
+function getToken(): string | null {
+  // Try localStorage first
+  let token = localStorage.getItem('token');
+  if (token) return token;
+  
+  // Try sessionStorage
+  token = sessionStorage.getItem('token');
+  if (token) return token;
+  
+  // Try alternative key names
+  token = localStorage.getItem('access_token');
+  if (token) return token;
+  
+  token = sessionStorage.getItem('access_token');
+  if (token) return token;
+  
+  return null;
+}
+
 export const heroApi = {
-  // Get current hero section
+  // Get current hero section (public endpoint)
   async getHero(): Promise<HeroData> {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${BACKEND_URL}/admin/hero`, {
+    const response = await fetch(`${BACKEND_URL}/hero`, {
       headers: {
-        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      credentials: 'include', // Send cookies (for refresh_token)
     });
 
     if (!response.ok) {
@@ -32,18 +51,19 @@ export const heroApi = {
     }
 
     const result = await response.json();
-    return result.data;
+    return result;
   },
 
   // Update hero section
   async updateHero(data: Partial<HeroData>): Promise<HeroData> {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const response = await fetch(`${BACKEND_URL}/admin/hero`, {
       method: 'PATCH',
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify(data),
     });
 
@@ -57,15 +77,16 @@ export const heroApi = {
 
   // Upload hero background image
   async uploadBackgroundImage(file: File): Promise<string> {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const formData = new FormData();
     formData.append('file', file);
 
     const response = await fetch(`${BACKEND_URL}/admin/hero/upload`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
+      credentials: 'include',
       body: formData,
     });
 
@@ -79,15 +100,16 @@ export const heroApi = {
 
   // Upload hero background video
   async uploadBackgroundVideo(file: File): Promise<string> {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const formData = new FormData();
     formData.append('file', file);
 
     const response = await fetch(`${BACKEND_URL}/admin/hero/upload-video`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
+      credentials: 'include',
       body: formData,
     });
 

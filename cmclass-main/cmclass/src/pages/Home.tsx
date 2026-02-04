@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Hero } from '../components/Hero';
 import { ProductCard } from '../components/ProductCard';
 import { QuickViewModal } from '../components/QuickViewModal';
 //import { Newsletter } from '../components/Newsletter';
-import { products } from '../data/products';
 import type { Product } from '../data/products';
 import { CategoryHero } from '../components/CollectionHero';
 import { Services } from '../components/ServiceSection';
+import { campaignsApi, type Campaign } from '../services/campaignsApi';
+import { publicApi } from '../services/publicApi';
 
 // Video for hero (Pexels free download)
 const heroVideo = '/videos/homme-hero1.mp4';
@@ -26,8 +27,107 @@ const collectionImage2 =
 
 export const Home = () => {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [servicesHeader, setServicesHeader] = useState({ title: 'les services CMClass', description: "La marque CMClass offre une mode sur mesure, avec pièces exclusives et services personnalisés.\nChaque vêtement reflète l’excellence artisanale et un style contemporain affirmé.." });
+  const [servicesItems, setServicesItems] = useState<any[]>([]);
+  const [productsData, setProductsData] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
 
-  const featuredProducts = products.filter((p) => p.category === 'HOMME').slice(0, 8);
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      const data = await campaignsApi.getCampaigns();
+      setCampaigns(data);
+    };
+    fetchCampaigns();
+  }, []);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setProductsLoading(true);
+      try {
+        const data = await publicApi.getProducts();
+        const mapped: Product[] = (data || []).map((p: any) => {
+          const numericPrice = Number(String(p.price ?? 0).replace(/[^0-9.-]+/g, ""));
+          return {
+            id: String(p.id),
+            name: p.name || '',
+            price: Number.isFinite(numericPrice) ? numericPrice : 0,
+            category: p.category || 'COLLECTION',
+            subcategory: '',
+            image: p.productImage || p.images?.[0] || '',
+            images: Array.isArray(p.images) ? p.images : [],
+            description: p.description || p.longDescription || '',
+            sizes: Array.isArray(p.sizes) ? p.sizes : [],
+            colors: Array.isArray(p.colors)
+              ? p.colors
+                  .map((c: any) => (typeof c === 'string' ? c : c?.hex))
+                  .filter(Boolean)
+              : [],
+            inStock: p.inStock !== false,
+          };
+        });
+        setProductsData(mapped);
+      } catch (err) {
+        console.error('Failed to load products', err);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const brand = await publicApi.getBrand();
+        const services = await publicApi.getServices();
+
+        // Check for local override saved by Content Manager (localStorage)
+        let localHeader: { title?: string; description?: string } | null = null;
+        try {
+          const raw = localStorage.getItem('cmclass_services_header');
+          if (raw) localHeader = JSON.parse(raw);
+        } catch (e) {
+          console.warn('Failed to parse local services header', e);
+        }
+
+        // Use local header when available, otherwise prefer persisted brand service header, then fall back
+        const title = (localHeader && localHeader.title) || brand.servicesHeaderTitle || brand.slogan || brand.name || servicesHeader.title;
+        const description = (localHeader && localHeader.description) || brand.servicesHeaderDescription || brand.description || servicesHeader.description;
+
+        setServicesHeader({ title, description });
+
+        // Map services to items shape expected by Services component
+        const items = (services || []).map((s: any) => ({
+          image: s.imageUrl,
+          title: s.title,
+          description: s.description,
+          link: s.link || '#',
+        }));
+        setServicesItems(items);
+      } catch (err) {
+        console.error('Error loading services', err);
+      }
+    };
+
+    fetchServices();
+
+    // Listen for admin-saved updates in same window
+    const onHeaderUpdated = () => fetchServices();
+    window.addEventListener('cmclass_services_header_updated', onHeaderUpdated);
+
+    // Also listen for storage events (other tabs) when ContentManager writes to localStorage
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'cmclass_services_header') fetchServices();
+    };
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener('cmclass_services_header_updated', onHeaderUpdated);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
 
   return (
     <div className="overflow-hidden">
@@ -41,7 +141,7 @@ export const Home = () => {
        ctaText="DÉCOUVRIR"
        ctaLink="/homme"
       />
-
+<div className='text-xxl'>Lalala</div>
 
       {/* Featured Collections*/}
       <section className="  py-8 lg:py-8 ">
@@ -53,7 +153,7 @@ export const Home = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            Explorer une sélection de créations de la marque
+            Explorer une sélection de lolo khklhioiioioiopcréations de la marque
           </motion.h3>
 
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
@@ -139,142 +239,57 @@ export const Home = () => {
       
  
  
- 
-      <section className='mb-32'>
-  <CategoryHero categoryTitle="Homme" subCategoryIndex={0} />
+ {/*Campaigns section*/}
+      {campaigns.map((campaign) => {
+        // Get products for this campaign
+        const campaignProducts = productsData.filter((p) => 
+          campaign.selectedProductIds?.includes(Number(p.id))
+        ).slice(0, 4);
 
-  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-4 md:gap-5 lg:gap-8">
-      {featuredProducts.slice(0, 4).map((product) => (
-        <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
-      ))}
-    </div>
+        return (
+          <section key={campaign.id} className='mb-32'>
+            <CategoryHero categoryTitle={campaign.genreText || 'Campagne'} subCategoryIndex={0} />
 
-    <motion.div
-      className="text-center mt-8 sm:mt-10 md:mt-12"
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-    >
-      <Link
-        to="/homme"
-        className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base transition-all duration-300 rounded-4xl"
-      >
-        Découvrir la collection
-      </Link>
-    </motion.div>
-  </div>
-      </section>
-  
-  
-  
-  
-  
-      <section className='mb-32'>
-  <CategoryHero categoryTitle="Parfums et Beauté" subCategoryIndex={0} />
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-4 md:gap-5 lg:gap-8">
+                {productsLoading ? (
+                  <p className="col-span-full text-center text-gray-500">Chargement des produits...</p>
+                ) : campaignProducts.length > 0 ? (
+                  campaignProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
+                  ))
+                ) : (
+                  <p className="col-span-full text-center text-gray-500">Aucun produit sélectionné pour cette campagne</p>
+                )}
+              </div>
 
-  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-4 md:gap-5 lg:gap-8">
-      {featuredProducts.slice(0, 4).map((product) => (
-        <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
-      ))}
-    </div>
+              <motion.div
+                className="text-center mt-8 sm:mt-10 md:mt-12"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <Link
+                  to={`/category?campaign=${campaign.id}`}
+                  className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base transition-all duration-300 rounded-4xl"
+                >
+                  {campaign.buttonText || 'Découvrir la collection'}
+                </Link>
+              </motion.div>
+            </div>
+          </section>
+        );
+      })}
+      
 
-    <motion.div
-      className="text-center mt-8 sm:mt-10 md:mt-12"
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-    >
-      <Link
-        to="/homme"
-        className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base transition-all duration-300 rounded-4xl"
-      >
-        Découvrir la collection
-      </Link>
-    </motion.div>
-  </div>
-      </section>
-      <section className='mb-32'>
-  <CategoryHero categoryTitle="Femme" subCategoryIndex={5} />
 
-  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-4 md:gap-5 lg:gap-8">
-      {featuredProducts.slice(0, 4).map((product) => (
-        <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
-      ))}
-    </div>
-
-    <motion.div
-      className="text-center mt-8 sm:mt-10 md:mt-12"
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-    >
-      <Link
-        to="/homme"
-        className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base transition-all duration-300 rounded-4xl"
-      >
-        Découvrir la collection
-      </Link>
-    </motion.div>
-  </div>
-      </section>
-      <section className='mb-32 '>
-  <CategoryHero categoryTitle="Joaillerie" subCategoryIndex={0} />
-
-  <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-4 md:gap-5 lg:gap-8">
-      {featuredProducts.slice(0, 4).map((product) => (
-        <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
-      ))}
-    </div>
-
-    <motion.div
-      className="text-center mt-8 sm:mt-10 md:mt-12"
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-    >
-      <Link
-        to="/homme"
-        className="inline-block border hover:border-2 font-medium text-black px-6 sm:px-8 md:px-8 py-3 sm:py-4 lg:py-3 text-sm sm:text-base transition-all duration-300 rounded-4xl"
-      >
-        Découvrir la collection
-      </Link>
-    </motion.div>
-  </div>
-      </section>
-
+      {/* Services Section */}
       <Services
-  title="les services CMClass"
-  description="La marque CMClass offre une mode sur mesure, avec pièces exclusives et services personnalisés.
-Chaque vêtement reflète l’excellence artisanale et un style contemporain affirmé.."
-  items={[
-    {
-      image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80",
-      title: "Sur mesure",
-      description: "explorer",
-      link: "/homme",
-    },
-    {
-      image: "https://images.unsplash.com/photo-1520975918311-7ce9d52f67e4?auto=format&fit=crop&w=800&q=80",
-      title: "Selection exclusive",
-      description: "Pièces choisis pour vous",
-      link: "/homme/pantalons",
-    },
-    {
-      image: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80",
-      title: "Services",
-      description: "Nous contacter",
-      link: "/pages/Contact",
-    },
-  ]}
-/>
+        title={servicesHeader.title}
+        description={servicesHeader.description}
+        items={servicesItems}
+      />
 
 
       {/* About Section 

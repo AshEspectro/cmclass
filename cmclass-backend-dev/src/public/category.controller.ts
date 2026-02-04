@@ -18,12 +18,23 @@ export class PublicCategoryController {
       title: c.name,
       slug: c.slug,
       link: `/${c.slug || c.name.toLowerCase().replace(/\s+/g, '-')}`,
+      imageUrl: c.imageUrl || null,
+      description: c.description || null,
       subcategories: c.children.map((ch) => ({
         id: ch.id,
         name: ch.name,
         slug: ch.slug,
         link: `/${ch.slug || ch.name.toLowerCase().replace(/\s+/g, '-')}`,
-        children: ch.children?.map((g) => ({ id: g.id, name: g.name, slug: g.slug, link: `/${g.slug || g.name.toLowerCase().replace(/\s+/g, '-')}` })) || [],
+        imageUrl: ch.imageUrl || null,
+        description: ch.description || null,
+        children: ch.children?.map((g) => ({ 
+          id: g.id, 
+          name: g.name, 
+          slug: g.slug, 
+          link: `/${g.slug || g.name.toLowerCase().replace(/\s+/g, '-')}`,
+          imageUrl: g.imageUrl || null,
+          description: g.description || null,
+        })) || [],
       })),
     }));
 

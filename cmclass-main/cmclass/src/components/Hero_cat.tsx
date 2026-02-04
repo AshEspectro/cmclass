@@ -87,19 +87,81 @@ import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
 
 
 import { products_cat } from "../data/products";
+import { publicApi } from "../services/publicApi";
 
 interface ProductGridProps {
   limit?: number; // optional
 }
 
 export function ProductGrid({ limit }: ProductGridProps) {
-  const items = limit ? products_cat.slice(0, limit) : products_cat;
+  const [items, setItems] = useState<Product_cat[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await publicApi.getProducts();
+        const mapped: Product_cat[] = Array.isArray(data)
+          ? data.map((p: any) => {
+              const price =
+                typeof p.price === "string"
+                  ? p.price
+                  : typeof p.price === "number"
+                    ? `${p.price.toFixed(2)}$`
+                    : typeof p.priceCents === "number"
+                      ? `${(p.priceCents / 100).toFixed(2)}$`
+                      : "0.00$";
+
+              const colors = Array.isArray(p.colors)
+                ? p.colors.map((c: any) =>
+                    typeof c === "string"
+                      ? { hex: c, images: [] }
+                      : { hex: c?.hex || "#000000", images: Array.isArray(c?.images) ? c.images : [] }
+                  )
+                : [];
+
+              return {
+                id: Number(p.id),
+                label: p.label || "",
+                name: p.name || "",
+                price,
+                longDescription: p.longDescription || p.description || "",
+                productImage: p.productImage || p.images?.[0] || "",
+                mannequinImage: p.mannequinImage || p.images?.[1] || p.productImage || "",
+                colors,
+                sizes: Array.isArray(p.sizes) ? p.sizes : [],
+              };
+            })
+          : [];
+
+        if (mounted) setItems(mapped);
+      } catch (err) {
+        console.error("Failed to load products for grid", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const sourceItems = items.length > 0 ? items : products_cat;
+  const limitedItems = limit ? sourceItems.slice(0, limit) : sourceItems;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 w-full">
-      {items.map((p) => (
+      {loading && items.length === 0 ? (
+        <div className="col-span-full text-center text-gray-500 py-6">
+          Chargement des produits...
+        </div>
+      ) : (
+        limitedItems.map((p) => (
         <ProductCard key={p.id} product_cat={p} />
-      ))}
+      )))}
     </div>
   );
 }
@@ -114,6 +176,13 @@ export function ProductGrid({ limit }: ProductGridProps) {
 import { useWishlist } from "../contexts/WishlistContext";
 import type { Product_cat } from "../data/products";
 import { Link } from "react-router-dom";
+
+const normalizeAssetUrl = (url?: string | null) => {
+  if (!url) return '';
+  const doubleHttpMatch = url.match(/^(https?:\/\/[^/]+)(https?:\/\/.*)$/);
+  if (doubleHttpMatch) return doubleHttpMatch[2];
+  return url;
+};
 
 interface ProductCardProps {
   product_cat: Product_cat;
@@ -144,8 +213,11 @@ export function ProductCard({ product_cat }: ProductCardProps) {
     }
   }, [showToast]);
 
-  const colorImages =
-    product_cat.colors.find((c) => c.hex === selectedColor)?.images || [];
+  const colorImages = (product_cat.colors.find((c) => c.hex === selectedColor)?.images || [])
+    .map((img) => normalizeAssetUrl(img))
+    .filter(Boolean);
+  const productImage = normalizeAssetUrl(product_cat.productImage);
+  const mannequinImage = normalizeAssetUrl(product_cat.mannequinImage);
 
   const prev = () =>
     setIndex((i) => (i === 0 ? colorImages.length - 1 : i - 1));
@@ -162,7 +234,7 @@ export function ProductCard({ product_cat }: ProductCardProps) {
       >
         {/* Default image */} <Link to={`/product/${product_cat.id}`} >{/* IMAGE AREA */}
         <img
-          src={product_cat.productImage}
+          src={productImage}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
             hoveringImage ? "opacity-0" : "opacity-100"
           }`}
@@ -170,7 +242,7 @@ export function ProductCard({ product_cat }: ProductCardProps) {
 
         {/* Mannequin image on hover */}
         <img
-          src={product_cat.mannequinImage}
+          src={mannequinImage}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
             hoveringImage ? "opacity-100" : "opacity-0"
           }`}
@@ -260,7 +332,7 @@ export function ProductCard({ product_cat }: ProductCardProps) {
     <div className="bg-[#007B8A] mx-4 md:mx-16 text-white rounded-lg shadow-lg flex items-center gap-3 transition-opacity duration-300 pointer-events-auto">
       {/* Image du produit */}
       <img
-        src={product_cat.productImage}
+        src={productImage}
         alt={product_cat.name}
         className="w-16 md:w-24 h-16 md:h-24 rounded-l-lg object-cover"
       />

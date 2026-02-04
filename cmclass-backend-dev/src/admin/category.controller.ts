@@ -75,6 +75,22 @@ export class CategoryController {
     return { url };
   }
 
+  @Post(':parentId/subcategories')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async createSubcategory(
+    @Param('parentId', ParseIntPipe) parentId: number,
+    @Body() body: CreateCategoryDto
+  ) {
+    // Generate hierarchical slug
+    const slug = await this.svc.makeSubcategorySlug(parentId, body.name);
+    const c = await this.svc.create({
+      ...body,
+      slug,
+      parentId,
+    } as any);
+    return { data: c };
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   async get(@Param('id', ParseIntPipe) id: number) {

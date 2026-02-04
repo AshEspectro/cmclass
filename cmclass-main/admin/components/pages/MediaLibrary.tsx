@@ -71,18 +71,18 @@ export function MediaLibrary() {
             </>
           )}
           <div className="flex border border-gray-200 rounded overflow-hidden">
-            <button
+            <Button
               onClick={() => setViewMode('grid')}
               className={`p-2 ${viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'} transition-colors`}
             >
               <Grid3x3 size={18} strokeWidth={1.5} />
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setViewMode('list')}
               className={`p-2 ${viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'} transition-colors border-l border-gray-200`}
             >
               <List size={18} strokeWidth={1.5} />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -169,12 +169,12 @@ export function MediaLibrary() {
                     <td className="px-6 py-4 text-gray-600">{item.date}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <Button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                           <Download size={16} className="text-gray-600" strokeWidth={1.5} />
-                        </button>
-                        <button className="p-2 hover:bg-red-50 rounded-full transition-colors">
+                        </Button>
+                        <Button className="p-2 hover:bg-red-50 rounded-full transition-colors">
                           <Trash2 size={16} className="text-red-500" strokeWidth={1.5} />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>

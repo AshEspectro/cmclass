@@ -1,24 +1,43 @@
 import { useState } from 'react';
 import { X, Heart, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { Product } from '../data/products';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { Link } from 'react-router-dom';
 
+export interface ApiProduct {
+  id: number | string;
+  name: string;
+  price?: number;
+  priceCents?: number;
+  productImage?: string;
+  mannequinImage?: string;
+  label?: string;
+  description?: string;
+  colors?: Array<{ name: string; hex: string; images?: string[] }> | string[];
+  sizes?: string[];
+  stock?: number;
+  inStock?: boolean;
+  categoryId?: number;
+  images?: string[];
+  [key: string]: unknown;
+}
 
 interface QuickViewModalProps {
-  product: Product;
+  product: ApiProduct;
   onClose: () => void;
 }
 
 export const QuickViewModal = ({ product, onClose }: QuickViewModalProps) => {
-  const [selectedSize, setSelectedSize] = useState(product.sizes[0] || '');
-  const [selectedColor, setSelectedColor] = useState(product.colors[0] || '');
+  const defaultSize = Array.isArray(product.sizes) && product.sizes.length > 0 ? (typeof product.sizes[0] === 'string' ? product.sizes[0] : '') : '';
+  const defaultColor = Array.isArray(product.colors) && product.colors.length > 0 ? (typeof product.colors[0] === 'string' ? product.colors[0] : (product.colors[0] as any)?.hex || '') : '';
+  
+  const [selectedSize, setSelectedSize] = useState(defaultSize);
+  const [selectedColor, setSelectedColor] = useState(defaultColor);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
-  const inWishlist = isInWishlist(product.id);
+  const inWishlist = isInWishlist(product.id as string | number);
   void quantity;
 void setQuantity;
 
@@ -27,16 +46,16 @@ void setQuantity;
       addToCart({
         ...product,
         colors: [{ hex: selectedColor, images: [] }]
-      }, selectedSize, selectedColor, quantity);
+      } as any, selectedSize, selectedColor, quantity);
       onClose();
     }
   };
 
   const handleWishlistClick = () => {
     if (inWishlist) {
-      removeFromWishlist(product.id);
+      removeFromWishlist(product.id as string | number);
     } else {
-      addToWishlist(product);
+      addToWishlist(product as any);
     }
   };
 
@@ -77,16 +96,16 @@ void setQuantity;
               {/* Details */}
               <div>
                 <h2 className="mb-3 sm:mb-4 text-xl sm:text-2xl">{product.name}</h2>
-                <p className="text-xl sm:text-2xl mb-4 sm:mb-6">{product.price.toLocaleString('fr-FR')} FC</p>
+                <p className="text-xl sm:text-2xl mb-4 sm:mb-6">{((product.price || product.priceCents) ? (product.price || (product.priceCents as number) / 100) : 0).toLocaleString('fr-FR')} FC</p>
 
                 <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">{product.description}</p>
 
                 {/* Size Selection */}
-                {product.sizes.length > 0 && (
+                {Array.isArray(product.sizes) && product.sizes.length > 0 && (
                   <div className="mb-4 sm:mb-6">
                     <label className="block text-xs sm:text-sm mb-2 sm:mb-3">TAILLE</label>
                     <div className="flex flex-wrap gap-2">
-                      {product.sizes.map((size :string) => (
+                      {product.sizes.map((size: string) => (
                         <button
                           key={size}
                           onClick={() => setSelectedSize(size)}
@@ -104,23 +123,27 @@ void setQuantity;
                 )}
 
                 {/* Color Selection */}
-                {product.colors.length > 0 && (
+                {Array.isArray(product.colors) && product.colors.length > 0 && (
                   <div className="mb-6 sm:mb-8">
                     <label className="block text-xs sm:text-sm mb-2 sm:mb-3">COULEUR</label>
                     <div className="flex flex-wrap gap-2">
-                      {product.colors.map((color: string) => (
+                      {product.colors.map((color: any) => {
+                        const colorValue = typeof color === 'string' ? color : color?.hex || '';
+                        const colorDisplay = typeof color === 'string' ? color : color?.name || color?.hex || '';
+                        return (
                         <button
-                          key={String(color)}
-                          onClick={() => setSelectedColor(color)}
+                          key={colorValue}
+                          onClick={() => setSelectedColor(colorValue)}
                           className={`px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base border transition-all duration-300 ${
-                            selectedColor === color
+                            selectedColor === colorValue
                               ? 'border-[#007B8A] bg-[#007B8A] text-white'
                               : 'border-gray-300 hover:border-black'
                           }`}
                         >
-                          {color}
+                          {colorDisplay}
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

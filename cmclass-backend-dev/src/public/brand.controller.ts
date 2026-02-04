@@ -15,8 +15,12 @@ export class PublicBrandController {
 
     return {
       name: brand.name,
+      slogan: brand.slogan || null,
+      description: brand.description || null,
       logoUrl: logo,
       faviconUrl: favicon,
+      servicesHeaderTitle: brand.servicesHeaderTitle || null,
+      servicesHeaderDescription: brand.servicesHeaderDescription || null,
     }
   }
 }
