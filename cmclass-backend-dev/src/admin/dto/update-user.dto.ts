@@ -15,4 +15,40 @@ export class UpdateUserDto {
 
   @IsOptional()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+
+  @IsOptional()
+  @IsString()
+  phoneCountryCode?: string;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  dateOfBirth?: string;
+
+  @IsOptional()
+  marketingOptIn?: boolean;
+
+  @IsOptional()
+  marketingEmails?: boolean;
+
+  @IsOptional()
+  marketingSms?: boolean;
+
+  @IsOptional()
+  marketingTargetedAds?: boolean;
 }

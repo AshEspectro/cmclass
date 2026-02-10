@@ -28,6 +28,36 @@ export const getAuthToken = (): string | null => {
   return null;
 };
 
+export const setAuthToken = (token: string) => {
+  if (localStorage.getItem('access_token') !== null) {
+    localStorage.setItem('access_token', token);
+    return;
+  }
+  if (sessionStorage.getItem('access_token') !== null) {
+    sessionStorage.setItem('access_token', token);
+    return;
+  }
+  if (localStorage.getItem('token') !== null) {
+    localStorage.setItem('access_token', token);
+    return;
+  }
+  if (sessionStorage.getItem('token') !== null) {
+    sessionStorage.setItem('access_token', token);
+    return;
+  }
+
+  // Default to session storage to avoid forcing "remember me"
+  sessionStorage.setItem('access_token', token);
+};
+
+const notifyUnauthorized = () => {
+  try {
+    window.dispatchEvent(new Event('cmclass:unauthorized'));
+  } catch (e) {
+    // ignore
+  }
+};
+
 export const apiHeaders = (contentType = 'application/json') => {
   const token = getAuthToken();
   const headers = {
@@ -53,13 +83,67 @@ export const createFetchOptions = (method: string = 'GET', body?: any, contentTy
   return options;
 };
 
+export const refreshAccessToken = async () => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+    if (!response.ok) return null;
+    const json = await response.json();
+    const token = json?.access_token;
+    if (!token) return null;
+    setAuthToken(token);
+    return token as string;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const fetchWithAuth = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+  const makeInit = (token?: string) => {
+    const headers = new Headers(init.headers || {});
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    const hasContentType = headers.has('Content-Type');
+    const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
+    if (!hasContentType && !isFormData) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    return {
+      ...init,
+      headers,
+      credentials: init.credentials ?? 'include',
+    };
+  };
+
+  const token = getAuthToken() || undefined;
+  let response = await fetch(input, makeInit(token));
+  if (response.status !== 401) return response;
+
+  const refreshed = await refreshAccessToken();
+  if (!refreshed) {
+    notifyUnauthorized();
+    return response;
+  }
+
+  response = await fetch(input, makeInit(refreshed));
+  if (response.status === 401) {
+    notifyUnauthorized();
+  }
+  return response;
+};
+
 // Products API
 export const productsAPI = {
   list: async (search = '', page = 1, pageSize = 20) => {
     const url = `${BACKEND_URL}/admin/products?search=${encodeURIComponent(search)}&page=${page}&pageSize=${pageSize}`;
     const options = createFetchOptions('GET');
     
-    const response = await fetch(url, options);
+    const response = await fetchWithAuth(url, options);
     
     if (!response.ok) {
       let errorMsg = 'Failed to fetch products';
@@ -75,9 +159,7 @@ export const productsAPI = {
   },
 
   get: async (id: number) => {
-    const response = await fetch(`${BACKEND_URL}/admin/products/${id}`, 
-      createFetchOptions('GET')
-    );
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/products/${id}`, createFetchOptions('GET'));
     if (!response.ok) {
       let errorMsg = 'Failed to fetch product';
       try {
@@ -113,9 +195,7 @@ export const productsAPI = {
 
     console.log('📦 Creating product with data:', cleanData);
 
-    const response = await fetch(`${BACKEND_URL}/admin/products`,
-      createFetchOptions('POST', cleanData)
-    );
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/products`, createFetchOptions('POST', cleanData));
     if (!response.ok) {
       let errorMsg = 'Failed to create product';
       try {
@@ -151,9 +231,7 @@ export const productsAPI = {
 
     console.log(`📝 Updating product ${id} with data:`, cleanData);
 
-    const response = await fetch(`${BACKEND_URL}/admin/products/${id}`,
-      createFetchOptions('PATCH', cleanData)
-    );
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/products/${id}`, createFetchOptions('PATCH', cleanData));
     if (!response.ok) {
       let errorMsg = 'Failed to update product';
       try {
@@ -169,9 +247,7 @@ export const productsAPI = {
   },
 
   delete: async (id: number) => {
-    const response = await fetch(`${BACKEND_URL}/admin/products/${id}`,
-      createFetchOptions('DELETE')
-    );
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/products/${id}`, createFetchOptions('DELETE'));
     if (!response.ok) {
       let errorMsg = 'Failed to delete product';
       try {
@@ -188,12 +264,8 @@ export const productsAPI = {
   upload: async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    const token = getAuthToken();
-    const response = await fetch(`${BACKEND_URL}/admin/products/upload`, {
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/products/upload`, {
       method: 'POST',
-      headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       credentials: 'include',
       body: formData,
     });
@@ -214,13 +286,13 @@ export const productsAPI = {
 // Brand admin API (get & update singleton)
 export const brandAPI = {
   get: async () => {
-    const response = await fetch(`${BACKEND_URL}/admin/brand`, createFetchOptions('GET'));
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/brand`, createFetchOptions('GET'));
     if (!response.ok) throw new Error('Failed to fetch brand');
     const json = await response.json();
     return json.data || json;
   },
   update: async (data: any) => {
-    const response = await fetch(`${BACKEND_URL}/admin/brand`, createFetchOptions('PATCH', data));
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/brand`, createFetchOptions('PATCH', data));
     if (!response.ok) {
       let errorMsg = 'Failed to update brand';
       try { const error = await response.json(); errorMsg = error.message || error.error || errorMsg; } catch (e) {}
@@ -234,7 +306,7 @@ export const brandAPI = {
 // Categories API
 export const categoriesAPI = {
   list: async (search = '', page = 1, pageSize = 20, includeInactive = false) => {
-    const response = await fetch(
+    const response = await fetchWithAuth(
       `${BACKEND_URL}/admin/categories?search=${encodeURIComponent(search)}&page=${page}&pageSize=${pageSize}&includeInactive=${includeInactive}`,
       createFetchOptions('GET')
     );
@@ -252,9 +324,7 @@ export const categoriesAPI = {
   },
 
   getAll: async () => {
-    const response = await fetch(`${BACKEND_URL}/admin/categories?pageSize=1000`,
-      createFetchOptions('GET')
-    );
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/categories?pageSize=1000`, createFetchOptions('GET'));
     if (!response.ok) {
       let errorMsg = 'Failed to fetch categories';
       try {
@@ -269,9 +339,7 @@ export const categoriesAPI = {
   },
 
   get: async (id: number) => {
-    const response = await fetch(`${BACKEND_URL}/admin/categories/${id}`,
-      createFetchOptions('GET')
-    );
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/categories/${id}`, createFetchOptions('GET'));
     if (!response.ok) {
       let errorMsg = 'Failed to fetch category';
       try {
@@ -286,26 +354,41 @@ export const categoriesAPI = {
   },
 
   create: async (data: any) => {
-    const response = await fetch(`${BACKEND_URL}/admin/categories`,
-      createFetchOptions('POST', data)
-    );
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/categories`, createFetchOptions('POST', data));
     if (!response.ok) throw new Error('Failed to create category');
     return response.json();
   },
 
   update: async (id: number, data: any) => {
-    const response = await fetch(`${BACKEND_URL}/admin/categories/${id}`,
-      createFetchOptions('PATCH', data)
-    );
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/categories/${id}`, createFetchOptions('PATCH', data));
     if (!response.ok) throw new Error('Failed to update category');
     return response.json();
   },
 
   delete: async (id: number) => {
-    const response = await fetch(`${BACKEND_URL}/admin/categories/${id}`,
-      createFetchOptions('DELETE')
-    );
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/categories/${id}`, createFetchOptions('DELETE'));
     if (!response.ok) throw new Error('Failed to delete category');
+    return response.json();
+  },
+};
+
+// Clients API
+export const clientsAPI = {
+  list: async (search = '') => {
+    const response = await fetchWithAuth(
+      `${BACKEND_URL}/admin/users/clients?search=${encodeURIComponent(search)}`,
+      createFetchOptions('GET')
+    );
+    if (!response.ok) {
+      let errorMsg = 'Failed to fetch clients';
+      try {
+        const error = await response.json();
+        errorMsg = error.message || error.error || errorMsg;
+      } catch (e) {
+        // ignore
+      }
+      throw new Error(errorMsg);
+    }
     return response.json();
   },
 };

@@ -1,8 +1,25 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { authApi } from "../services/authApi";
 
 export default function ForgotPwd() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+    try {
+      await authApi.forgotPassword(email);
+      setMessage({ type: 'success', text: "Si un compte existe pour cet e-mail, vous recevrez un lien de réinitialisation." });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err?.message || "Une erreur est survenue." });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const Info = () => (
     <div className="bg-gray-50 border border-none px-8 py-10 w-full max-w-lg mx-auto">
@@ -25,7 +42,7 @@ export default function ForgotPwd() {
 
         {/* SECTION GAUCHE */}
         <main className="col-span-1 md:col-span-2 w-full md:max-w-3xl">
-          
+
           {/* Bouton retour */}
           <Link to="/login">
             <button className="text-sm text-gray-600 hover:underline mb-6">&larr; Se connecter</button>
@@ -36,10 +53,10 @@ export default function ForgotPwd() {
 
           <p className="text-sm text-gray-700 mb-10 w-[90%]">
             Pour réinitialiser votre mot de passe, veuillez nous fournir votre adresse e-mail. Nous vous enverrons un message dans quelques instants.
-Pour toute aide supplémentaire, veuillez contacter le Service Clients.</p>
+            Pour toute aide supplémentaire, veuillez contacter le Service Clients.</p>
 
           {/* FORMULAIRE */}
-          <form className="space-y-8">
+          <form className="space-y-8" onSubmit={handleSubmit}>
 
             {/* Champ email */}
             <div className="flex flex-col">
@@ -50,23 +67,31 @@ Pour toute aide supplémentaire, veuillez contacter le Service Clients.</p>
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border border-gray-300 px-4 py-3 rounded-md focus:outline-none focus:border-black text-sm"
+                required
               />
             </div>
+
+            {message && (
+              <p className={`text-xs ${message.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                {message.text}
+              </p>
+            )}
 
             {/* CTA */}
             <div className="flex flex-col items-center md:items-end mt-auto">
               <button
                 type="submit"
-                className="bg-black text-white py-3 w-xs rounded-3xl text-sm tracking-wide hover:bg-gray-800 transition"
+                disabled={loading}
+                className="bg-black text-white py-3 w-xs rounded-3xl text-sm tracking-wide hover:bg-gray-800 transition disabled:bg-gray-400"
               >
-                Envoyer
+                {loading ? "Envoi..." : "Envoyer"}
               </button>
 
               {/* Lien créer un compte */}
               <div className="flex flex-col mt-8 text-center w-xs pr-0 md:pr-36 md:text-start">
                 <p className="font-medium text-sm">Vous n'avez pas de compte ?</p>
-                <Link 
-                  to="/compte" 
+                <Link
+                  to="/compte"
                   className="underline text-sm hover:text-black w-fit self-center md:self-start"
                 >
                   Créer un compte

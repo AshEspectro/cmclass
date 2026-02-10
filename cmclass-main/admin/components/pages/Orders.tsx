@@ -1,19 +1,75 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { Search, Filter, ExternalLink, Download } from 'lucide-react';
+import { fetchWithAuth, createFetchOptions } from '../../services/api';
 
-const orders = [
-  { id: '#CMD-2847', customer: 'Sophie Dubois', date: '2025-12-09', total: '4 250 €', status: 'Livrée', items: 2, payment: 'Payée' },
-  { id: '#CMD-2846', customer: 'Isabelle Martin', date: '2025-12-08', total: '2 890 €', status: 'En Transit', items: 1, payment: 'Payée' },
-  { id: '#CMD-2845', customer: 'Emma Rousseau', date: '2025-12-08', total: '1 560 €', status: 'En Préparation', items: 3, payment: 'Payée' },
-  { id: '#CMD-2844', customer: 'Olivia Bernard', date: '2025-12-07', total: '5 890 €', status: 'En Transit', items: 2, payment: 'Payée' },
-  { id: '#CMD-2843', customer: 'Charlotte Petit', date: '2025-12-07', total: '3 120 €', status: 'Livrée', items: 1, payment: 'Payée' },
-  { id: '#CMD-2842', customer: 'Amélie Laurent', date: '2025-12-06', total: '8 950 €', status: 'En Préparation', items: 4, payment: 'Payée' },
-  { id: '#CMD-2841', customer: 'Mia Lefebvre', date: '2025-12-06', total: '2 340 €', status: 'Livrée', items: 2, payment: 'Payée' },
-  { id: '#CMD-2840', customer: 'Léa Moreau', date: '2025-12-05', total: '4 780 €', status: 'Annulée', items: 1, payment: 'Remboursée' },
-];
+type OrderStatus = 'Livrée' | 'En Transit' | 'En Préparation' | 'Annulée';
+type PaymentStatus = 'Payée' | 'Remboursée' | 'En attente';
+
+type OrderLine = {
+  name: string;
+  quantity: number;
+  price: number;
+  size?: string;
+  color?: string;
+  image?: string | null;
+};
+
+type Order = {
+  id: string;
+  customer: string;
+  email?: string;
+  date: string;
+  total: number;
+  status: OrderStatus;
+  items: number;
+  payment: PaymentStatus;
+  lines?: OrderLine[];
+};
+
+const BACKEND_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 export function Orders() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [stats, setStats] = useState<{ totalOrders: number; pendingOrders: number; inTransitOrders: number; avgOrderValue: number } | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+    fetchWithAuth(`${BACKEND_URL}/admin/orders`, createFetchOptions('GET'))
+      .then(async (res) => {
+        if (!res.ok) {
+          const payload = await res.json().catch(() => null);
+          throw new Error(payload?.message || 'Failed to fetch orders');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (!active) return;
+        setOrders(data?.orders || []);
+        setStats(data?.stats || null);
+        setSelectedOrder((data?.orders || [])[0] || null);
+      })
+      .catch((err: any) => {
+        if (!active) return;
+        setError(err?.message || 'Failed to load orders');
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Livrée':
@@ -40,35 +96,55 @@ export function Orders() {
     }
   };
 
+  const formatCurrency = useMemo(() => {
+    return (value: number) =>
+      new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
+  }, []);
+
+  const filteredOrders = orders.filter((order) => {
+    const term = query.trim().toLowerCase();
+    if (!term) return true;
+    return (
+      order.id.toLowerCase().includes(term) ||
+      order.customer.toLowerCase().includes(term) ||
+      (order.email || '').toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+          {error}
+        </div>
+      )}
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-6">
         <Card>
           <CardContent>
             <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Total Commandes</p>
-            <p className="text-2xl mb-1">903</p>
+            <p className="text-2xl mb-1">{stats ? stats.totalOrders.toLocaleString('fr-FR') : '—'}</p>
             <p className="text-sm text-[#007B8A]">↑ 12,5% ce mois</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent>
             <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">En Attente</p>
-            <p className="text-2xl mb-1">28</p>
+            <p className="text-2xl mb-1">{stats ? stats.pendingOrders.toLocaleString('fr-FR') : '—'}</p>
             <p className="text-sm text-gray-500">Nécessite attention</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent>
             <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">En Transit</p>
-            <p className="text-2xl mb-1">156</p>
+            <p className="text-2xl mb-1">{stats ? stats.inTransitOrders.toLocaleString('fr-FR') : '—'}</p>
             <p className="text-sm text-gray-500">En cours de livraison</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent>
             <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Valeur Moyenne</p>
-            <p className="text-2xl mb-1">3 640 €</p>
+            <p className="text-2xl mb-1">{stats ? formatCurrency(stats.avgOrderValue) : '—'}</p>
             <p className="text-sm text-[#007B8A]">↑ 8,2% ce mois</p>
           </CardContent>
         </Card>
@@ -95,6 +171,8 @@ export function Orders() {
               <input
                 type="text"
                 placeholder="Rechercher des commandes..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 className="pl-9 pr-4 py-2 border border-gray-200 rounded w-64 focus:outline-none focus:border-[#007B8A] transition-colors text-sm"
               />
             </div>
@@ -119,7 +197,7 @@ export function Orders() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <span className="text-[#007B8A]">{order.id}</span>
@@ -127,7 +205,7 @@ export function Orders() {
                   <td className="px-6 py-4">{order.customer}</td>
                   <td className="px-6 py-4 text-gray-600">{order.date}</td>
                   <td className="px-6 py-4 text-gray-600">{order.items}</td>
-                  <td className="px-6 py-4">{order.total}</td>
+                  <td className="px-6 py-4">{formatCurrency(order.total)}</td>
                   <td className="px-6 py-4">
                     <span className={`text-xs px-3 py-1 rounded-full ${getStatusColor(order.status)}`}>
                       {order.status}
@@ -140,13 +218,23 @@ export function Orders() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                      <button
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        onClick={() => setSelectedOrder(order)}
+                      >
                         <ExternalLink size={16} className="text-gray-600" strokeWidth={1.5} />
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
+              {filteredOrders.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">
+                    {loading ? 'Chargement...' : 'Aucune commande trouvée'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </CardContent>
@@ -156,62 +244,70 @@ export function Orders() {
       <div className="grid grid-cols-3 gap-6">
         <Card className="col-span-2">
           <CardHeader>
-            <h3>Détails de la Commande #CMD-2847</h3>
+            <h3>Détails de la Commande {selectedOrder?.id || ''}</h3>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start justify-between pb-4 border-b border-gray-100">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Client</p>
-                <p>Sophie Dubois</p>
-                <p className="text-sm text-gray-600">sophie.dubois@email.com</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-500 mb-1">Adresse de Livraison</p>
-                <p className="text-sm">15 Avenue Montaigne</p>
-                <p className="text-sm">75008 Paris, France</p>
-              </div>
-            </div>
-            
-            <div>
-              <p className="text-sm text-gray-500 mb-3">Articles Commandés</p>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gray-100 rounded"></div>
-                    <div>
-                      <p className="text-sm">Robe de Soirée en Soie</p>
-                      <p className="text-xs text-gray-500">Taille: M, Couleur: Noir</p>
-                    </div>
+            {selectedOrder ? (
+              <>
+                <div className="flex items-start justify-between pb-4 border-b border-gray-100">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Client</p>
+                    <p>{selectedOrder.customer}</p>
+                    <p className="text-sm text-gray-600">{selectedOrder.email || '—'}</p>
                   </div>
-                  <p>2 500 €</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gray-100 rounded"></div>
-                    <div>
-                      <p className="text-sm">Sac à Main en Cuir</p>
-                      <p className="text-xs text-gray-500">Couleur: Beige</p>
-                    </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500 mb-1">Statut</p>
+                    <p className="text-sm">{selectedOrder.status}</p>
+                    <p className="text-sm text-gray-600">{selectedOrder.payment}</p>
                   </div>
-                  <p>1 750 €</p>
                 </div>
-              </div>
-            </div>
+                
+                <div>
+                  <p className="text-sm text-gray-500 mb-3">Articles Commandés</p>
+                  <div className="space-y-3">
+                    {(selectedOrder.lines || []).map((line, idx) => (
+                      <div key={`${line.name}-${idx}`} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden">
+                            {line.image ? (
+                              <img src={line.image} alt={line.name} className="w-full h-full object-cover" />
+                            ) : null}
+                          </div>
+                          <div>
+                            <p className="text-sm">{line.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {line.size ? `Taille: ${line.size}` : ''}{line.size && line.color ? ', ' : ''}
+                              {line.color ? `Couleur: ${line.color}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <p>{formatCurrency(line.price * line.quantity)}</p>
+                      </div>
+                    ))}
+                    {(!selectedOrder.lines || selectedOrder.lines.length === 0) && (
+                      <p className="text-sm text-gray-500">Aucun article.</p>
+                    )}
+                  </div>
+                </div>
 
-            <div className="pt-4 border-t border-gray-100 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Sous-total</span>
-                <span>4 250 €</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Livraison</span>
-                <span>Gratuite</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-gray-100">
-                <span>Total</span>
-                <span>4 250 €</span>
-              </div>
-            </div>
+                <div className="pt-4 border-t border-gray-100 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Sous-total</span>
+                    <span>{formatCurrency(selectedOrder.total)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Livraison</span>
+                    <span>Gratuite</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-gray-100">
+                    <span>Total</span>
+                    <span>{formatCurrency(selectedOrder.total)}</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">Aucune commande sélectionnée.</p>
+            )}
           </CardContent>
         </Card>
 

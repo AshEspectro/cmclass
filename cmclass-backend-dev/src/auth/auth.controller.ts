@@ -1,16 +1,18 @@
-import { Body, Controller, Post, BadRequestException, Req, Res, Get, Query } from '@nestjs/common';
+import { Body, Controller, Post, BadRequestException, Req, Res, Get, Query, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { OAuthDto } from './dto/oauth.dto';
 import { SignupRequestDto } from './dto/signup-request.dto';
+import { RegisterDto } from './dto/register.dto';
 import { Request, Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService, private prisma: PrismaService) {}
+  constructor(private authService: AuthService, private prisma: PrismaService) { }
 
   private getCookieOptions() {
     const oneMonth = 30 * 24 * 60 * 60 * 1000;
@@ -28,10 +30,25 @@ export class AuthController {
     if ((result as any).refresh_token) {
       const refresh = (result as any).refresh_token;
       res.cookie('refresh_token', refresh, this.getCookieOptions());
-      // do not expose refresh token in response body
       delete (result as any).refresh_token;
     }
     return result;
+  }
+
+  @Post('admin/login')
+  async adminLogin(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.adminLogin(dto.email, dto.password, !!dto.remember);
+    if ((result as any).refresh_token) {
+      const refresh = (result as any).refresh_token;
+      res.cookie('refresh_token', refresh, this.getCookieOptions());
+      delete (result as any).refresh_token;
+    }
+    return result;
+  }
+
+  @Post('register')
+  async register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
   }
 
   @Post('oauth')
@@ -72,19 +89,31 @@ export class AuthController {
     return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 
-  // Public signup request — creates a pending request for admin approval
   @Post('signup')
   async signupRequest(@Body() dto: SignupRequestDto) {
     return this.authService.createSignupRequest(dto);
   }
 
-  // Public endpoint to check signup request status by email. Frontend can poll this
-  // to detect when an admin has approved/denied a signup request.
   @Get('signup-status')
   async signupStatus(@Query('email') email: string) {
     if (!email) throw new BadRequestException('email required');
     const sr = await this.prisma.signupRequest.findUnique({ where: { email } });
     if (!sr) return { status: 'NOT_FOUND' };
     return { status: sr.status };
+  }
+
+  @Get('verify')
+  async verifyEmail(@Query('token') token: string) {
+    if (!token) throw new BadRequestException('token required');
+    return this.authService.verifyEmail(token);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async me(@Req() req) {
+    const user = await this.prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) throw new BadRequestException('User not found');
+    const { password, refreshToken, ...rest } = user as any;
+    return { user: rest };
   }
 }

@@ -19,6 +19,26 @@ export class UpdateBrandDto {
 
   @IsOptional()
   @IsString()
+  instagramUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  facebookUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  twitterUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  pinterestUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  footerText?: string;
+
+  @IsOptional()
+  @IsString()
   primaryColor?: string;
 
   @IsOptional()
@@ -32,6 +52,14 @@ export class UpdateBrandDto {
   @IsOptional()
   @IsString()
   logoUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  logoLightUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  logoDarkUrl?: string;
 
   @IsOptional()
   @IsString()

@@ -20,6 +20,7 @@ import { publicApi } from '../services/publicApi';
 
 interface CampaignSection {
   categoryTitle: string;
+  campaignTitle?: string;
   categoryId?: number;
   campaignId?: number;
   link: string;
@@ -53,12 +54,30 @@ export const Home = () => {
             const campaignId = campaign.id as number;
             const campaignProducts = await publicApi.getCampaignCatalog(campaignId);
             const products: ApiProduct[] = Array.isArray(campaignProducts) ? campaignProducts : campaignProducts.items || [];
-            
+
+            // Prefer explicit campaign.link (normalize to start with '/'),
+            // otherwise try to resolve from category slug when available,
+            // fallback to a slugified campaign title route.
+            const rawLink = (campaign.link as string) || '';
+            const normalizedLink = rawLink ? (rawLink.startsWith('/') ? rawLink : `/${rawLink}`) : '';
+            const categoryId = campaign.categoryId as number | undefined;
+            const rawTitle = (campaign.title as string) || `campaign-${campaignId}`;
+            const slugify = (s: string) =>
+              s
+                .toString()
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            const titleSlug = slugify(rawTitle);
+            const resolvedLink = normalizedLink || `/category?campaignId=${campaignId}&campaignTitle=${titleSlug}`;
+
             return {
               categoryTitle: (campaign.title as string) || '',
-              categoryId: campaign.categoryId as number,
+              campaignTitle: (campaign.title as string) || '',
+              categoryId: categoryId,
               campaignId: campaignId,
-              link: (campaign.link as string) || '/homme',
+              link: resolvedLink,
               buttonText: (campaign.buttonText as string) || 'Découvrir la collection',
               campaign: campaign,
               products: products,
@@ -88,6 +107,33 @@ export const Home = () => {
 
     fetchData();
   }, []);
+
+  // Update campaign links when categories become available
+  useEffect(() => {
+    if (leafCategories.length === 0 || campaignSections.length === 0) return;
+
+    setCampaignSections((prev) =>
+      prev.map((section) => {
+        // If link already looks like a valid route, leave it
+        if (section.link && section.link !== '' && section.link !== `/campaigns/${section.campaignId}`) {
+          return section;
+        }
+
+        const cat = section.categoryId ? leafCategories.find((c) => c.id === section.categoryId) : undefined;
+        const slugify = (s: string) =>
+          s
+            .toString()
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+
+        const title = section.campaignTitle || `campaign-${section.campaignId}`;
+        const newLink = cat ? `/${cat.slug}` : section.campaignId ? `/category?campaignId=${section.campaignId}&campaignTitle=${slugify(title)}` : section.link;
+        return { ...section, link: newLink };
+      })
+    );
+  }, [leafCategories]);
 
   return (
     <div className="overflow-hidden">
@@ -123,7 +169,7 @@ export const Home = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: 0.1 * i }}
                 >
-                  <Link to={`/${cat.slug}`} className="block">
+                  <Link to={`/category?categoryId=${cat.id}`} className="block">
                     <div className="aspect-4/5 bg-gray-100 overflow-hidden">
                       {cat.imageUrl && (
                         <img

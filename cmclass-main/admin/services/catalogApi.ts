@@ -1,4 +1,5 @@
 // Category & Product API service for admin
+import { fetchWithAuth } from './api';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const BACKEND_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3000';
 
@@ -25,31 +26,10 @@ export interface Product {
   categoryId: number;
 }
 
-function getToken(): string | null {
-  let token = localStorage.getItem('token');
-  if (token) return token;
-  
-  token = sessionStorage.getItem('token');
-  if (token) return token;
-  
-  token = localStorage.getItem('access_token');
-  if (token) return token;
-  
-  token = sessionStorage.getItem('access_token');
-  if (token) return token;
-  
-  return null;
-}
-
 export const catalogApi = {
   async getCategories(): Promise<Category[]> {
-    const token = getToken();
-    const response = await fetch(`${BACKEND_URL}/admin/categories`, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/categories`, {
+      headers: { 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {
@@ -61,13 +41,8 @@ export const catalogApi = {
   },
 
   async getProducts(): Promise<Product[]> {
-    const token = getToken();
-    const response = await fetch(`${BACKEND_URL}/admin/products`, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/products`, {
+      headers: { 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {

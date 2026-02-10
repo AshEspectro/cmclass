@@ -28,7 +28,7 @@ import { MailService } from '../mail/mail.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
 export class UsersController {
-  constructor(private prisma: PrismaService, private mail: MailService) {}
+  constructor(private prisma: PrismaService, private mail: MailService) { }
 
   @Get()
   async list(
@@ -39,11 +39,21 @@ export class UsersController {
     const page = Math.max(1, Number(pageRaw) || 1);
     const pageSize = Math.min(100, Number(pageSizeRaw) || 20);
     const skip = (page - 1) * pageSize;
-    const where: any = {};
+
+    // Only return team members (not regular USERs)
+    const where: any = {
+      role: { not: 'USER' }
+    };
+
     if (search) {
-      where.OR = [
-        { email: { contains: search, mode: 'insensitive' } },
-        { username: { contains: search, mode: 'insensitive' } },
+      where.AND = [
+        { role: { not: 'USER' } },
+        {
+          OR: [
+            { email: { contains: search, mode: 'insensitive' } },
+            { username: { contains: search, mode: 'insensitive' } },
+          ]
+        }
       ];
     }
 
@@ -61,6 +71,61 @@ export class UsersController {
     };
   }
 
+  @Get('clients')
+  async listClients(
+    @Query('search') search?: string,
+  ) {
+    const ASSET_BASE = process.env.PUBLIC_ASSET_URL || 'http://localhost:3000';
+    const where: any = { role: 'USER' };
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { username: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const users = await this.prisma.user.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        wishlistItems: { include: { product: { include: { category: true } } } },
+        cartItems: { include: { product: { include: { category: true } } } },
+      },
+    });
+
+    const mapProduct = (product: any) => ({
+      id: product.id,
+      label: product.label || null,
+      name: product.name,
+      price: product.priceCents ? product.priceCents / 100 : 0,
+      sizes: product.sizes || [],
+      longDescription: product.longDescription || null,
+      productImage: product.productImage || null,
+      mannequinImage: product.mannequinImage || null,
+      colors: product.colors ? (Array.isArray(product.colors) ? product.colors : JSON.parse(product.colors as any)) : [],
+      images: product.images || [],
+      inStock: product.inStock,
+      categoryId: product.categoryId,
+      category: product.category?.name || null,
+    });
+
+    const data = users.map((u) => {
+      const { password, refreshToken, resetPasswordToken, resetPasswordExpires, ...rest } = u as any;
+      return {
+        ...rest,
+        wishlist: u.wishlistItems.map((w) => mapProduct(w.product)),
+        cart: u.cartItems.map((c) => ({
+          ...mapProduct(c.product),
+          quantity: c.quantity,
+          selectedSize: c.size || 'Unique',
+          selectedColor: c.color || '#000000',
+        })),
+      };
+    });
+
+    return { data, meta: { total: data.length } };
+  }
+
   @Post()
   async create(@Request() req: any, @Body() dto: CreateUserDto) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
@@ -75,6 +140,16 @@ export class UsersController {
         username: dto.username,
         password: hashed,
         role: dto.role ?? 'USER',
+        title: dto.title,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phoneCountryCode: dto.phoneCountryCode,
+        phoneNumber: dto.phoneNumber,
+        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,
+        marketingOptIn: dto.marketingOptIn ?? false,
+        marketingEmails: dto.marketingEmails ?? false,
+        marketingSms: dto.marketingSms ?? false,
+        marketingTargetedAds: dto.marketingTargetedAds ?? false,
       },
     });
 
@@ -98,7 +173,7 @@ export class UsersController {
 
     // Audit log
     try {
-      await this.prisma.auditLog.create({ data: { actorId: req.user?.sub ?? null, targetUserId: user.id, action: 'user.create', meta: { email: user.email, role: user.role } } });
+      await this.prisma.auditLog.create({ data: { actorId: req.user?.id ?? null, targetUserId: user.id, action: 'user.create', meta: { email: user.email, role: user.role } } });
     } catch (e) {
       console.error('Failed to write audit log', e);
     }
@@ -127,12 +202,17 @@ export class UsersController {
       }
     }
 
-    const user = await this.prisma.user.update({ where: { id: parsed }, data: dto });
+    const updateData: any = { ...dto };
+    if (dto.dateOfBirth) {
+      updateData.dateOfBirth = new Date(dto.dateOfBirth);
+    }
+
+    const user = await this.prisma.user.update({ where: { id: parsed }, data: updateData });
     const { password, ...rest } = user as any;
 
     // Audit
     try {
-      await this.prisma.auditLog.create({ data: { actorId: req.user?.sub ?? null, targetUserId: user.id, action: 'user.update', meta: dto as any } });
+      await this.prisma.auditLog.create({ data: { actorId: req.user?.id ?? null, targetUserId: user.id, action: 'user.update', meta: dto as any } });
     } catch (e) {
       console.error('Failed to write audit log', e);
     }
@@ -164,7 +244,7 @@ export class UsersController {
 
     // Audit
     try {
-      await this.prisma.auditLog.create({ data: { actorId: req.user?.sub ?? null, targetUserId: updated.id, action: 'user.reset_password', meta: { autogenerated: !body?.password } } });
+      await this.prisma.auditLog.create({ data: { actorId: req.user?.id ?? null, targetUserId: updated.id, action: 'user.reset_password', meta: { autogenerated: !body?.password } } });
     } catch (e) {
       console.error('Failed to write audit log', e);
     }
@@ -183,14 +263,15 @@ export class UsersController {
       if (target.role === 'SUPER_ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
         throw new ForbiddenException('Only SUPER_ADMIN can delete SUPER_ADMIN accounts');
       }
-      
+
       // Create audit log BEFORE deleting the user to avoid foreign key constraint issues
       try {
-        await this.prisma.auditLog.create({ data: { actorId: req.user?.sub ?? null, targetUserId: parsed, action: 'user.delete', meta: {} } });
-      } catch (e) {
+        await this.prisma.auditLog.create({ data: { actorId: req.user?.id ?? null, targetUserId: parsed, action: 'user.delete', meta: {} } });
+      }
+      catch (e) {
         console.error('Failed to write audit log', e);
       }
-      
+
       await this.prisma.user.delete({ where: { id: parsed } });
       return { success: true };
     } catch (err: any) {

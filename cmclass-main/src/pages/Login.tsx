@@ -1,19 +1,47 @@
 import { useState } from "react";
-import { SiGoogle } from "react-icons/si";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 
 export default function AccountPage() {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { login, oauthLogin } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await login(loginData);
+      navigate("/home");
+    } catch (err: any) {
+      setError(err?.message || "Invalid email or password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    setError(null);
+    setLoading(true);
+    try {
+      await oauthLogin({ provider: "google", token: credential });
+      navigate("/home");
+    } catch (err: any) {
+      setError(err?.message || "Google authentication failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const Info = () => (
     <div className="bg-gray-50 border border-none px-8 py-10 w-full max-w-lg mx-auto">
       <p className="font-regular text-xs tracking-wider uppercase text-gray-700 mb-6">
-        Ce que vous trouverez dans votre compte 
+        Ce que vous trouverez dans votre compte
       </p>
 
       <ul className="space-y-6 text-gray-700 text-sm leading-relaxed">
@@ -38,9 +66,12 @@ export default function AccountPage() {
           </p>
 
           {/* Google Sign In */}
-          <button className="w-full bg-gray-100 py-4 rounded-4xl flex items-center justify-center gap-3 text-sm border border-gray-300 hover:bg-gray-200 transition mb-6">
-            <SiGoogle size={20} /> Se connecter avec Google
-          </button>
+          <GoogleSignInButton
+            className="bg-gray-100 border border-gray-300 rounded-4xl hover:bg-gray-200 transition py-3 mb-6"
+            text="signin_with"
+            onCredential={handleGoogleCredential}
+            onError={(msg) => setError(msg)}
+          />
 
           <p className="text-right text-xs text-gray-500 mb-2">Champs obligatoires*</p>
 
@@ -96,11 +127,13 @@ export default function AccountPage() {
 
             {/* Submit */}
             <div className="flex flex-col items-center md:items-end space-y-1 mt-4">
+              {error && <p className="text-red-500 text-xs mb-2">{error}</p>}
               <button
                 type="submit"
-                className="bg-[#007B8A]  text-white py-3 rounded-3xl px-28 text-sm tracking-wide hover:bg-gray-900 transition"
+                disabled={loading}
+                className="bg-[#007B8A] text-white py-3 rounded-3xl px-28 text-sm tracking-wide hover:bg-gray-900 transition disabled:bg-gray-400"
               >
-                Se connecter
+                {loading ? "Connexion..." : "Se connecter"}
               </button>
 
               {/* Create Account */}

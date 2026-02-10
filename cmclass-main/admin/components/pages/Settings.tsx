@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { Upload, Save, Plus, Trash2 } from 'lucide-react';
+import { footerApi, type FooterSection as AdminFooterSection, type FooterLink as AdminFooterLink } from '../../services/footerApi';
+import { serviceApi, type AdminService } from '../../services/serviceApi';
+import { notificationApi, type AdminNotification } from '../../services/notificationApi';
 
 const roleMap: { [key: string]: string } = {
   SUPER_ADMIN: 'Administrateur',
@@ -25,16 +28,23 @@ interface SettingsProps {
     slogan?: string;
     description?: string;
     contactEmail?: string;
+    instagramUrl?: string;
+    facebookUrl?: string;
+    twitterUrl?: string;
+    pinterestUrl?: string;
+    footerText?: string;
     primaryColor?: string;
     secondaryColor?: string;
     accentColor?: string;
     logoUrl?: string;
+    logoLightUrl?: string;
+    logoDarkUrl?: string;
     faviconUrl?: string;
   } | null;
 }
 
 export function Settings({ brand }: SettingsProps) {
-  const [activeTab, setActiveTab] = useState<'brand' | 'team' | 'notifications'>('brand');
+  const [activeTab, setActiveTab] = useState<'brand' | 'team' | 'notifications' | 'footer'>('brand');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,14 +54,54 @@ export function Settings({ brand }: SettingsProps) {
     slogan: brand?.slogan || 'Élégance Intemporelle',
     description: brand?.description || 'Une maison de haute couture dédiée à l\'excellence artisanale et au design intemporel.',
     contactEmail: brand?.contactEmail || 'contact@maison.com',
+    instagramUrl: brand?.instagramUrl || '',
+    facebookUrl: brand?.facebookUrl || '',
+    twitterUrl: brand?.twitterUrl || '',
+    pinterestUrl: brand?.pinterestUrl || '',
+    footerText: brand?.footerText || '',
     primaryColor: brand?.primaryColor || '#007B8A',
     secondaryColor: brand?.secondaryColor || '#000000',
     accentColor: brand?.accentColor || '#FFFFFF',
   });
   const [brandSaving, setBrandSaving] = useState(false);
-  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoLightUploading, setLogoLightUploading] = useState(false);
+  const [logoDarkUploading, setLogoDarkUploading] = useState(false);
   const [faviconUploading, setFaviconUploading] = useState(false);
-  const [brandLogo, setBrandLogo] = useState(brand?.logoUrl || '');
+  const [brandLogoLight, setBrandLogoLight] = useState(brand?.logoLightUrl || '');
+  const [brandLogoDark, setBrandLogoDark] = useState(brand?.logoDarkUrl || '');
+  const [footerSections, setFooterSections] = useState<AdminFooterSection[]>([]);
+  const [footerLoading, setFooterLoading] = useState(false);
+  const [footerError, setFooterError] = useState<string | null>(null);
+  const [servicesCache, setServicesCache] = useState<AdminService[]>([]);
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifError, setNotifError] = useState<string | null>(null);
+  const [notifForm, setNotifForm] = useState({ title: '', message: '', type: 'INFO' });
+
+  const normalizeSocialUrl = (
+    platform: 'instagram' | 'facebook' | 'twitter' | 'pinterest',
+    value: string,
+  ) => {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+
+    let normalized = trimmed;
+    if (normalized.startsWith('@')) normalized = normalized.slice(1);
+    if (normalized.startsWith('www.')) normalized = normalized.slice(4);
+
+    const domainMap: Record<typeof platform, string> = {
+      instagram: 'instagram.com',
+      facebook: 'facebook.com',
+      twitter: 'twitter.com',
+      pinterest: 'pinterest.com',
+    };
+    const domain = domainMap[platform];
+    if (normalized.toLowerCase().includes(domain)) {
+      return `https://${normalized}`;
+    }
+    return `https://${domain}/${normalized}`;
+  };
 
   // Sync brand data when it changes
   useEffect(() => {
@@ -61,11 +111,18 @@ export function Settings({ brand }: SettingsProps) {
         slogan: brand.slogan || 'Élégance Intemporelle',
         description: brand.description || 'Une maison de haute couture dédiée à l\'excellence artisanale et au design intemporel.',
         contactEmail: brand.contactEmail || 'contact@maison.com',
+        instagramUrl: brand.instagramUrl || '',
+        facebookUrl: brand.facebookUrl || '',
+        twitterUrl: brand.twitterUrl || '',
+        pinterestUrl: brand.pinterestUrl || '',
+        footerText: brand.footerText || '',
         primaryColor: brand.primaryColor || '#007B8A',
         secondaryColor: brand.secondaryColor || '#000000',
         accentColor: brand.accentColor || '#FFFFFF',
       });
-      setBrandLogo(brand.logoUrl || '');
+      const fallbackLogo = brand.logoUrl || '';
+      setBrandLogoLight(brand.logoLightUrl || fallbackLogo);
+      setBrandLogoDark(brand.logoDarkUrl || fallbackLogo);
     }
   }, [brand]);
 
@@ -74,30 +131,68 @@ export function Settings({ brand }: SettingsProps) {
     setBrandForm(prev => ({ ...prev, [field]: value }));
   };
 
-  // Handle logo upload
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadBrandAsset = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/brand/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    if (!response.ok) throw new Error('Failed to upload asset');
+    const data = await response.json();
+    return data.url as string;
+  };
+
+  const loadFooterSections = async () => {
+    setFooterLoading(true);
+    setFooterError(null);
+    try {
+      const [sections, services] = await Promise.all([
+        footerApi.listSections(),
+        serviceApi.getServices().catch(() => []),
+      ]);
+      setFooterSections(sections || []);
+      setServicesCache(services || []);
+    } catch (e: any) {
+      setFooterError(e?.message || 'Impossible de charger le footer');
+    } finally {
+      setFooterLoading(false);
+    }
+  };
+
+  // Handle light logo upload
+  const handleLogoLightUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setLogoUploading(true);
+    setLogoLightUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/brand/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-      if (!response.ok) throw new Error('Failed to upload logo');
-      const data = await response.json();
-      setBrandLogo(data.url);
+      const url = await uploadBrandAsset(file);
+      setBrandLogoLight(url);
     } catch (error) {
-      alert('Erreur lors du téléchargement du logo: ' + (error as Error).message);
+      alert('Erreur lors du téléchargement du logo clair: ' + (error as Error).message);
     } finally {
-      setLogoUploading(false);
+      setLogoLightUploading(false);
+    }
+  };
+
+  // Handle dark logo upload
+  const handleLogoDarkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLogoDarkUploading(true);
+    try {
+      const url = await uploadBrandAsset(file);
+      setBrandLogoDark(url);
+    } catch (error) {
+      alert('Erreur lors du téléchargement du logo sombre: ' + (error as Error).message);
+    } finally {
+      setLogoDarkUploading(false);
     }
   };
 
@@ -108,17 +203,7 @@ export function Settings({ brand }: SettingsProps) {
 
     setFaviconUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/brand/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-      if (!response.ok) throw new Error('Failed to upload favicon');
+      await uploadBrandAsset(file);
       alert('Favicon téléchargé avec succès');
     } catch (error) {
       alert('Erreur lors du téléchargement du favicon: ' + (error as Error).message);
@@ -132,6 +217,16 @@ export function Settings({ brand }: SettingsProps) {
     setBrandSaving(true);
     try {
       const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      const normalizedBrandForm = {
+        ...brandForm,
+        instagramUrl: normalizeSocialUrl('instagram', brandForm.instagramUrl),
+        facebookUrl: normalizeSocialUrl('facebook', brandForm.facebookUrl),
+        twitterUrl: normalizeSocialUrl('twitter', brandForm.twitterUrl),
+        pinterestUrl: normalizeSocialUrl('pinterest', brandForm.pinterestUrl),
+      };
+      const logoLightUrl = brandLogoLight.trim();
+      const logoDarkUrl = brandLogoDark.trim();
+      const fallbackLogo = logoDarkUrl || logoLightUrl || brand?.logoUrl || '';
       const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/brand', {
         method: 'PATCH',
         headers: {
@@ -139,12 +234,15 @@ export function Settings({ brand }: SettingsProps) {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ...brandForm,
-          logoUrl: brandLogo,
+          ...normalizedBrandForm,
+          logoUrl: fallbackLogo || null,
+          logoLightUrl: logoLightUrl || null,
+          logoDarkUrl: logoDarkUrl || null,
         }),
       });
       
       if (response.ok) {
+        setBrandForm(normalizedBrandForm);
         alert('Paramètres de marque mis à jour avec succès');
       } else {
         alert('Erreur lors de la mise à jour');
@@ -205,6 +303,190 @@ export function Settings({ brand }: SettingsProps) {
         });
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'footer') {
+      loadFooterSections();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'notifications') {
+      loadNotifications();
+    }
+  }, [activeTab]);
+
+  const loadNotifications = async () => {
+    setNotifLoading(true);
+    setNotifError(null);
+    try {
+      const data = await notificationApi.list(false);
+      setNotifications(data);
+    } catch (e: any) {
+      setNotifError(e?.message || 'Impossible de charger les notifications');
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const createNotification = async () => {
+    if (!notifForm.title || !notifForm.message) return;
+    setNotifLoading(true);
+    try {
+      const created = await notificationApi.create(notifForm);
+      setNotifications((prev) => [created, ...prev]);
+      setNotifForm({ title: '', message: '', type: notifForm.type });
+    } catch (e: any) {
+      setNotifError(e?.message || 'Creation impossible');
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const setNotificationRead = async (id: number, read: boolean) => {
+    setNotifLoading(true);
+    try {
+      const updated = await notificationApi.markRead(id, read);
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, ...updated } : n)));
+    } catch (e: any) {
+      setNotifError(e?.message || 'Mise a jour impossible');
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const deleteNotification = async (id: number) => {
+    setNotifLoading(true);
+    try {
+      await notificationApi.delete(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (e: any) {
+      setNotifError(e?.message || 'Suppression impossible');
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const isServicesSection = (title?: string) =>
+    (title || '').trim().toLowerCase().includes('service');
+
+  const handleSectionChange = (id: number, patch: Partial<AdminFooterSection>) => {
+    setFooterSections((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...patch } : s))
+    );
+  };
+
+  const saveSection = async (section: AdminFooterSection) => {
+    if (!section.id) return;
+    setFooterLoading(true);
+    try {
+      const updated = await footerApi.updateSection(section.id, {
+        title: section.title,
+        order: section.order,
+        isActive: section.isActive,
+      });
+      setFooterSections((prev) => prev.map((s) => (s.id === section.id ? { ...s, ...updated } : s)));
+    } catch (e: any) {
+      setFooterError(e?.message || 'Mise a jour impossible');
+    } finally {
+      setFooterLoading(false);
+    }
+  };
+
+  const addSection = async () => {
+    setFooterLoading(true);
+    try {
+      const created = await footerApi.createSection({
+        title: 'Nouvelle section',
+        order: (footerSections?.length || 0) + 1,
+        isActive: true,
+      });
+      setFooterSections((prev) => [...prev, created]);
+    } catch (e: any) {
+      setFooterError(e?.message || 'Creation impossible');
+    } finally {
+      setFooterLoading(false);
+    }
+  };
+
+  const removeSection = async (id?: number) => {
+    if (!id) return;
+    setFooterLoading(true);
+    try {
+      await footerApi.deleteSection(id);
+      setFooterSections((prev) => prev.filter((s) => s.id !== id));
+    } catch (e: any) {
+      setFooterError(e?.message || 'Suppression impossible');
+    } finally {
+      setFooterLoading(false);
+    }
+  };
+
+  const addLink = async (sectionId?: number) => {
+    if (!sectionId) return;
+    setFooterLoading(true);
+    try {
+      const created = await footerApi.createLink(sectionId, {
+        label: 'Nouveau lien',
+        url: '/',
+        order: 1,
+        isActive: true,
+      });
+      setFooterSections((prev) =>
+        prev.map((s) =>
+          s.id === sectionId ? { ...s, links: [...(s.links || []), created] } : s
+        )
+      );
+    } catch (e: any) {
+      setFooterError(e?.message || 'Creation de lien impossible');
+    } finally {
+      setFooterLoading(false);
+    }
+  };
+
+  const updateLink = async (sectionId: number, link: AdminFooterLink) => {
+    if (!link.id) return;
+    setFooterLoading(true);
+    try {
+      const updated = await footerApi.updateLink(link.id, {
+        label: link.label,
+        url: link.url,
+        order: link.order,
+        isActive: link.isActive,
+      });
+      setFooterSections((prev) =>
+        prev.map((s) =>
+          s.id === sectionId
+            ? {
+                ...s,
+                links: (s.links || []).map((l) => (l.id === link.id ? { ...l, ...updated } : l)),
+              }
+            : s
+        )
+      );
+    } catch (e: any) {
+      setFooterError(e?.message || 'Mise a jour de lien impossible');
+    } finally {
+      setFooterLoading(false);
+    }
+  };
+
+  const deleteLink = async (sectionId: number, linkId?: number) => {
+    if (!linkId) return;
+    setFooterLoading(true);
+    try {
+      await footerApi.deleteLink(linkId);
+      setFooterSections((prev) =>
+        prev.map((s) =>
+          s.id === sectionId ? { ...s, links: (s.links || []).filter((l) => l.id !== linkId) } : s
+        )
+      );
+    } catch (e: any) {
+      setFooterError(e?.message || 'Suppression de lien impossible');
+    } finally {
+      setFooterLoading(false);
+    }
+  };
 
   const handleRoleChange = (memberId: number, newRole: string) => {
     const backendRole = roleBackendMap[newRole] || newRole;
@@ -345,6 +627,16 @@ export function Settings({ brand }: SettingsProps) {
         >
           Notifications
         </button>
+        <button
+          onClick={() => setActiveTab('footer')}
+          className={`px-6 py-3 border-b-2 transition-colors ${
+            activeTab === 'footer'
+              ? 'border-[#007B8A] text-black'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Footer
+        </button>
       </div>
 
       {/* Brand Settings */}
@@ -401,38 +693,71 @@ export function Settings({ brand }: SettingsProps) {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm mb-2 text-gray-700">Email de Contact</label>
-                    <input
-                      type="email"
-                      value={brandForm.contactEmail}
-                      onChange={(e) => handleBrandInputChange('contactEmail', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm mb-2 text-gray-700">Email de Contact</label>
+                  <input
+                    type="email"
+                    value={brandForm.contactEmail}
+                    onChange={(e) => handleBrandInputChange('contactEmail', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
+                  />
                 </div>
+
+                <div>
+                  <label className="block text-sm mb-2 text-gray-700">Texte du Footer</label>
+                  <textarea
+                    rows={3}
+                    value={brandForm.footerText}
+                    onChange={(e) => handleBrandInputChange('footerText', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
+                    placeholder="Texte affiché en bas du footer"
+                  />
+                </div>
+              </div>
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm mb-2 text-gray-700">Logo de la Marque</label>
-                  {brandLogo && (
+                    <label className="block text-sm mb-2 text-gray-700">Logo Clair (Navbar)</label>
+                  {brandLogoLight && (
                     <div className="mb-4 w-full bg-gray-100 rounded overflow-hidden">
-                      <img src={brandLogo} alt="Logo" className="w-full h-32 object-contain p-2" />
+                      <img src={brandLogoLight} alt="Logo clair" className="w-full h-32 object-contain p-2" />
                     </div>
                   )}
                   <input 
                     type="file" 
-                    id="brand-logo"
+                    id="brand-logo-light"
                     accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                    onChange={handleLogoUpload}
-                    disabled={logoUploading}
+                    onChange={handleLogoLightUpload}
+                    disabled={logoLightUploading}
                     className="hidden"
                   />
-                  <label htmlFor="brand-logo" className="block border-2 border-dashed border-gray-300 rounded p-8 text-center hover:border-[#007B8A] transition-colors cursor-pointer">
+                  <label htmlFor="brand-logo-light" className="block border-2 border-dashed border-gray-300 rounded p-8 text-center hover:border-[#007B8A] transition-colors cursor-pointer">
                     <Upload size={32} className="mx-auto mb-3 text-gray-400" strokeWidth={1.5} />
-                    <p className="text-sm text-gray-600">{logoUploading ? 'Téléchargement...' : 'Télécharger le Logo'}</p>
+                    <p className="text-sm text-gray-600">{logoLightUploading ? 'Téléchargement...' : 'Télécharger le Logo Clair'}</p>
                     <p className="text-xs text-gray-400 mt-1">PNG ou SVG, 500x500px recommandé</p>
                   </label>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-2 text-gray-700">Logo Sombre (Footer)</label>
+                  {brandLogoDark && (
+                    <div className="mb-4 w-full bg-gray-100 rounded overflow-hidden">
+                      <img src={brandLogoDark} alt="Logo sombre" className="w-full h-32 object-contain p-2" />
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    id="brand-logo-dark"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    onChange={handleLogoDarkUpload}
+                    disabled={logoDarkUploading}
+                    className="hidden"
+                  />
+                  <label htmlFor="brand-logo-dark" className="block border-2 border-dashed border-gray-300 rounded p-8 text-center hover:border-[#007B8A] transition-colors cursor-pointer">
+                    <Upload size={32} className="mx-auto mb-3 text-gray-400" strokeWidth={1.5} />
+                    <p className="text-sm text-gray-600">{logoDarkUploading ? 'Téléchargement...' : 'Télécharger le Logo Sombre'}</p>
+                    <p className="text-xs text-gray-400 mt-1">PNG ou SVG, 500x500px recommandé</p>
+                  </label>
+                  </div>
                   <div>
                     <label className="block text-sm mb-2 text-gray-700">Favicon</label>
                     <input 
@@ -450,7 +775,6 @@ export function Settings({ brand }: SettingsProps) {
                     </label>
                   </div>
                 </div>
-              </div>
               </div>
             </CardContent>
 
@@ -527,6 +851,8 @@ export function Settings({ brand }: SettingsProps) {
                   <input
                     type="text"
                     placeholder="@votremarque"
+                    value={brandForm.instagramUrl}
+                    onChange={(e) => handleBrandInputChange('instagramUrl', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
                   />
                 </div>
@@ -535,6 +861,8 @@ export function Settings({ brand }: SettingsProps) {
                   <input
                     type="text"
                     placeholder="facebook.com/votremarque"
+                    value={brandForm.facebookUrl}
+                    onChange={(e) => handleBrandInputChange('facebookUrl', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
                   />
                 </div>
@@ -543,6 +871,8 @@ export function Settings({ brand }: SettingsProps) {
                   <input
                     type="text"
                     placeholder="@votremarque"
+                    value={brandForm.twitterUrl}
+                    onChange={(e) => handleBrandInputChange('twitterUrl', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
                   />
                 </div>
@@ -551,6 +881,8 @@ export function Settings({ brand }: SettingsProps) {
                   <input
                     type="text"
                     placeholder="pinterest.com/votremarque"
+                    value={brandForm.pinterestUrl}
+                    onChange={(e) => handleBrandInputChange('pinterestUrl', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
                   />
                 </div>
@@ -711,85 +1043,356 @@ export function Settings({ brand }: SettingsProps) {
       {/* Notifications Settings */}
       {activeTab === 'notifications' && (
         <div className="space-y-6">
+          {notifError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+              {notifError}
+            </div>
+          )}
+
           <Card>
             <CardHeader>
-              <h3>Préférences de Notification</h3>
-              <p className="text-sm text-gray-500 mt-1">Choisir quelles notifications vous souhaitez recevoir</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3>Centre de notifications</h3>
+                  <p className="text-sm text-gray-500 mt-1">Creer et suivre les alertes admin.</p>
+                </div>
+                {notifLoading && <p className="text-xs text-gray-400">Chargement...</p>}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <div>
-                  <p className="mb-1">Nouvelles Commandes</p>
-                  <p className="text-sm text-gray-500">Recevoir une notification pour chaque nouvelle commande</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-1">
+                  <label className="block text-sm text-gray-600 mb-1">Titre</label>
+                  <input
+                    type="text"
+                    value={notifForm.title}
+                    onChange={(e) => setNotifForm((p) => ({ ...p, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A]"
+                  />
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 accent-[#007B8A]" />
+                <div className="col-span-1">
+                  <label className="block text-sm text-gray-600 mb-1">Type</label>
+                  <select
+                    value={notifForm.type}
+                    onChange={(e) => setNotifForm((p) => ({ ...p, type: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A]"
+                  >
+                    <option value="INFO">INFO</option>
+                    <option value="ORDER">ORDER</option>
+                    <option value="STOCK">STOCK</option>
+                    <option value="CONTENT">CONTENT</option>
+                  </select>
+                </div>
+                <div className="col-span-1 flex items-end">
+                  <Button variant="primary" size="sm" onClick={createNotification} disabled={notifLoading}>
+                    <Plus size={14} /> Publier
+                  </Button>
+                </div>
               </div>
-              
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <div>
-                  <p className="mb-1">Stock Faible</p>
-                  <p className="text-sm text-gray-500">Alertes lorsque les produits sont en rupture de stock</p>
-                </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 accent-[#007B8A]" />
-              </div>
-
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <div>
-                  <p className="mb-1">Nouveaux Clients</p>
-                  <p className="text-sm text-gray-500">Notification lorsqu'un nouveau client s'inscrit</p>
-                </div>
-                <input type="checkbox" className="w-5 h-5 accent-[#007B8A]" />
-              </div>
-
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <div>
-                  <p className="mb-1">Rapports Hebdomadaires</p>
-                  <p className="text-sm text-gray-500">Recevoir un résumé hebdomadaire par email</p>
-                </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 accent-[#007B8A]" />
-              </div>
-
-              <div className="flex items-center justify-between py-3">
-                <div>
-                  <p className="mb-1">Mises à Jour Produit</p>
-                  <p className="text-sm text-gray-500">Notifications sur les modifications de produits</p>
-                </div>
-                <input type="checkbox" className="w-5 h-5 accent-[#007B8A]" />
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Message</label>
+                <textarea
+                  rows={3}
+                  value={notifForm.message}
+                  onChange={(e) => setNotifForm((p) => ({ ...p, message: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A]"
+                />
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <h3>Canaux de Notification</h3>
-              <p className="text-sm text-gray-500 mt-1">Choisir comment recevoir les notifications</p>
+              <h3>Notifications recents</h3>
+              <p className="text-sm text-gray-500 mt-1">Marquez comme lues ou supprimez.</p>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <div>
-                  <p className="mb-1">Notifications Email</p>
-                  <p className="text-sm text-gray-500">Recevoir des notifications par email</p>
-                </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 accent-[#007B8A]" />
-              </div>
-
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <div>
-                  <p className="mb-1">Notifications Push</p>
-                  <p className="text-sm text-gray-500">Notifications du navigateur en temps réel</p>
-                </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 accent-[#007B8A]" />
-              </div>
-
-              <div className="flex items-center justify-between py-3">
-                <div>
-                  <p className="mb-1">Notifications SMS</p>
-                  <p className="text-sm text-gray-500">Recevoir des alertes importantes par SMS</p>
-                </div>
-                <input type="checkbox" className="w-5 h-5 accent-[#007B8A]" />
-              </div>
+            <CardContent className="space-y-3">
+              {notifications.length === 0 ? (
+                <div className="text-gray-500 text-sm">Aucune notification.</div>
+              ) : (
+                notifications.map((n) => (
+                  <div key={n.id} className="border border-gray-100 rounded p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">{n.type || 'INFO'}</span>
+                          {!n.read && <span className="text-xs text-[#007B8A]">Non lu</span>}
+                        </div>
+                        <p className="font-medium">{n.title}</p>
+                        <p className="text-sm text-gray-700">{n.message}</p>
+                        <p className="text-xs text-gray-400">{n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}</p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => setNotificationRead(n.id!, !n.read)}
+                          disabled={notifLoading}
+                        >
+                          {n.read ? 'Marquer non lu' : 'Marquer lu'}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteNotification(n.id!)}
+                          disabled={notifLoading}
+                        >
+                          <Trash2 size={14} /> Supprimer
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {activeTab === 'footer' && (
+        <div className="space-y-6">
+          {footerError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+              {footerError}
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Sections du footer</h3>
+            <Button variant="primary" size="sm" onClick={addSection} disabled={footerLoading}>
+              <Plus size={16} /> Ajouter une section
+            </Button>
+          </div>
+
+          {footerLoading && footerSections.length === 0 ? (
+            <div className="text-gray-500">Chargement...</div>
+          ) : footerSections.length === 0 ? (
+            <div className="text-gray-500">Aucune section. Ajoutez-en une.</div>
+          ) : (
+            footerSections
+              .slice()
+              .sort((a, b) => (a.order || 0) - (b.order || 0))
+              .map((section) => {
+                const servicesMode = isServicesSection(section.title);
+                const effectiveLinks = servicesMode
+                  ? (servicesCache || []).map((svc, idx) => ({
+                      id: idx + 1,
+                      label: svc.title || 'Service',
+                      url: svc.link || '/contact',
+                      order: idx + 1,
+                      isActive: svc.isActive ?? true,
+                    }))
+                  : section.links || [];
+
+                return (
+                  <Card key={section.id} className="border border-gray-200">
+                    <CardHeader className="flex items-start justify-between gap-4">
+                      <div className="space-y-3 w-full">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                          <div className="md:col-span-2">
+                            <label className="block text-sm text-gray-600 mb-1">Titre</label>
+                            <input
+                              type="text"
+                              value={section.title}
+                              onChange={(e) => handleSectionChange(section.id!, { title: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-gray-600 mb-1">Ordre</label>
+                            <input
+                              type="number"
+                              value={section.order ?? 0}
+                              onChange={(e) =>
+                                handleSectionChange(section.id!, { order: Number(e.target.value) || 0 })
+                              }
+                              className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A]"
+                            />
+                          </div>
+                          <div className="flex items-end gap-2">
+                            <label className="flex items-center gap-2 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={section.isActive ?? true}
+                                onChange={(e) => handleSectionChange(section.id!, { isActive: e.target.checked })}
+                              />
+                              Actif
+                            </label>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => saveSection(section)}
+                            disabled={footerLoading}
+                          >
+                            <Save size={14} /> Enregistrer
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSection(section.id)}
+                            disabled={footerLoading}
+                          >
+                            <Trash2 size={14} /> Supprimer
+                          </Button>
+                        </div>
+                        {servicesMode && (
+                          <div className="text-xs text-gray-500">
+                            Cette section affiche automatiquement les services actifs (API services).
+                          </div>
+                        )}
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-3">
+                      {!servicesMode && (
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-sm font-medium">Liens</h4>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => addLink(section.id)}
+                            disabled={footerLoading}
+                          >
+                            <Plus size={14} /> Ajouter un lien
+                          </Button>
+                        </div>
+                      )}
+
+                      {effectiveLinks.length === 0 ? (
+                        <div className="text-gray-400 text-sm">
+                          {servicesMode ? 'Aucun service actif' : 'Aucun lien'}
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {effectiveLinks
+                            .slice()
+                            .sort((a, b) => (a.order || 0) - (b.order || 0))
+                            .map((link) => (
+                              <div
+                                key={link.id}
+                                className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center border border-gray-100 rounded p-3"
+                              >
+                                <div className="md:col-span-2">
+                                  <label className="block text-xs text-gray-500 mb-1">Label</label>
+                                  <input
+                                    type="text"
+                                    value={link.label}
+                                    disabled={servicesMode}
+                                    onChange={(e) =>
+                                      setFooterSections((prev) =>
+                                        prev.map((s) =>
+                                          s.id === section.id
+                                            ? {
+                                                ...s,
+                                                links: (s.links || []).map((l) =>
+                                                  l.id === link.id ? { ...l, label: e.target.value } : l
+                                                ),
+                                              }
+                                            : s
+                                        )
+                                      )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A]"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <label className="block text-xs text-gray-500 mb-1">URL</label>
+                                  <input
+                                    type="text"
+                                    value={link.url}
+                                    disabled={servicesMode}
+                                    onChange={(e) =>
+                                      setFooterSections((prev) =>
+                                        prev.map((s) =>
+                                          s.id === section.id
+                                            ? {
+                                                ...s,
+                                                links: (s.links || []).map((l) =>
+                                                  l.id === link.id ? { ...l, url: e.target.value } : l
+                                                ),
+                                              }
+                                            : s
+                                        )
+                                      )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A]"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Ordre</label>
+                                  <input
+                                    type="number"
+                                    value={link.order ?? 0}
+                                    disabled={servicesMode}
+                                    onChange={(e) =>
+                                      setFooterSections((prev) =>
+                                        prev.map((s) =>
+                                          s.id === section.id
+                                            ? {
+                                                ...s,
+                                                links: (s.links || []).map((l) =>
+                                                  l.id === link.id ? { ...l, order: Number(e.target.value) || 0 } : l
+                                                ),
+                                              }
+                                            : s
+                                        )
+                                      )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A]"
+                                  />
+                                </div>
+                                {!servicesMode && (
+                                  <div className="flex items-center gap-2 justify-end">
+                                    <label className="flex items-center gap-2 text-xs">
+                                      <input
+                                        type="checkbox"
+                                        checked={link.isActive ?? true}
+                                        onChange={(e) =>
+                                          setFooterSections((prev) =>
+                                            prev.map((s) =>
+                                              s.id === section.id
+                                                ? {
+                                                    ...s,
+                                                    links: (s.links || []).map((l) =>
+                                                      l.id === link.id ? { ...l, isActive: e.target.checked } : l
+                                                    ),
+                                                  }
+                                                : s
+                                            )
+                                          )
+                                        }
+                                      />
+                                      Actif
+                                    </label>
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      onClick={() => updateLink(section.id!, link)}
+                                      disabled={footerLoading}
+                                    >
+                                      <Save size={14} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => deleteLink(section.id!, link.id)}
+                                      disabled={footerLoading}
+                                    >
+                                      <Trash2 size={14} />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
+          )}
         </div>
       )}
     </div>

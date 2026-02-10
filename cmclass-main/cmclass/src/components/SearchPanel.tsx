@@ -1,8 +1,9 @@
-import  { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Search } from 'lucide-react';
 import { motion } from 'motion/react';
-import { products } from '../data/products';
+import { publicApi } from '../services/publicApi';
+import type { Product_cat } from '../types/api';
 
 interface SearchPanelProps {
   onClose: () => void;
@@ -10,13 +11,48 @@ interface SearchPanelProps {
 
 export const SearchPanel = ({ onClose }: SearchPanelProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [products, setProducts] = useState<Product_cat[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Fetch products when panel opens
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const data = await publicApi.getProducts();
+        const mapped: Product_cat[] = (data || []).map((p: any) => ({
+          id: Number(p.id),
+          label: p.label || "",
+          name: p.name || "",
+          price: typeof p.price === "string" ? p.price : typeof p.price === "number" ? `${p.price.toFixed(2)}$` : "0.00$",
+          longDescription: p.longDescription || p.description || "",
+          productImage: p.productImage || (Array.isArray(p.images) ? p.images[0] : "") || "",
+          mannequinImage: p.mannequinImage || (Array.isArray(p.images) ? p.images[1] : "") || p.productImage || "",
+          colors: Array.isArray(p.colors)
+            ? p.colors.map((c: any) =>
+              typeof c === "string"
+                ? { hex: c, images: [] }
+                : { hex: c?.hex || "#000000", images: Array.isArray(c?.images) ? c.images : [] }
+            )
+            : [],
+          sizes: Array.isArray(p.sizes) ? p.sizes : [],
+        }));
+        setProducts(mapped);
+      } catch (error) {
+        console.error('Failed to fetch products for search:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const filteredProducts = searchQuery.trim()
     ? products.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.subcategory.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.label && product.label.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
     : [];
 
   const suggestedSearches = [
@@ -90,8 +126,15 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
             </div>
           )}
 
+          {/* Loading State */}
+          {loading && searchQuery.trim() && (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Recherche en cours...</p>
+            </div>
+          )}
+
           {/* Results */}
-          {searchQuery.trim() && (
+          {searchQuery.trim() && !loading && (
             <div>
               <p className="text-xs text-gray-600 mb-4 tracking-wide">
                 {filteredProducts.length} RÉSULTAT{filteredProducts.length !== 1 ? 'S' : ''}
@@ -105,19 +148,21 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
                     transition={{ delay: index * 0.05 }}
                   >
                     <Link
-                      to={`/produit/${product.id}`}
+                      to={`/product/${product.id}`}
                       onClick={onClose}
                       className="flex gap-4 hover:bg-gray-50 p-2 -mx-2 transition-colors duration-300 group"
                     >
-                      <div className="w-20 h-20 bg-gray-100 flex-shrink-0">
-                        {/* Product image placeholder */}
+                      <div className="w-20 h-20 bg-gray-100 flex-shrink-0 overflow-hidden">
+                        {product.productImage && (
+                          <img src={product.productImage} alt={product.name} className="w-full h-full object-cover" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm mb-1 truncate group-hover:text-[#007B8A] transition-colors duration-300">
                           {product.name}
                         </h4>
-                        <p className="text-xs text-gray-600 mb-1">{product.subcategory}</p>
-                        <p className="text-sm">{product.price.toLocaleString('fr-FR')} FC</p>
+                        {product.label && <p className="text-xs text-gray-600 mb-1">{product.label}</p>}
+                        <p className="text-sm">{product.price}</p>
                       </div>
                     </Link>
                   </motion.div>
@@ -126,7 +171,7 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
             </div>
           )}
 
-          {searchQuery.trim() && filteredProducts.length === 0 && (
+          {searchQuery.trim() && !loading && filteredProducts.length === 0 && (
             <div className="text-center py-8">
               <p className="text-gray-600 mb-4">Aucun produit trouvé</p>
               <p className="text-sm text-gray-500">

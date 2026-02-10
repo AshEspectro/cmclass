@@ -5,7 +5,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async list({ page = 1, pageSize = 20, search = '', categoryId }: any = {}) {
     const where: any = {};
@@ -28,7 +28,7 @@ export class ProductService {
     if (!dto.categoryId) throw new BadRequestException('Category is required');
 
     const slug = dto.slug || this.slugify(dto.name);
-    
+
     // Ensure category exists
     const cat = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
     if (!cat) throw new BadRequestException('Invalid category');
@@ -49,6 +49,8 @@ export class ProductService {
       sizes: dto.sizes || [],
       priceCents: dto.priceCents || 0,
       stock: dto.stock || 0,
+      careInstructions: dto.careInstructions,
+      environmentalInfo: dto.environmentalInfo,
     };
 
     console.log('Creating product with data:', JSON.stringify(data, null, 2));
@@ -69,11 +71,11 @@ export class ProductService {
 
     // Only include fields that are provided
     const data: any = {};
-    
+
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.slug !== undefined) data.slug = dto.slug;
     else if (dto.name) data.slug = this.slugify(dto.name);
-    
+
     if (dto.description !== undefined) data.description = dto.description;
     if (dto.productImage !== undefined) data.productImage = dto.productImage;
     if (dto.label !== undefined) data.label = dto.label;
@@ -85,7 +87,9 @@ export class ProductService {
     if (dto.sizes !== undefined) data.sizes = dto.sizes;
     if (dto.priceCents !== undefined) data.priceCents = dto.priceCents;
     if (dto.stock !== undefined) data.stock = dto.stock;
-    
+    if (dto.careInstructions !== undefined) data.careInstructions = dto.careInstructions;
+    if (dto.environmentalInfo !== undefined) data.environmentalInfo = dto.environmentalInfo;
+
     if (dto.categoryId !== undefined) {
       const cat = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
       if (!cat) throw new BadRequestException('Invalid category');

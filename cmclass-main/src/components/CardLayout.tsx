@@ -1,4 +1,5 @@
 import { useEffect, useState, type FC } from "react";
+import { useLocation, Link } from "react-router-dom";
 import { ChevronDown, Settings2, Check, ChevronRight } from "lucide-react";
 import { ChevronLeft ,} from "lucide-react";
 
@@ -116,6 +117,7 @@ const FilterNavbar: FC<FilterNavbarProps> = ({ categories, selectedCategory, onS
 interface CardData {
   image: string;
   categories: string[];
+  categoryId?: number;
 }
 
 interface CarouselSectionProps {
@@ -198,14 +200,27 @@ const CarouselSection: FC<CarouselSectionProps> = ({ cards }) => {
                   </div>
 
                   {/* Categories */}
-                  <div className="flex flex-col items-start mt-2 cursor-pointer group gap-1">
-                    {card.categories.map((cat, i) => (
-                      <span key={i} className="text-xs w-6 px-1">
-                        {cat}
-                      </span>
-                    ))}
-                    <span className="h-[1px] bg-black w-0 transition-all duration-300 group-hover:w-full" />
-                  </div>
+                  {card.categoryId ? (
+                    <Link to={`/category?categoryId=${card.categoryId}`} className="block">
+                      <div className="flex flex-col items-start mt-2 cursor-pointer group gap-1">
+                        {card.categories.map((cat, i) => (
+                          <span key={i} className="text-xs w-6 px-1">
+                            {cat}
+                          </span>
+                        ))}
+                        <span className="h-[1px] bg-black w-0 transition-all duration-300 group-hover:w-full" />
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="flex flex-col items-start mt-2 cursor-pointer group gap-1">
+                      {card.categories.map((cat, i) => (
+                        <span key={i} className="text-xs w-6 px-1">
+                          {cat}
+                        </span>
+                      ))}
+                      <span className="h-[1px] bg-black w-0 transition-all duration-300 group-hover:w-full" />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -230,25 +245,87 @@ const CarouselSection: FC<CarouselSectionProps> = ({ cards }) => {
 
 
 
+interface HeaderPageProps {
+  campaignCategories?: Array<Record<string, unknown>>;
+}
+
 /** PARENT COMPONENT */
-const HandbagsPage: FC = () => {
+const HeaderPage: FC<HeaderPageProps> = ({ campaignCategories: propCampaignCategories }) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const location = useLocation();
+  const [remoteCategories, setRemoteCategories] = useState<typeof categoriesData | null>(null);
+
+  useEffect(() => {
+    // If campaign categories are passed as props, use them directly
+    if (propCampaignCategories && propCampaignCategories.length > 0) {
+      const mapped = propCampaignCategories.map((c: Record<string, unknown>) => ({
+        category: String(c.name || c.title || c.label || 'Collection'),
+        image: String(c.imageUrl || c.image || '/homme.jfif'),
+        categoryId: typeof c.id === 'number' ? c.id : undefined,
+      }));
+      setRemoteCategories(mapped as typeof categoriesData);
+      return;
+    }
+
+    const params = new URLSearchParams(location.search);
+    const campaignId = params.get('campaignId') || import.meta.env.VITE_CAMPAIGN_ID;
+    if (!campaignId) return;
+
+    let mounted = true;
+    (async () => {
+      try {
+        const apiBase = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const resp = await fetch(`${apiBase}/campaigns/${campaignId}/categories`);
+        if (!resp.ok) {
+          // Campaign not found, fall back to local categories
+          console.warn('Campaign not found, using local categories', resp.status);
+        } else {
+          const body = await resp.json();
+          const cats = Array.isArray(body.data) ? body.data : (body.data || []);
+
+const mapped = cats.map((c: Record<string, unknown>) => ({
+            category: String(c.name || c.title || c.label || 'Collection'),
+            image: String(c.imageUrl || c.image || '/homme.jfif'),
+            categoryId: typeof c.id === 'number' ? c.id : undefined,
+          }));
+
+        if (mounted) setRemoteCategories(mapped as typeof categoriesData);
+        }
+      } catch {
+        // ignore and keep fallback
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [location.search, propCampaignCategories]);
+
+  // Determine source categories (remote when available)
+  const sourceCategories = remoteCategories || categoriesData;
+
+  // If requested for a single category (via query) or the campaign has only one category, hide the FilterNavbar
+  const params = new URLSearchParams(location.search);
+  const singleCategoryRequested = !!params.get('categoryId');
+  const showFilterNavbar = !singleCategoryRequested && (!remoteCategories || (remoteCategories && remoteCategories.length > 1));
 
   // Filter cards based on selected category
-  const filteredCards: CardData[] = categoriesData
+  const filteredCards: CardData[] = sourceCategories
     .filter((item) => !selectedCategory || item.category === selectedCategory)
     .map((item) => ({
       image: item.image,
       categories: [item.category],
+      categoryId: (item as Record<string, unknown>).categoryId as number | undefined,
     }));
 
   return (
     
        <>
-      <FilterNavbar
-        categories={categoriesData}
-        selectedCategory={selectedCategory}
-        onSelect={setSelectedCategory} />
+      {showFilterNavbar && (
+        <FilterNavbar
+          categories={sourceCategories}
+          selectedCategory={selectedCategory}
+          onSelect={setSelectedCategory}
+        />
+      )}
     <CarouselSection cards={filteredCards} />
    
 </>
@@ -256,7 +333,7 @@ const HandbagsPage: FC = () => {
   );
 };
 
-export default HandbagsPage;
+export default HeaderPage;
 
 
 

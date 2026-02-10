@@ -1,6 +1,7 @@
 // src/pages/WishlistPage.tsx
 import { Link } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
+import { AuthRequired } from "../components/AuthRequired";
 import { useWishlist } from "../contexts/WishlistContext";
 import { ProductGrid } from "../components/Hero_cat";
 import { ShoppingBag,  X } from "lucide-react";
@@ -10,6 +11,19 @@ export default function WishlistPage() {
   const { isAuthenticated } = useAuth();
   const { items, removeFromWishlist } = useWishlist();
   
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center px-3 md:px-0 py-16">
+        <div className="w-full max-w-2xl mt-24">
+          <AuthRequired
+            title="Connectez-vous pour accéder à votre liste d’envies"
+            description="Créez un compte ou connectez-vous pour enregistrer vos articles favoris."
+          />
+        </div>
+      </div>
+    );
+  }
 
   const wishlistEmpty = items.length === 0;
 
@@ -30,15 +44,6 @@ export default function WishlistPage() {
             <br />
             Besoin d’inspiration ?
           </p>
-
-          {!isAuthenticated && (
-            <Link
-              to="/login"
-              className="mt-8 px-6 py-3 border border-black rounded-full text-sm tracking-wide bg-black text-white hover:bg-white hover:text-black transition"
-            >
-              Se connecter
-            </Link>
-          )}
 
           <div className="mt-24 mb-8"></div>
 

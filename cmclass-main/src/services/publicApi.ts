@@ -95,10 +95,10 @@ export const publicApi = {
   },
 
   // Get all products
-  async getProducts(page = 1, pageSize = 100) {
+  async getProducts(page = 1, pageSize = 100, search = '') {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/products?page=${page}&pageSize=${pageSize}`,
+        `${API_BASE_URL}/products?page=${page}&pageSize=${pageSize}${search ? `&search=${encodeURIComponent(search)}` : ''}`,
         {
           method: 'GET',
           headers: {
@@ -199,6 +199,36 @@ export const publicApi = {
       return {};
     }
   },
+  // Get footer sections/links
+  async getFooterSections() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/footer`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error(`Failed to fetch footer: ${response.status}`);
+      const json = await response.json();
+      return json.data || [];
+    } catch (error) {
+      console.error('Error fetching footer sections:', error);
+      return [];
+    }
+  },
+  // Get about page content
+  async getAbout() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/about`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error(`Failed to fetch about content: ${response.status}`);
+      const json = await response.json();
+      return json.data || json || {};
+    } catch (error) {
+      console.error('Error fetching about content:', error);
+      return {};
+    }
+  },
   // Get single product by id
   async getProduct(id: number | string) {
     try {
@@ -211,6 +241,21 @@ export const publicApi = {
       return json.data || null;
     } catch (error) {
       console.error('Error fetching product:', error);
+      return null;
+    }
+  },
+  // Get single category by id
+  async getCategory(id: number | string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error(`Failed to fetch category: ${response.status}`);
+      const json = await response.json();
+      return json.data || json || null;
+    } catch (error) {
+      console.error('Error fetching category:', error);
       return null;
     }
   },

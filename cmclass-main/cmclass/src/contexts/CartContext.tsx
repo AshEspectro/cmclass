@@ -1,6 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { authFetch } from "../services/secureApi";
+import { useAuth } from "./AuthContext";
 
 export interface CartItem {
   id: string | number;
@@ -18,10 +21,12 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Partial<CartItem>, size: string, color: string, quantity: number) => void;
-  removeFromCart: (productId: string | number, size: string, color: string) => void;
-  updateQuantity: (productId: string | number, size: string, color: string, quantity: number) => void;
-  clearCart: () => void;
+  loading: boolean;
+  addToCart: (product: Partial<CartItem>, size: string, color: string, quantity: number) => Promise<void>;
+  removeFromCart: (productId: string | number, size: string, color: string) => Promise<void>;
+  updateQuantity: (productId: string | number, size: string, color: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  refresh: () => Promise<void>;
   total: number;
   itemCount: number;
 }
@@ -30,70 +35,113 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  const addToCart = (product: Partial<CartItem>, size: string, color: string, quantity: number) => {
-    setItems((currentItems) => {
-      const existingItem = currentItems.find(
-        (item) => item.id === product.id && item.selectedSize === size && item.selectedColor === color
-      );
+  const refresh = async () => {
+    if (!isAuthenticated) {
+      setItems([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await authFetch("/cart");
+      setItems(Array.isArray(data?.data) ? data.data : []);
+    } catch (e) {
+      console.error("Failed to fetch cart", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (existingItem) {
-        return currentItems.map((item) =>
-          item.id === product.id && item.selectedSize === size && item.selectedColor === color
-            ? { ...item, quantity: (item.quantity || 0) + quantity }
-            : item
-        );
-      }
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
-      return [
-        ...currentItems,
-        {
-          id: product.id!,
-          name: product.name || "",
-          price: product.price || 0,
-          label: product.label,
-          productImage: product.productImage,
-          mannequinImage: product.mannequinImage,
-          colors: product.colors,
+  const addToCart = async (product: Partial<CartItem>, size: string, color: string, quantity: number) => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    if (!product?.id) return;
+    try {
+      await authFetch("/cart/items", {
+        method: "POST",
+        body: JSON.stringify({
+          productId: Number(product.id),
           quantity,
           selectedSize: size,
           selectedColor: color,
-        },
-      ];
-    });
+        }),
+      });
+      await refresh();
+    } catch (e) {
+      console.error("Failed to add to cart", e);
+    }
   };
 
-  const removeFromCart = (productId: string | number, size: string, color: string) => {
-    setItems((currentItems) =>
-      currentItems.filter(
-        (item) => !(item.id === productId && item.selectedSize === size && item.selectedColor === color)
-      )
-    );
-  };
-
-  const updateQuantity = (productId: string | number, size: string, color: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(productId, size, color);
+  const removeFromCart = async (productId: string | number, size: string, color: string) => {
+    if (!isAuthenticated) {
+      navigate("/login");
       return;
     }
-
-    setItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === productId && item.selectedSize === size && item.selectedColor === color
-          ? { ...item, quantity }
-          : item
-      )
-    );
+    try {
+      await authFetch("/cart/items", {
+        method: "DELETE",
+        body: JSON.stringify({
+          productId: Number(productId),
+          selectedSize: size,
+          selectedColor: color,
+        }),
+      });
+      await refresh();
+    } catch (e) {
+      console.error("Failed to remove from cart", e);
+    }
   };
 
-  const clearCart = () => setItems([]);
+  const updateQuantity = async (productId: string | number, size: string, color: string, quantity: number) => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    try {
+      await authFetch("/cart/items", {
+        method: "PATCH",
+        body: JSON.stringify({
+          productId: Number(productId),
+          quantity,
+          selectedSize: size,
+          selectedColor: color,
+        }),
+      });
+      await refresh();
+    } catch (e) {
+      console.error("Failed to update cart quantity", e);
+    }
+  };
+
+  const clearCart = async () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    try {
+      await authFetch("/cart", { method: "DELETE" });
+      setItems([]);
+    } catch (e) {
+      console.error("Failed to clear cart", e);
+    }
+  };
 
   const total = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
   const itemCount = items.reduce((count, item) => count + item.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, total, itemCount }}
+      value={{ items, loading, addToCart, removeFromCart, updateQuantity, clearCart, refresh, total, itemCount }}
     >
       {children}
     </CartContext.Provider>

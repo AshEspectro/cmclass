@@ -13,6 +13,8 @@ export class BrandService {
     }
     // Normalize any stored URLs that include /public/ path segment
     if (brand.logoUrl) brand.logoUrl = brand.logoUrl.replace('/public/', '/');
+    if (brand.logoLightUrl) brand.logoLightUrl = brand.logoLightUrl.replace('/public/', '/');
+    if (brand.logoDarkUrl) brand.logoDarkUrl = brand.logoDarkUrl.replace('/public/', '/');
     if (brand.faviconUrl) brand.faviconUrl = brand.faviconUrl.replace('/public/', '/');
     return brand;
   }
@@ -27,6 +29,8 @@ export class BrandService {
     });
     // Normalize returned URLs
     if (brand.logoUrl) brand.logoUrl = brand.logoUrl.replace('/public/', '/');
+    if (brand.logoLightUrl) brand.logoLightUrl = brand.logoLightUrl.replace('/public/', '/');
+    if (brand.logoDarkUrl) brand.logoDarkUrl = brand.logoDarkUrl.replace('/public/', '/');
     if (brand.faviconUrl) brand.faviconUrl = brand.faviconUrl.replace('/public/', '/');
     return brand;
   }

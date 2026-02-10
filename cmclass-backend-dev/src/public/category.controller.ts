@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('categories')
@@ -79,5 +79,43 @@ for (const c of cats) {
 
 
     return { mainCategories, heroContent };
+  }
+
+  @Get(':id')
+  async getById(@Param('id') id: string) {
+    // Validate and parse ID
+    const parsedId = parseInt(id, 10);
+    if (isNaN(parsedId) || parsedId <= 0) {
+      throw new BadRequestException('Invalid category ID. Must be a valid positive integer.');
+    }
+
+    const category = await this.prisma.category.findUnique({
+      where: { id: parsedId },
+      include: {
+        products: {
+          where: { status: 'ACTIVE' },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${parsedId} not found`);
+    }
+
+    // Return category with metadata
+    return {
+      data: {
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+        description: category.description,
+        imageUrl: category.imageUrl,
+        active: category.active,
+        parentId: category.parentId,
+        productCount: category.products?.length || 0,
+        products: category.products || [],
+      },
+    };
   }
 }

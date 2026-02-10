@@ -22,6 +22,8 @@ interface Product {
   mannequinImage?: string;
   colors?: any;
   sizes?: string[];
+  careInstructions?: string;
+  environmentalInfo?: string;
 }
 
 interface Category {
@@ -51,6 +53,8 @@ export function Products() {
     colors: [] as { name: string; hex: string; images: string[] }[],
     sizes: [] as string[],
     categoryId: 0,
+    careInstructions: '',
+    environmentalInfo: '',
   });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -117,6 +121,8 @@ export function Products() {
         colors: [],
         sizes: [],
         categoryId: 0,
+        careInstructions: '',
+        environmentalInfo: '',
       });
       setNewSize('');
       setNewColorName('');
@@ -176,7 +182,7 @@ export function Products() {
 
   const handleImageUpload = async (file: File, imageType: string = 'product') => {
     if (!file) return;
-    
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       setError('Veuillez sélectionner une image valide');
@@ -197,8 +203,8 @@ export function Products() {
       }
       setError(null);
       const result = await productsAPI.upload(file);
-      
-      switch(imageType) {
+
+      switch (imageType) {
         case 'product':
           setFormData(prev => ({ ...prev, productImage: result.url }));
           break;
@@ -240,7 +246,7 @@ export function Products() {
     e.stopPropagation();
     setDragActive(false);
     setDragActiveType(null);
-    
+
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       handleImageUpload(files[0], imageType);
@@ -306,16 +312,16 @@ export function Products() {
                 </thead>
                 <tbody>
                   {products.map((product) => (
-                    <tr 
-                      key={product.id} 
+                    <tr
+                      key={product.id}
                       className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
                           <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden">
                             {product.productImage ? (
-                              <img 
-                                src={product.productImage} 
+                              <img
+                                src={product.productImage}
                                 alt={product.name}
                                 className="w-full h-full object-cover"
                               />
@@ -336,9 +342,9 @@ export function Products() {
                         {product.colors && product.colors.length > 0 ? (
                           <div className="flex gap-1">
                             {product.colors.map((color: any, idx: number) => (
-                              <div 
-                                key={idx} 
-                                className="w-6 h-6 rounded border border-gray-300 cursor-pointer hover:ring-2 hover:ring-[#007B8A] transition-all" 
+                              <div
+                                key={idx}
+                                className="w-6 h-6 rounded border border-gray-300 cursor-pointer hover:ring-2 hover:ring-[#007B8A] transition-all"
                                 style={{ backgroundColor: color.hex }}
                                 title={color.name}
                               />
@@ -362,26 +368,25 @@ export function Products() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`text-xs px-3 py-1 rounded-full ${
-                          getProductStatus(product) === 'Actif' 
-                            ? 'bg-[#e6f4f6] text-[#007B8A]' 
-                            : getProductStatus(product) === 'Stock Faible'
+                        <span className={`text-xs px-3 py-1 rounded-full ${getProductStatus(product) === 'Actif'
+                          ? 'bg-[#e6f4f6] text-[#007B8A]'
+                          : getProductStatus(product) === 'Stock Faible'
                             ? 'bg-yellow-50 text-yellow-700'
                             : 'bg-red-50 text-red-600'
-                        }`}>
+                          }`}>
                           {getProductStatus(product)}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <button 
+                          <button
                             onClick={() => setViewingProduct(product)}
                             className="p-2 hover:bg-blue-50 rounded-full transition-colors"
                             aria-label={`View product ${product.name}`}
                           >
                             <Eye size={16} className="text-blue-600" strokeWidth={1.5} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               setSelectedProduct(product);
                               setFormData({
@@ -397,6 +402,8 @@ export function Products() {
                                 colors: (product as any).colors || [],
                                 sizes: (product as any).sizes || [],
                                 categoryId: product.category.id,
+                                careInstructions: (product as any).careInstructions || '',
+                                environmentalInfo: (product as any).environmentalInfo || '',
                               });
                               setNewSize('');
                               setNewColorName('');
@@ -408,7 +415,7 @@ export function Products() {
                           >
                             <Edit size={16} className="text-gray-600" strokeWidth={1.5} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleDeleteProduct(product.id)}
                             className="p-2 hover:bg-red-50 rounded-full transition-colors"
                             aria-label={`Delete product ${product.name}`}
@@ -449,7 +456,7 @@ export function Products() {
                     className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm mb-2 text-gray-700">Prix (USD)</label>
@@ -477,7 +484,7 @@ export function Products() {
 
                 <div>
                   <label htmlFor="create-category" className="block text-sm mb-2 text-gray-700">Catégorie*</label>
-                  <select 
+                  <select
                     id="create-category"
                     value={formData.categoryId}
                     onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
@@ -513,13 +520,35 @@ export function Products() {
                 </div>
 
                 <div>
+                  <label className="block text-sm mb-2 text-gray-700">Conseils d'entretien (Optionnel)</label>
+                  <textarea
+                    value={formData.careInstructions}
+                    onChange={(e) => setFormData({ ...formData, careInstructions: e.target.value })}
+                    rows={3}
+                    placeholder="Ex: Lavage à froid, ne pas blanchir..."
+                    className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2 text-gray-700">Info Environnementale (Optionnel)</label>
+                  <textarea
+                    value={formData.environmentalInfo}
+                    onChange={(e) => setFormData({ ...formData, environmentalInfo: e.target.value })}
+                    rows={3}
+                    placeholder="Ex: Produit recyclé, coton bio..."
+                    className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm mb-2 text-gray-700">Couleurs avec Hex et Images</label>
                   <div className="space-y-3">
                     {formData.colors.map((color, idx) => (
                       <div key={idx} className="border border-gray-200 rounded p-3 space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div 
+                            <div
                               className="w-8 h-8 rounded border border-gray-300"
                               style={{ backgroundColor: color.hex }}
                             />
@@ -542,8 +571,8 @@ export function Products() {
                         <div className="flex flex-wrap gap-2 mb-3">
                           {color.images.map((img, imgIdx) => (
                             <div key={imgIdx} className="relative group">
-                              <img 
-                                src={img} 
+                              <img
+                                src={img}
                                 alt={`Color ${color.hex} view ${imgIdx + 1}`}
                                 className="w-12 h-12 rounded object-cover border border-gray-200"
                                 onError={(e) => e.currentTarget.style.display = 'none'}
@@ -552,8 +581,8 @@ export function Products() {
                                 type="button"
                                 onClick={() => setFormData({
                                   ...formData,
-                                  colors: formData.colors.map((c, i) => 
-                                    i === idx 
+                                  colors: formData.colors.map((c, i) =>
+                                    i === idx
                                       ? { ...c, images: c.images.filter((_, j) => j !== imgIdx) }
                                       : c
                                   )
@@ -566,7 +595,7 @@ export function Products() {
                             </div>
                           ))}
                         </div>
-                        
+
                         <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
                           <p className="text-xs font-medium text-blue-900 mb-2">Ajouter des images à cette couleur</p>
                           <div className="flex gap-2 items-end">
@@ -578,8 +607,8 @@ export function Products() {
                                 if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                                   setFormData({
                                     ...formData,
-                                    colors: formData.colors.map((c, i) => 
-                                      i === idx 
+                                    colors: formData.colors.map((c, i) =>
+                                      i === idx
                                         ? { ...c, images: [...c.images, e.currentTarget.value] }
                                         : c
                                     )
@@ -591,8 +620,8 @@ export function Products() {
                                 if (e.currentTarget.value.trim()) {
                                   setFormData({
                                     ...formData,
-                                    colors: formData.colors.map((c, i) => 
-                                      i === idx 
+                                    colors: formData.colors.map((c, i) =>
+                                      i === idx
                                         ? { ...c, images: [...c.images, e.currentTarget.value] }
                                         : c
                                     )
@@ -616,8 +645,8 @@ export function Products() {
                                       const result = await productsAPI.upload(file);
                                       setFormData({
                                         ...formData,
-                                        colors: formData.colors.map((c, i) => 
-                                          i === idx 
+                                        colors: formData.colors.map((c, i) =>
+                                          i === idx
                                             ? { ...c, images: [...c.images, result.url] }
                                             : c
                                         )
@@ -643,8 +672,8 @@ export function Products() {
                                 if (input && input.value.trim()) {
                                   setFormData({
                                     ...formData,
-                                    colors: formData.colors.map((c, i) => 
-                                      i === idx 
+                                    colors: formData.colors.map((c, i) =>
+                                      i === idx
                                         ? { ...c, images: [...c.images, input.value] }
                                         : c
                                     )
@@ -661,7 +690,7 @@ export function Products() {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="mt-4 p-4 bg-gray-50 rounded space-y-2">
                     <p className="text-sm font-medium text-gray-700">Ajouter une Couleur</p>
                     <div className="grid grid-cols-4 gap-2">
@@ -818,9 +847,8 @@ export function Products() {
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded p-8 text-center cursor-pointer transition-colors ${
-                      dragActive ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
-                    } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`border-2 border-dashed rounded p-8 text-center cursor-pointer transition-colors ${dragActive ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
+                      } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <input
                       type="file"
@@ -834,9 +862,9 @@ export function Products() {
                       <div className="mb-3">
                         {formData.productImage ? (
                           <div className="flex items-center justify-center mb-3">
-                            <img 
-                              src={formData.productImage} 
-                              alt="Product" 
+                            <img
+                              src={formData.productImage}
+                              alt="Product"
                               className="max-h-32 rounded"
                             />
                           </div>
@@ -874,9 +902,8 @@ export function Products() {
                     onDragLeave={(e) => handleDrag(e, 'mannequin')}
                     onDragOver={(e) => handleDrag(e, 'mannequin')}
                     onDrop={(e) => handleDrop(e, 'mannequin')}
-                    className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-colors ${
-                      dragActiveType === 'mannequin' ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
-                    } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-colors ${dragActiveType === 'mannequin' ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
+                      } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <input
                       type="file"
@@ -890,9 +917,9 @@ export function Products() {
                       <div className="mb-3">
                         {formData.mannequinImage ? (
                           <div className="flex items-center justify-center mb-3">
-                            <img 
-                              src={formData.mannequinImage} 
-                              alt="Mannequin" 
+                            <img
+                              src={formData.mannequinImage}
+                              alt="Mannequin"
                               className="max-h-32 rounded"
                             />
                           </div>
@@ -930,9 +957,8 @@ export function Products() {
                     onDragLeave={(e) => handleDrag(e, 'additional')}
                     onDragOver={(e) => handleDrag(e, 'additional')}
                     onDrop={(e) => handleDrop(e, 'additional')}
-                    className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-colors ${
-                      dragActiveType === 'additional' ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
-                    } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-colors ${dragActiveType === 'additional' ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
+                      } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <input
                       type="file"
@@ -1007,7 +1033,7 @@ export function Products() {
                     className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm mb-2 text-gray-700">Prix (USD)</label>
@@ -1035,7 +1061,7 @@ export function Products() {
 
                 <div>
                   <label htmlFor="edit-category" className="block text-sm mb-2 text-gray-700">Catégorie</label>
-                  <select 
+                  <select
                     id="edit-category"
                     value={formData.categoryId}
                     onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
@@ -1069,13 +1095,35 @@ export function Products() {
                 </div>
 
                 <div>
+                  <label className="block text-sm mb-2 text-gray-700">Conseils d'entretien (Optionnel)</label>
+                  <textarea
+                    value={formData.careInstructions}
+                    onChange={(e) => setFormData({ ...formData, careInstructions: e.target.value })}
+                    rows={3}
+                    placeholder="Ex: Lavage à froid, ne pas blanchir..."
+                    className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2 text-gray-700">Info Environnementale (Optionnel)</label>
+                  <textarea
+                    value={formData.environmentalInfo}
+                    onChange={(e) => setFormData({ ...formData, environmentalInfo: e.target.value })}
+                    rows={3}
+                    placeholder="Ex: Produit recyclé, coton bio..."
+                    className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm mb-2 text-gray-700">Couleurs avec Hex et Images</label>
                   <div className="space-y-3">
                     {formData.colors.map((color, idx) => (
                       <div key={idx} className="border border-gray-200 rounded p-3 space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div 
+                            <div
                               className="w-8 h-8 rounded border border-gray-300"
                               style={{ backgroundColor: color.hex }}
                             />
@@ -1098,8 +1146,8 @@ export function Products() {
                         <div className="flex flex-wrap gap-2 mb-3">
                           {color.images.map((img, imgIdx) => (
                             <div key={imgIdx} className="relative group">
-                              <img 
-                                src={img} 
+                              <img
+                                src={img}
                                 alt={`Color ${color.hex} view ${imgIdx + 1}`}
                                 className="w-12 h-12 rounded object-cover border border-gray-200"
                                 onError={(e) => e.currentTarget.style.display = 'none'}
@@ -1108,8 +1156,8 @@ export function Products() {
                                 type="button"
                                 onClick={() => setFormData({
                                   ...formData,
-                                  colors: formData.colors.map((c, i) => 
-                                    i === idx 
+                                  colors: formData.colors.map((c, i) =>
+                                    i === idx
                                       ? { ...c, images: c.images.filter((_, j) => j !== imgIdx) }
                                       : c
                                   )
@@ -1122,11 +1170,11 @@ export function Products() {
                             </div>
                           ))}
                         </div>
-                        
+
                         <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
                           <p className="text-xs font-medium text-blue-900 mb-2">Ajouter des images à cette couleur</p>
                           <div className="flex gap-2 items-end">
-                            
+
                             <button
                               type="button"
                               onClick={() => {
@@ -1142,8 +1190,8 @@ export function Products() {
                                       const result = await productsAPI.upload(file);
                                       setFormData({
                                         ...formData,
-                                        colors: formData.colors.map((c, i) => 
-                                          i === idx 
+                                        colors: formData.colors.map((c, i) =>
+                                          i === idx
                                             ? { ...c, images: [...c.images, result.url] }
                                             : c
                                         )
@@ -1162,13 +1210,13 @@ export function Products() {
                             >
                               {uploadingImage ? 'Upload...' : 'Télécharger'}
                             </button>
-                            
+
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="mt-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg border border-gray-200 shadow-sm space-y-4">
                     <div className="flex items-center justify-between mb-4">
                       <div>
@@ -1176,15 +1224,15 @@ export function Products() {
                         <p className="text-xs text-gray-500 mt-1">Remplissez les détails et téléchargez une image</p>
                       </div>
                       {newColorHex && (
-                        <div 
+                        <div
                           onClick={() => document.getElementById('color-picker-edit')?.click()}
                           className="flex items-center gap-3 cursor-pointer group"
                         >
-                          <div 
+                          <div
                             className="w-12 h-12 rounded-lg border-2 border-gray-300 shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all"
                             style={{ backgroundColor: newColorHex }}
                           />
-                          
+
                         </div>
                       )}
                     </div>
@@ -1227,7 +1275,7 @@ export function Products() {
                       <div className="space-y-2 ">
                         <label className="block w-full text-sm font-medium text-gray-700">Image de la Couleur</label>
                         <div className="flex gap-2">
-                          
+
                           <button
                             type="button"
                             onClick={() => {
@@ -1360,9 +1408,8 @@ export function Products() {
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded p-8 text-center cursor-pointer transition-colors ${
-                      dragActive ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
-                    } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`border-2 border-dashed rounded p-8 text-center cursor-pointer transition-colors ${dragActive ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
+                      } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <input
                       type="file"
@@ -1376,9 +1423,9 @@ export function Products() {
                       <div className="mb-3">
                         {formData.productImage ? (
                           <div className="flex items-center justify-center mb-3">
-                            <img 
-                              src={formData.productImage} 
-                              alt="Product" 
+                            <img
+                              src={formData.productImage}
+                              alt="Product"
                               className="max-h-32 rounded"
                             />
                           </div>
@@ -1426,9 +1473,8 @@ export function Products() {
                     onDragLeave={(e) => handleDrag(e, 'mannequin')}
                     onDragOver={(e) => handleDrag(e, 'mannequin')}
                     onDrop={(e) => handleDrop(e, 'mannequin')}
-                    className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-colors ${
-                      dragActiveType === 'mannequin' ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
-                    } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-colors ${dragActiveType === 'mannequin' ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
+                      } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <input
                       type="file"
@@ -1442,9 +1488,9 @@ export function Products() {
                       <div className="mb-3">
                         {formData.mannequinImage ? (
                           <div className="flex items-center justify-center mb-3">
-                            <img 
-                              src={formData.mannequinImage} 
-                              alt="Mannequin" 
+                            <img
+                              src={formData.mannequinImage}
+                              alt="Mannequin"
                               className="max-h-32 rounded"
                             />
                           </div>
@@ -1482,9 +1528,8 @@ export function Products() {
                     onDragLeave={(e) => handleDrag(e, 'additional')}
                     onDragOver={(e) => handleDrag(e, 'additional')}
                     onDrop={(e) => handleDrop(e, 'additional')}
-                    className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-colors ${
-                      dragActiveType === 'additional' ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
-                    } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-colors ${dragActiveType === 'additional' ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300'
+                      } ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <input
                       type="file"
@@ -1565,7 +1610,7 @@ export function Products() {
                       <div className="w-full h-48 bg-gray-200 rounded flex items-center justify-center">Pas d'image</div>
                     )}
                   </div>
-                  
+
                   {viewingProduct.mannequinImage && (
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Image Mannequin</h4>
@@ -1596,7 +1641,7 @@ export function Products() {
                     <label className="text-xs text-gray-500 font-semibold">NOM</label>
                     <p className="text-lg font-semibold">{viewingProduct.name}</p>
                   </div>
-                  
+
                   <div>
                     <label className="text-xs text-gray-500 font-semibold">PRIX</label>
                     <p className="text-lg font-semibold">{formatPrice(viewingProduct.priceCents)}</p>
@@ -1609,13 +1654,12 @@ export function Products() {
 
                   <div>
                     <label className="text-xs text-gray-500 font-semibold">STATUT</label>
-                    <span className={`inline-block text-xs px-3 py-1 rounded-full ${
-                      getProductStatus(viewingProduct) === 'Actif' 
-                        ? 'bg-[#e6f4f6] text-[#007B8A]' 
-                        : getProductStatus(viewingProduct) === 'Stock Faible'
+                    <span className={`inline-block text-xs px-3 py-1 rounded-full ${getProductStatus(viewingProduct) === 'Actif'
+                      ? 'bg-[#e6f4f6] text-[#007B8A]'
+                      : getProductStatus(viewingProduct) === 'Stock Faible'
                         ? 'bg-yellow-50 text-yellow-700'
                         : 'bg-red-50 text-red-600'
-                    }`}>
+                      }`}>
                       {getProductStatus(viewingProduct)}
                     </span>
                   </div>
@@ -1660,7 +1704,7 @@ export function Products() {
                 </div>
               )}
 
-             
+
 
               {/* Couleurs */}
               {(viewingProduct as any).colors && (viewingProduct as any).colors.length > 0 && (
@@ -1670,7 +1714,7 @@ export function Products() {
                     {(viewingProduct as any).colors.map((color: any, idx: number) => (
                       <div key={idx} className="border border-gray-200 rounded p-3">
                         <div className="flex items-center gap-3 mb-2">
-                          <div 
+                          <div
                             className="w-8 h-8 rounded border border-gray-300"
                             style={{ backgroundColor: color.hex }}
                           />
@@ -1682,9 +1726,9 @@ export function Products() {
                         {color.images && color.images.length > 0 && (
                           <div className="flex flex-wrap gap-2">
                             {color.images.map((img: string, imgIdx: number) => (
-                              <img 
-                                key={imgIdx} 
-                                src={img} 
+                              <img
+                                key={imgIdx}
+                                src={img}
                                 alt={`${color.name} ${imgIdx + 1}`}
                                 className="w-16 h-16 rounded object-cover border border-gray-200"
                                 onError={(e) => e.currentTarget.style.display = 'none'}

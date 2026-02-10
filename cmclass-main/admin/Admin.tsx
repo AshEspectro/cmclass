@@ -1,8 +1,9 @@
-import  { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './components/pages/Dashboard';
 import { ContentManager } from './components/pages/ContentManager';
+import { AboutPage } from './components/pages/AboutPage';
 import { Products } from './components/pages/Products';
 import { Categories } from './components/pages/Categories';
 import { MediaLibrary } from './components/pages/MediaLibrary';
@@ -34,9 +35,22 @@ function Index() {
     fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/brand')
       .then(r => r.json())
       .then(b => setBrand(b))
-      .catch(() => {});
+      .catch(() => { });
+
+    const handleUnauthorized = () => {
+      localStorage.removeItem('access_token');
+      sessionStorage.removeItem('access_token');
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+      setIsAuthenticated(false);
+      setAuthView('login');
+      setMessage({ type: 'error', text: 'Session expirée — veuillez vous reconnecter.' });
+    };
+
+    window.addEventListener('cmclass:unauthorized', handleUnauthorized);
     return () => {
       if (pollRef.current) window.clearInterval(pollRef.current);
+      window.removeEventListener('cmclass:unauthorized', handleUnauthorized);
     };
   }, []);
 
@@ -50,6 +64,11 @@ function Index() {
       title: 'Gestion de Contenu',
       subtitle: 'Gérer la page d\'accueil, campagnes et contenu éditorial',
       component: <ContentManager />
+    },
+    about: {
+      title: 'Page À propos',
+      subtitle: 'Modifier le contenu de la page À propos',
+      component: <AboutPage />
     },
     products: {
       title: 'Produits',
@@ -89,13 +108,13 @@ function Index() {
   if (!isAuthenticated) {
     if (authView === 'login') {
       return (
-        <Login 
+        <Login
           brand={brand}
           message={message}
           onLogin={async (payload: { email: string; password: string; remember: boolean }) => {
             setMessage(null);
             try {
-              const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/auth/login', {
+              const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/auth/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -106,32 +125,26 @@ function Index() {
 
               const token = data?.access_token;
               if (token) {
-                console.log('✓ Token received from backend:', token.substring(0, 20) + '...');
+                console.log('✓ Admin Token received:', token.substring(0, 20) + '...');
                 if (payload.remember) {
                   localStorage.setItem('access_token', token);
-                  console.log('✓ Token stored in localStorage');
                 } else {
                   sessionStorage.setItem('access_token', token);
-                  console.log('✓ Token stored in sessionStorage');
                 }
-                // Verify it was stored
-                const stored = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-                console.log('✓ Token verification:', !!stored);
-              } else {
-                console.warn('✗ No access_token in response:', data);
               }
-              setMessage({ type: 'success', text: 'Connecté avec succès' });
+              setMessage({ type: 'success', text: 'Section Administration connectée' });
               setIsAuthenticated(true);
             } catch (err: any) {
-              setMessage({ type: 'error', text: err?.message || 'Login error' });
+              setMessage({ type: 'error', text: err?.message || 'Erreur de connexion Admin' });
             }
           }}
           onSwitchToSignup={() => setAuthView('signup')}
         />
       );
-    } else {
+    }
+    else {
       return (
-        <Signup 
+        <Signup
           brand={brand}
           message={message}
           onSignup={async (payload: { name: string; email: string; brandName: string; password: string; acceptTerms: boolean }) => {
@@ -164,7 +177,7 @@ function Index() {
                     // attempt auto-login with stored credentials
                     if (pollRef.current) { window.clearInterval(pollRef.current); pollRef.current = null; }
                     try {
-                      const loginRes = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/auth/login', {
+                      const loginRes = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/auth/admin/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
@@ -209,8 +222,8 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar 
-        currentPage={currentPage} 
+      <Sidebar
+        currentPage={currentPage}
         onNavigate={setCurrentPage}
         brand={brand}
         onLogout={() => {
@@ -220,13 +233,13 @@ function Index() {
           setAuthView('login');
         }}
       />
-      
+
       <div className="ml-64">
-        <Header 
-          title={currentConfig.title} 
+        <Header
+          title={currentConfig.title}
           subtitle={currentConfig.subtitle}
         />
-        
+
         <main className="px-12 py-8">
           {currentConfig.component}
         </main>

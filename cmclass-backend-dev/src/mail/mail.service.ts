@@ -94,6 +94,37 @@ export class MailService {
     }
   }
 
+  async sendContactNotification(
+    to: string,
+    payload: { id?: number; name: string; email: string; subject: string; message: string },
+  ) {
+    const from = process.env.EMAIL_FROM || 'espectro.ash@gmail.com';
+    const subject = `Nouveau message de contact: ${payload.subject || 'Sans sujet'}`;
+    const text = `Bonjour,\n\nUn nouveau message de contact a été reçu:\n\nID: ${payload.id ?? 'n/a'}\nNom: ${payload.name}\nEmail: ${payload.email}\nSujet: ${payload.subject}\n\nMessage:\n${payload.message}\n\nMerci.`;
+
+    // Skip email if no transporter configured and not in production
+    if (!this.transporter && process.env.NODE_ENV !== 'production') {
+      this.logger.warn(`Skipping contact notification email to ${to} (no SMTP configured)`);
+      return { success: true, skipped: true };
+    }
+
+    try {
+      if (!this.transporter) {
+        this.logger.warn('No email transporter configured');
+        return { success: false, error: 'No email transporter' };
+      }
+
+      const info = await this.transporter.sendMail({ from, to, subject, text });
+      this.logger.log(`Contact notification email sent to ${to}`);
+      const preview = nodemailer.getTestMessageUrl(info);
+      if (preview) this.logger.log(`Preview email at: ${preview}`);
+      return { success: true, provider: 'smtp', info, preview };
+    } catch (err) {
+      this.logger.error('Failed to send contact notification', err as any);
+      return { success: false, error: err };
+    }
+  }
+
   async sendApprovalEmail(to: string, username: string, tempPassword: string, role?: string) {
     const from = process.env.EMAIL_FROM || 'espectro.ash@gmail.com';
     const subject = "Votre demande d'inscription a été approuvée";
@@ -146,6 +177,35 @@ export class MailService {
       return { success: true, provider: 'smtp', info, preview };
     } catch (err) {
       this.logger.error('Failed to send denial email', err as any);
+      return { success: false, error: err };
+    }
+  }
+
+  async sendEmailVerification(to: string, name: string | undefined, verifyUrl: string) {
+    const from = process.env.EMAIL_FROM || 'espectro.ash@gmail.com';
+    const subject = "Vérifiez votre adresse e-mail";
+    const displayName = name || to;
+    const text = `Bonjour ${displayName},\n\nMerci pour votre inscription. Veuillez confirmer votre adresse e-mail en cliquant sur le lien suivant :\n\n${verifyUrl}\n\nSi vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail.\n\nMerci.`;
+
+    if (!this.transporter && process.env.NODE_ENV !== 'production') {
+      this.logger.warn(`Skipping verification email to ${to} (no SMTP configured)`);
+      this.logger.warn(`Verification link: ${verifyUrl}`);
+      return { success: true, skipped: true };
+    }
+
+    try {
+      if (!this.transporter) {
+        this.logger.warn('No email transporter configured');
+        return { success: false, error: 'No email transporter' };
+      }
+
+      const info = await this.transporter.sendMail({ from, to, subject, text });
+      this.logger.log(`Verification email sent to ${to}`);
+      const preview = nodemailer.getTestMessageUrl(info);
+      if (preview) this.logger.log(`Preview email at: ${preview}`);
+      return { success: true, provider: 'smtp', info, preview };
+    } catch (err) {
+      this.logger.error('Failed to send verification email', err as any);
       return { success: false, error: err };
     }
   }

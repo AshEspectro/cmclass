@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ShieldCheck, Truck, RefreshCcw, Store, ChevronRight, Heart, X, Plus, Minus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useCart } from "../contexts/CartContext";
 import { useWishlist } from "../contexts/WishlistContext";
+import { useAuth } from "../contexts/AuthContext";
+import { AuthRequired } from "../components/AuthRequired";
 
 
 interface CMClassOverlayProps {
@@ -53,12 +55,56 @@ export function CMClassOverlay({ open, onClose, title, children }: CMClassOverla
 
 
 export default function Cartpage() {
+  const { isAuthenticated } = useAuth();
   const { items: cartItems } = useCart();            // <-- YOUR CART DATA
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
-  const { items, removeFromCart, updateQuantity, total } = useCart();
+  const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
 
   const [openOverlay, setOpenOverlay] = useState(false);
   const [activeService, setActiveService] = useState<any>(null);
+  const [mobileMoneyOpen, setMobileMoneyOpen] = useState(false);
+  const [mmSelected, setMmSelected] = useState<string | null>(null);
+  const [mmPhone, setMmPhone] = useState<string>("");
+  const [mmLoading, setMmLoading] = useState(false);
+  const mmPhoneRef = useRef<HTMLInputElement | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+
+  const API_BASE_URL =
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_URL ||
+    'http://localhost:3000';
+
+  const handleCheckout = async (paymentStatus: 'PENDING' | 'PAID' | 'REFUNDED' = 'PENDING') => {
+    if (checkoutLoading) return;
+    setCheckoutMessage(null);
+    setCheckoutLoading(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setCheckoutMessage("Veuillez vous connecter pour continuer.");
+        return;
+      }
+      const response = await fetch(`${API_BASE_URL}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ paymentStatus }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.message || "Échec de la création de la commande.");
+      }
+      clearCart();
+      setCheckoutMessage("Commande créée avec succès.");
+    } catch (err: any) {
+      setCheckoutMessage(err?.message || "Une erreur est survenue.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   const openService = (service: any) => {
     setActiveService(service);
@@ -70,6 +116,29 @@ export default function Cartpage() {
       removeFromWishlist(product.id.toString());
     } else {
       addToWishlist(product);
+    }
+  };
+
+  const openMobileMoney = () => {
+    setMmSelected(null);
+    setMmPhone("");
+    setMobileMoneyOpen(true);
+  };
+
+  const handleConfirmMobileMoney = async () => {
+    if (!mmSelected) return; // guard
+    if (!mmPhone || mmPhone.trim().length < 6) {
+      mmPhoneRef.current?.focus();
+      return;
+    }
+    setMmLoading(true);
+    try {
+      console.log("💳 Mobile Money payment requested", { method: mmSelected, phone: mmPhone });
+      setTimeout(() => setMobileMoneyOpen(false), 700);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setMmLoading(false);
     }
   };
 
@@ -103,6 +172,19 @@ export default function Cartpage() {
         "Ce service est offert et disponible dans l’ensemble de nos magasins..."
     },
   ];
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center px-3 md:px-0 py-16">
+        <div className="w-full max-w-2xl mt-24">
+          <AuthRequired
+            title="Connectez-vous pour accéder à votre panier"
+            description="Créez un compte ou connectez-vous pour ajouter des articles au panier."
+          />
+        </div>
+      </div>
+    );
+  }
 
   const cartIsEmpty = cartItems.length === 0;
 
@@ -149,14 +231,22 @@ export default function Cartpage() {
             {cartItems.map((item,index) => {
               const inWishlist = isInWishlist(item.id.toString());
 
+              // determine the best image to show for this cart item
+              const mainImage =
+                (item as any).productImage ||
+                (item as any).mannequinImage ||
+                ((item as any).colors && (item as any).colors[0]?.images?.[0]) ||
+                (item as any).image ||
+                "https://via.placeholder.com/400x400?text=No+Image";
+
               return (
                 <div key={`${item.id}-${item.selectedSize}-${item.selectedColor}-${index}`} className="flex  h-40 md:h-56 xl:h-60   p-2.5 justify-start bg-white rounded-lg mb-3  gap-3 sm:gap-4">
 
                   {/* IMAGE */}
                   <div className="w-36 h-full md:w-48 xl:w-56 bg-black/5 flex-shrink" >
                     <img
-                      src={item.image as string}
-                      alt={item.name}
+                      src={mainImage as string}
+                      alt={item.name || "product"}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -291,13 +381,23 @@ export default function Cartpage() {
             <span>{total.toLocaleString('fr-FR')} FC</span>
           </div>
           <div>
-            <button className="w-full bg-[#007B8A] text-white py-3 mt-6 rounded-full text-sm sm:text-base hover:bg-white hover:text-black border transition-all duration-300">
-              Passer à la caisse
+            <button
+              onClick={() => handleCheckout('PENDING')}
+              disabled={checkoutLoading}
+              className="w-full bg-[#007B8A] text-white py-3 mt-6 rounded-full text-sm sm:text-base hover:bg-white hover:text-black border transition-all duration-300 disabled:opacity-60"
+            >
+              {checkoutLoading ? "Traitement..." : "Passer à la caisse"}
             </button>
-            <button className="w-full bg-black text-white py-3 mt-3 rounded-full text-sm sm:text-base hover:bg-white hover:text-black border transition-all duration-300">
+            <button
+              onClick={openMobileMoney}
+              className="w-full bg-black text-white py-3 mt-3 rounded-full text-sm sm:text-base hover:bg-white hover:text-black border transition-all duration-300"
+            >
               Payer avec mobile money
             </button>
             <Link to="/home" className="flex underline justify-center pt-3">continuer vos achats</Link>
+            {checkoutMessage && (
+              <p className="text-sm text-center text-gray-600 mt-3">{checkoutMessage}</p>
+            )}
 
           </div>
         </div>}
@@ -338,6 +438,70 @@ export default function Cartpage() {
         >
             {activeService.content}
           </CMClassOverlay></>
+      )}
+
+      {/* Mobile Money Modal */}
+      {mobileMoneyOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-end md:items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMoneyOpen(false)} />
+
+          <div className="relative w-full md:w-[520px] bg-white rounded-t-xl md:rounded-xl p-6 md:p-8 mx-4 md:mx-0 shadow-lg">
+            <h3 className="text-lg font-semibold mb-2">Payer avec Mobile Money</h3>
+            <p className="text-sm text-gray-600 mb-4">Choisissez un opérateur et entrez votre numéro pour procéder au paiement sécurisé.</p>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {[
+                { id: 'airtel', label: 'Airtel Money' },
+                { id: 'mpesa', label: 'M-Pesa' },
+                { id: 'orange', label: 'Orange Money' },
+                { id: 'afri', label: 'AfriMoney' },
+              ].map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => setMmSelected(m.id)}
+                  className={`border rounded-lg p-3 text-sm text-left flex items-center gap-3 ${mmSelected === m.id ? 'border-[#007B8A] bg-[#F0FFFD]' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                >
+                  <div className="w-10 h-10 bg-black/5 rounded flex items-center justify-center text-xs font-semibold">{m.label.split(' ')[0]}</div>
+                  <div>
+                    <div className="font-medium">{m.label}</div>
+                    <div className="text-xs text-gray-500">Paiement instantané</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <label className="block text-sm font-medium">Numéro de téléphone</label>
+            <input
+              ref={mmPhoneRef}
+              value={mmPhone}
+              onChange={(e) => setMmPhone(e.target.value)}
+              placeholder="+243 812 345 678"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 mt-2 mb-2 focus:ring-1 focus:ring-[#007B8A] focus:border-[#007B8A] outline-none"
+              inputMode="tel"
+            />
+
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={() => setMobileMoneyOpen(false)} className="px-4 py-2 rounded bg-gray-100">Annuler</button>
+              <button
+                onClick={async () => {
+                  if (!mmSelected) { mmPhoneRef.current?.focus(); return; }
+                  if (!mmPhone || mmPhone.trim().length < 6) { mmPhoneRef.current?.focus(); return; }
+                  setMmLoading(true);
+                  try {
+                    await handleCheckout('PENDING');
+                    setTimeout(() => setMobileMoneyOpen(false), 700);
+                  } finally {
+                    setMmLoading(false);
+                  }
+                }}
+                className="px-4 py-2 rounded bg-[#007B8A] text-white disabled:opacity-60"
+                disabled={mmLoading}
+              >
+                {mmLoading ? 'Traitement...' : 'Confirmer'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

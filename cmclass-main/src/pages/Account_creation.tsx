@@ -1,14 +1,32 @@
 import { useState, useRef } from "react";
-import { useGoogleOAuth } from "../components/GoogleAut";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 
 export default function CreateAccount() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordRules, setShowPasswordRules] = useState(false);
   const [password, setPassword] = useState("");
+  const [emailConfirm, setEmailConfirm] = useState("");
+  const [form, setForm] = useState({
+    email: "",
+    title: "",
+    firstName: "",
+    lastName: "",
+    phoneCountryCode: "+243",
+    phoneNumber: "",
+    dateOfBirth: "",
+    marketingOptIn: false,
+    marketingEmails: false,
+    marketingSms: false,
+    marketingTargetedAds: false,
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const passwordWrapperRef = useRef<HTMLDivElement | null>(null);
-  const { redirectToGoogle } = useGoogleOAuth(); 
+  const { register, oauthLogin } = useAuth();
+  const navigate = useNavigate();
 
   const passwordRules = [
     { id: "length", label: "Au moins 8 caractères", test: (v: string) => v.length >= 8 },
@@ -27,6 +45,64 @@ export default function CreateAccount() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+
+    if (!form.email || !emailConfirm || form.email !== emailConfirm) {
+      setMessage({ type: "error", text: "Les e-mails ne correspondent pas." });
+      return;
+    }
+    if (unsatisfiedRules.length > 0) {
+      setMessage({ type: "error", text: "Le mot de passe ne respecte pas les exigences." });
+      return;
+    }
+    if (!form.title || !form.firstName || !form.lastName) {
+      setMessage({ type: "error", text: "Veuillez remplir tous les champs obligatoires." });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await register({
+        email: form.email,
+        password,
+        title: form.title,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        phoneCountryCode: form.phoneCountryCode || undefined,
+        phoneNumber: form.phoneNumber || undefined,
+        dateOfBirth: form.dateOfBirth || undefined,
+        marketingOptIn: form.marketingOptIn,
+        marketingEmails: form.marketingOptIn ? form.marketingEmails : false,
+        marketingSms: form.marketingOptIn ? form.marketingSms : false,
+        marketingTargetedAds: form.marketingOptIn ? form.marketingTargetedAds : false,
+      });
+      setMessage({
+        type: "success",
+        text: result?.message || "Compte créé. Vérifiez votre e-mail pour activer le compte.",
+      });
+    } catch (err: any) {
+      setMessage({ type: "error", text: err?.message || "Une erreur est survenue." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    setMessage(null);
+    setLoading(true);
+    try {
+      await oauthLogin({ provider: "google", token: credential });
+      setMessage({ type: "success", text: "Compte créé avec Google." });
+      navigate("/home");
+    } catch (err: any) {
+      setMessage({ type: "error", text: err?.message || "Google authentication failed" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-white flex flex-col">
       <main className="w-full flex justify-center px-6 md:px-16 py-10 mt-24">
@@ -34,17 +110,12 @@ export default function CreateAccount() {
           <h2 className="text-xl font-semibold mb-4">Créez votre compte</h2>
 
           {/* Google Button */}
-          <button
-            onClick={redirectToGoogle}
-            className="w-full bg-gray-100 py-3 rounded-4xl flex items-center justify-center gap-3 hover:bg-gray-200 transition mb-6"
-          >
-            <img
-              src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
-              alt="Google"
-              className="w-8 h-8"
-            />
-            <span className="text-sm">Se connecter avec Google</span>
-          </button>
+          <GoogleSignInButton
+            className="bg-gray-100 border border-gray-300 rounded-4xl hover:bg-gray-200 transition py-3 mb-6"
+            text="signup_with"
+            onCredential={handleGoogleCredential}
+            onError={(msg) => setMessage({ type: "error", text: msg })}
+          />
 
           <p className="text-sm text-gray-700 mb-4">
             Créez votre compte pour profiter d'une expérience personnalisée.
@@ -57,7 +128,7 @@ export default function CreateAccount() {
           </p>
 
           {/* FORM */}
-          <form className="space-y-10">
+          <form className="space-y-10" onSubmit={handleSubmit}>
 
             {/* TWO-COLUMN GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -69,7 +140,10 @@ export default function CreateAccount() {
                   <label className="block text-sm font-medium">E-mail *</label>
                   <input
                     type="email"
+                    value={form.email}
+                    onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
                     className="w-full border border-gray-300 rounded-md text-[13px] px-3 py-2 mt-1"
+                    required
                   />
                 </div>
                 {/* Email confirmation */}
@@ -77,7 +151,10 @@ export default function CreateAccount() {
                   <label className="block text-sm font-medium">Confirmation e-mail *</label>
                   <input
                     type="email"
+                    value={emailConfirm}
+                    onChange={(e) => setEmailConfirm(e.target.value)}
                     className="w-full border border-gray-300 rounded-md text-[13px] px-3 py-2 mt-1"
+                    required
                   />
                 </div>
                 {/* Password */}
@@ -91,6 +168,7 @@ export default function CreateAccount() {
                       className="w-full border border-gray-300 rounded-md text-[13px] px-3 py-2 mt-1"
                       onFocus={() => setShowPasswordRules(true)}
                       onBlur={handleBlur}
+                      required
                     />
                     <button
                       type="button"
@@ -117,13 +195,15 @@ export default function CreateAccount() {
                   <label className="block text-sm font-medium">Civilité *</label>
                   <select
                     className="w-full border border-gray-300 rounded-md text-[13px] px-3 py-2 mt-1 bg-white focus:ring-black focus:border-black"
-                    defaultValue=""
+                    value={form.title}
+                    onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                    required
                   >
                     <option value="" disabled>Sélectionnez votre civilité</option>
-                    <option>M.</option>
-                    <option>Mme.</option>
-                    <option>Mlle.</option>
-                    <option>Mx.</option>
+                    <option value="M.">M.</option>
+                    <option value="Mme.">Mme.</option>
+                    <option value="Mlle.">Mlle.</option>
+                    <option value="Mx.">Mx.</option>
                   </select>
                 </div>
                 {/* First Name */}
@@ -131,7 +211,10 @@ export default function CreateAccount() {
                   <label className="block text-sm font-medium">Prénom *</label>
                   <input
                     type="text"
+                    value={form.firstName}
+                    onChange={(e) => setForm(prev => ({ ...prev, firstName: e.target.value }))}
                     className="w-full border border-gray-300 rounded-md text-[13px] px-3 py-2 mt-1"
+                    required
                   />
                 </div>
                 {/* Last Name */}
@@ -139,7 +222,10 @@ export default function CreateAccount() {
                   <label className="block text-sm font-medium">Nom *</label>
                   <input
                     type="text"
+                    value={form.lastName}
+                    onChange={(e) => setForm(prev => ({ ...prev, lastName: e.target.value }))}
                     className="w-full border border-gray-300 rounded-md text-[13px] px-3 py-2 mt-1"
+                    required
                   />
                 </div>
                 {/* PHONE NUMBER WITH COUNTRY SELECT */}
@@ -148,6 +234,8 @@ export default function CreateAccount() {
                   <div className="flex gap-2 mt-1">
                     <select
                       className="w-24 border border-gray-300 rounded-md text-[13px] px-3 py-2 bg-white focus:border-black"
+                      value={form.phoneCountryCode}
+                      onChange={(e) => setForm(prev => ({ ...prev, phoneCountryCode: e.target.value }))}
                     >
                       <option value="+1">+1</option>
                       <option value="+33">+33</option>
@@ -161,6 +249,8 @@ export default function CreateAccount() {
                     <input
                       type="text"
                       placeholder="XXX-XXX-XXXX"
+                      value={form.phoneNumber}
+                      onChange={(e) => setForm(prev => ({ ...prev, phoneNumber: e.target.value }))}
                       className="flex-1 border border-gray-300 rounded-md text-[13px] px-3 py-2"
                     />
                   </div>
@@ -170,6 +260,8 @@ export default function CreateAccount() {
                   <label className="block text-sm font-medium">Date de naissance</label>
                   <input
                     type="date"
+                    value={form.dateOfBirth}
+                    onChange={(e) => setForm(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                     className="w-full border border-gray-300 rounded-md text-[13px] px-3 py-2 mt-1"
                   />
                   <p className="text-xs text-gray-500 mt-1 leading-5">
@@ -182,17 +274,34 @@ export default function CreateAccount() {
             {/* PREFERENCES */}
             <div className="border-t border-gray-200 pt-6">
               <label className="flex items-center gap-3 text-sm">
-                <input type="checkbox" className="w-4 h-4" />
+                <input
+                  type="checkbox"
+                  className="w-4 h-4"
+                  checked={form.marketingOptIn}
+                  onChange={(e) => setForm(prev => ({ ...prev, marketingOptIn: e.target.checked }))}
+                />
                 J’accepte de recevoir des communications marketing de Louis Vuitton.
               </label>
               <div className="pl-12">
                 <p className="text-sm font-medium mt-4">Mes préférences :</p>
                 <label className="flex items-center gap-2 text-sm py-2">
-                  <input type="checkbox" className="w-4 h-4" />
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4"
+                    checked={form.marketingEmails}
+                    onChange={(e) => setForm(prev => ({ ...prev, marketingEmails: e.target.checked }))}
+                    disabled={!form.marketingOptIn}
+                  />
                   Emails marketing
                 </label>
                 <label className="flex items-center gap-2 text-sm py-2">
-                  <input type="checkbox" className="w-4 h-4" />
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4"
+                    checked={form.marketingSms}
+                    onChange={(e) => setForm(prev => ({ ...prev, marketingSms: e.target.checked }))}
+                    disabled={!form.marketingOptIn}
+                  />
                   SMS marketing
                 </label>
                 <p className="text-xs text-gray-500 leading-4 pl-6 w-full md:w-[40%]">
@@ -200,17 +309,33 @@ export default function CreateAccount() {
                   La fréquence des messages peut varier. Envoyez STOP pour annuler.
                 </p>
                 <label className="flex items-center gap-2 text-sm py-2 mt-2">
-                  <input type="checkbox" className="w-4 h-4" />
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4"
+                    checked={form.marketingTargetedAds}
+                    onChange={(e) => setForm(prev => ({ ...prev, marketingTargetedAds: e.target.checked }))}
+                    disabled={!form.marketingOptIn}
+                  />
                   Publicité ciblée via des partenaires tiers
                 </label>
               </div>
             </div>
 
+            {message && (
+              <p className={`text-sm ${message.type === "success" ? "text-green-600" : "text-red-500"}`}>
+                {message.text}
+              </p>
+            )}
+
             {/* CTA */}
             <div className="flex justify-end  mt-6 mb-24">
               <div>
-                <button className="bg-[#007B8A]  text-white py-3 px-32 rounded-3xl hover:bg-black transition">
-                  Suivant
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-[#007B8A]  text-white py-3 px-32 rounded-3xl hover:bg-black transition disabled:bg-gray-400"
+                >
+                  {loading ? "Création..." : "Suivant"}
                 </button>
                 <p className="text-xs py-4 leading-6 w-[60%]">
                   Vous recevrez un code d’activation par e-mail pour valider la création de votre compte.

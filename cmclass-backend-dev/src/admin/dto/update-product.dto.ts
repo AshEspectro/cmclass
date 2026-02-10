@@ -37,6 +37,14 @@ export class UpdateProductDto {
   @IsOptional()
   mannequinImage?: string;
 
+  @IsString()
+  @IsOptional()
+  careInstructions?: string;
+
+  @IsString()
+  @IsOptional()
+  environmentalInfo?: string;
+
   @IsOptional()
   colors?: any; // JSON array of { name: string; hex: string; images: string[] }
 

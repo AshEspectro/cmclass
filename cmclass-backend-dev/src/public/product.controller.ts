@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('products')
 export class PublicProductController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   @Get()
   async list(
@@ -13,9 +13,15 @@ export class PublicProductController {
     @Query('search') search = ''
   ) {
     const ASSET_BASE = process.env.PUBLIC_ASSET_URL || 'http://localhost:3000';
-    
+
     const where: any = { status: 'ACTIVE' };
-    if (categoryId) where.categoryId = Number(categoryId);
+    if (categoryId) {
+      const parsedCategoryId = Number(categoryId);
+      if (isNaN(parsedCategoryId) || parsedCategoryId <= 0) {
+        return { data: [], meta: { total: 0, page: Number(page), pageSize: Number(pageSize), error: 'Invalid categoryId' } };
+      }
+      where.categoryId = parsedCategoryId;
+    }
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -38,13 +44,13 @@ export class PublicProductController {
       id: p.id,
       label: p.label || null,
       name: p.name,
-      price: p.priceCents ? `${(p.priceCents / 100).toFixed(2)}$` : '0.00$',
-      sizes: [], // Add sizes if needed
+      price: p.priceCents ? p.priceCents / 100 : 0,
+      sizes: p.sizes || [],
       longDescription: p.longDescription || null,
-      productImage: p.productImage ? `${ASSET_BASE}${p.productImage}` : null,
-      mannequinImage: p.mannequinImage ? `${ASSET_BASE}${p.mannequinImage}` : null,
+      productImage: p.productImage || null,
+      mannequinImage: p.mannequinImage || null,
       colors: p.colors ? (Array.isArray(p.colors) ? p.colors : JSON.parse(p.colors as any)) : [],
-      images: p.images?.map((img) => `${ASSET_BASE}${img}`) || [],
+      images: p.images || [],
       inStock: p.inStock,
       categoryId: p.categoryId,
       category: p.category?.name || null,
@@ -55,8 +61,6 @@ export class PublicProductController {
 
   @Get(':id')
   async getProduct(@Param('id') id: string) {
-    const ASSET_BASE = process.env.PUBLIC_ASSET_URL || 'http://localhost:3000';
-    
     const product = await this.prisma.product.findUnique({
       where: { id: Number(id) },
       include: { category: true },
@@ -71,13 +75,13 @@ export class PublicProductController {
       id: product.id,
       label: product.label || null,
       name: product.name,
-      price: product.priceCents ? `${(product.priceCents / 100).toFixed(2)}$` : '0.00$',
-      sizes: [], // Add sizes if needed
+      price: product.priceCents ? product.priceCents / 100 : 0,
+      sizes: product.sizes || [],
       longDescription: product.longDescription || null,
-      productImage: product.productImage ? `${ASSET_BASE}${product.productImage}` : null,
-      mannequinImage: product.mannequinImage ? `${ASSET_BASE}${product.mannequinImage}` : null,
+      productImage: product.productImage || null,
+      mannequinImage: product.mannequinImage || null,
       colors: product.colors ? (Array.isArray(product.colors) ? product.colors : JSON.parse(product.colors as any)) : [],
-      images: product.images?.map((img) => `${ASSET_BASE}${img}`) || [],
+      images: product.images || [],
       inStock: product.inStock,
       categoryId: product.categoryId,
       category: product.category?.name || null,
@@ -89,8 +93,6 @@ export class PublicProductController {
 
   @Get('category/:categorySlug')
   async getByCategory(@Param('categorySlug') slug: string) {
-    const ASSET_BASE = process.env.PUBLIC_ASSET_URL || 'http://localhost:3000';
-    
     const category = await this.prisma.category.findUnique({
       where: { slug },
     });
@@ -108,13 +110,13 @@ export class PublicProductController {
       id: p.id,
       label: p.label || null,
       name: p.name,
-      price: p.priceCents ? `${(p.priceCents / 100).toFixed(2)}$` : '0.00$',
-      sizes: [],
+      price: p.priceCents ? p.priceCents / 100 : 0,
+      sizes: p.sizes || [],
       longDescription: p.longDescription || null,
-      productImage: p.productImage ? `${ASSET_BASE}${p.productImage}` : null,
-      mannequinImage: p.mannequinImage ? `${ASSET_BASE}${p.mannequinImage}` : null,
+      productImage: p.productImage || null,
+      mannequinImage: p.mannequinImage || null,
       colors: p.colors ? (Array.isArray(p.colors) ? p.colors : JSON.parse(p.colors as any)) : [],
-      images: p.images?.map((img) => `${ASSET_BASE}${img}`) || [],
+      images: p.images || [],
       inStock: p.inStock,
       categoryId: p.categoryId,
       category: category.name,

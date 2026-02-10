@@ -50,8 +50,8 @@ export const publicApi = {
       console.error('Error fetching brand', err);
       return {};
     }
-  }
-,
+  },
+
   async getProduct(id: number | string) {
     try {
       const res = await fetch(`${BACKEND_URL}/products/${id}`, { headers: { 'Content-Type': 'application/json' } });
@@ -61,6 +61,18 @@ export const publicApi = {
     } catch (err) {
       console.error('Error fetching product', err);
       return null;
+    }
+  },
+
+  async getCategories() {
+    try {
+      const res = await fetch(`${BACKEND_URL}/categories`, { headers: { 'Content-Type': 'application/json' } });
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      const json = await res.json();
+      return json; // returns { mainCategories, heroContent }
+    } catch (err) {
+      console.error('Error fetching categories', err);
+      return { mainCategories: [], heroContent: {} };
     }
   }
 };

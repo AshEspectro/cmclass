@@ -1,4 +1,5 @@
 // Hero section API service
+import { fetchWithAuth } from './api';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const BACKEND_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3000';
 
@@ -16,34 +17,11 @@ export interface HeroData {
   updatedAt?: string;
 }
 
-// Helper to get token from various storage locations
-function getToken(): string | null {
-  // Try localStorage first
-  let token = localStorage.getItem('token');
-  if (token) return token;
-  
-  // Try sessionStorage
-  token = sessionStorage.getItem('token');
-  if (token) return token;
-  
-  // Try alternative key names
-  token = localStorage.getItem('access_token');
-  if (token) return token;
-  
-  token = sessionStorage.getItem('access_token');
-  if (token) return token;
-  
-  return null;
-}
-
 export const heroApi = {
   // Get current hero section (public endpoint)
   async getHero(): Promise<HeroData> {
-    const response = await fetch(`${BACKEND_URL}/hero`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // Send cookies (for refresh_token)
+    const response = await fetchWithAuth(`${BACKEND_URL}/hero`, {
+      headers: { 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {
@@ -56,14 +34,9 @@ export const heroApi = {
 
   // Update hero section
   async updateHero(data: Partial<HeroData>): Promise<HeroData> {
-    const token = getToken();
-    const response = await fetch(`${BACKEND_URL}/admin/hero`, {
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/hero`, {
       method: 'PATCH',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
 
@@ -77,16 +50,11 @@ export const heroApi = {
 
   // Upload hero background image
   async uploadBackgroundImage(file: File): Promise<string> {
-    const token = getToken();
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${BACKEND_URL}/admin/hero/upload`, {
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/hero/upload`, {
       method: 'POST',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      credentials: 'include',
       body: formData,
     });
 
@@ -100,16 +68,11 @@ export const heroApi = {
 
   // Upload hero background video
   async uploadBackgroundVideo(file: File): Promise<string> {
-    const token = getToken();
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${BACKEND_URL}/admin/hero/upload-video`, {
+    const response = await fetchWithAuth(`${BACKEND_URL}/admin/hero/upload-video`, {
       method: 'POST',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      credentials: 'include',
       body: formData,
     });
 

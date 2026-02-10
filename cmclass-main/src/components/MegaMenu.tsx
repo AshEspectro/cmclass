@@ -145,16 +145,20 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
         const data = await response.json();
         
         // Transform API response to match MenuItem structure
-        const transformedCategories = (data.mainCategories || []).map((cat: any) => ({
-          title: cat.title,
-          link: cat.link,
-          subcategories: cat.subcategories?.map((sub: any) => ({
-            id: sub.id,
-            name: sub.name,
-            link: sub.link,
-            children: sub.children || []
-          })) || []
-        }));
+        const transformedCategories = (data.mainCategories || []).map((cat: any) => {
+          const firstSubId = cat?.subcategories?.[0]?.id;
+          return {
+            title: cat.title,
+            link: firstSubId ? `/category?categoryId=${firstSubId}` : cat.link,
+            subcategories:
+              cat.subcategories?.map((sub: any) => ({
+                id: sub.id,
+                name: sub.name,
+                link: sub.id ? `/category?categoryId=${sub.id}` : sub.link,
+                children: sub.children || [],
+              })) || [],
+          };
+        });
         
         setCategories(transformedCategories);
         setApiHeroContent(data.heroContent || {});
@@ -275,14 +279,7 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
                 <Phone size={18} />
                 <span>Besoin d'aide ? +243 99 123 4567</span>
               </button>
-              <Link
-                to="/developpement-durable"
-                onClick={onClose}
-                className="flex items-center gap-3 text-sm sm:text-base text-gray-600 hover:text-[#007B8A] transition-colors duration-300"
-              >
-                <Leaf size={18} />
-                <span>Développement Durable</span>
-              </Link>
+              
               <Link
                 to="/compte"
                 onClick={onClose}
@@ -292,7 +289,7 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
                 <span>Mon Compte</span>
               </Link>
               <Link
-                to="/magasins"
+                to="/a-propos"
                 onClick={onClose}
                 className="flex items-center gap-3 text-sm sm:text-base text-gray-600 hover:text-[#007B8A] transition-colors duration-300"
               >
@@ -350,7 +347,7 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
                       transition={{ delay: index * 0.1, duration: 0.4 }}
                     >
                       <Link
-                        to={sub.link}
+                        to={sub.link || (sub.id ? `/category?categoryId=${sub.id}` : '#')}
                         onClick={onClose}
                         className="group block text-lg tracking-wide font-medium relative text-gray-800 hover:text-[#007B8A] transition-colors duration-300"
                       >

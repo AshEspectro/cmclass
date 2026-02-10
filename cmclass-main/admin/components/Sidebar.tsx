@@ -7,6 +7,7 @@ import {
   ShoppingCart, 
   Users, 
   Settings,
+  Info,
   LogOut,
   X
 } from 'lucide-react';
@@ -22,6 +23,7 @@ interface SidebarProps {
 const menuItems = [
   { id: 'dashboard', label: 'Tableau de Bord', icon: LayoutDashboard },
   { id: 'content', label: 'Gestion de Contenu', icon: FileText },
+  { id: 'about', label: 'À propos', icon: Info },
   { id: 'products', label: 'Produits', icon: Package },
   { id: 'categories', label: 'Catégories', icon: FolderTree },
   { id: 'media', label: 'Médiathèque', icon: Image },

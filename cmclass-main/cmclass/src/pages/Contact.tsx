@@ -40,7 +40,7 @@ export const Contact = () => {
           >
             <h1 className="mb-4 sm:mb-6">CONTACTEZ-NOUS</h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed px-4">
-              Nous sommes à votre écoute. Que ce soit pour une question, une collaboration ou simplement 
+              Nous sommes à votre écoute. Que ce soit pour une question, une collaboration ou simplement
               pour échanger, n'hésitez pas à nous contacter.
             </p>
           </motion.div>
@@ -113,21 +113,21 @@ export const Contact = () => {
                 <div className="flex gap-4">
                   <a
                     href="#"
-                    className="w-12 h-12 border border-gray-300 flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
+                    className="w-12 h-12 border flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
                     aria-label="Instagram"
                   >
                     <Instagram size={20} />
                   </a>
                   <a
                     href="#"
-                    className="w-12 h-12 border border-gray-300 flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
+                    className="w-12 h-12 border  flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
                     aria-label="Facebook"
                   >
                     <Facebook size={20} />
                   </a>
                   <a
                     href="#"
-                    className="w-12 h-12 border border-gray-300 flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
+                    className="w-12 h-12 border  flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
                     aria-label="Twitter"
                   >
                     <Twitter size={20} />
@@ -156,7 +156,7 @@ export const Contact = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full border border-gray-300 px-4 py-3 focus:outline-none focus:border-[#007B8A] transition-colors duration-300"
+                    className="w-full border border-gray-300 px-4 py-3 rounded-xs focus:outline-none focus:border-[#007B8A] transition-colors duration-300"
                   />
                 </div>
 
@@ -171,7 +171,7 @@ export const Contact = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full border border-gray-300 px-4 py-3 focus:outline-none focus:border-[#007B8A] transition-colors duration-300"
+                    className="w-full border border-gray-300 px-4 py-3 rounded focus:outline-none focus:border-[#007B8A] transition-colors duration-300"
                   />
                 </div>
 
@@ -185,7 +185,7 @@ export const Contact = () => {
                     value={formData.subject}
                     onChange={handleChange}
                     required
-                    className="w-full border border-gray-300 px-4 py-3 focus:outline-none focus:border-[#007B8A] transition-colors duration-300"
+                    className="w-full border border-gray-300 px-4 py-3 rounded focus:outline-none focus:border-[#007B8A] transition-colors duration-300"
                   >
                     <option value="">Sélectionnez un sujet</option>
                     <option value="commande">Question sur une commande</option>
@@ -206,13 +206,13 @@ export const Contact = () => {
                     onChange={handleChange}
                     required
                     rows={6}
-                    className="w-full border border-gray-300 px-4 py-3 focus:outline-none focus:border-[#007B8A] transition-colors duration-300 resize-none"
+                    className="w-full border border-gray-300 px-4 py-3 rounded focus:outline-none focus:border-[#007B8A] transition-colors duration-300 resize-none"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-[#007B8A] text-white py-4 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                  className="w-full bg-[#007B8A] text-white py-4 hover:bg-[#006170] rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg"
                 >
                   ENVOYER
                 </button>

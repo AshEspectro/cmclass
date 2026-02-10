@@ -1,8 +1,25 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { authApi } from "../services/authApi";
 
 export default function AccountPage_A() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+    try {
+      await authApi.forgotPassword(email);
+      setMessage({ type: 'success', text: "Si un compte existe pour cet e-mail, vous recevrez un lien de connexion." });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err?.message || "Une erreur est survenue." });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const Info = () => (
     <div className="bg-gray-50 border border-none px-8 py-10 w-full max-w-lg mx-auto">
@@ -39,7 +56,7 @@ export default function AccountPage_A() {
           </p>
 
           {/* FORMULAIRE */}
-          <form className="space-y-8">
+          <form className="space-y-8" onSubmit={handleSubmit}>
 
             {/* Champ email */}
             <div className="flex flex-col">
@@ -50,16 +67,24 @@ export default function AccountPage_A() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border border-gray-300 px-4 py-3 rounded-md focus:outline-none focus:border-black text-sm"
+                required
               />
             </div>
+
+            {message && (
+              <p className={`text-xs ${message.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                {message.text}
+              </p>
+            )}
 
             {/* CTA */}
             <div className="flex flex-col items-center md:items-end mt-auto">
               <button
                 type="submit"
+                disabled={loading}
                 className="bg-black text-white py-3 w-xs rounded-3xl text-sm tracking-wide hover:bg-gray-800 transition"
               >
-                Envoyer
+                {loading ? "Envoi..." : "Envoyer"}
               </button>
 
               {/* Lien créer un compte */}

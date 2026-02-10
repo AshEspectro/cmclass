@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { User, LogOut } from "lucide-react";
 import { createPortal } from "react-dom";
-import { SiGoogle } from "react-icons/si";import { Link } from "react-router-dom";
-                                                                                                                                                                                                                         ;
+import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { GoogleSignInButton } from "./GoogleSignInButton";
 
 // WRAPPER (User icon trigger)
 export const UserAccountOverlayWrapper = () => {
@@ -34,17 +35,41 @@ interface AccountProps {
 }
 
 export const Account = ({ onClose }: AccountProps) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isAuthenticated, user, login, logout, oauthLogin } = useAuth();
   const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoggedIn(true);
+    setError(null);
+    setLoading(true);
+    try {
+      await login(loginData);
+      onClose();
+    } catch (err: any) {
+      setError(err?.message || "Invalid email or password");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    logout();
     setLoginData({ email: "", password: "" });
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    setError(null);
+    setLoading(true);
+    try {
+      await oauthLogin({ provider: "google", token: credential });
+      onClose();
+    } catch (err: any) {
+      setError(err?.message || "Google authentication failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // INFO BLOCK
@@ -52,10 +77,10 @@ export const Account = ({ onClose }: AccountProps) => {
     <div className=" mt-8 py-8 px-8 bg-gray-100 style-none rounded-md text-sm text-gray-700 space-y-2">
       <p className="font-medium text-xs">What you will find in your MyLV account:</p>
       <ul className="list-disc list-inside space-y-2 pl-8">
-        <li className=" py-2 text-xs" >Access your order history</li>
-        <li className="border-t border-gray-200 py-2 text-xs" >Manage your personal information</li>
-        <li className="border-t border-gray-200 py-2 text-xs" >Receive Louis Vuitton's digital communications</li>
-        <li className="border-t border-gray-200 py-2 text-xs" >Register your wishlist</li>
+        <li className=" py-2 text-xs">Access your order history</li>
+        <li className="border-t border-gray-200 py-2 text-xs">Manage your personal information</li>
+        <li className="border-t border-gray-200 py-2 text-xs">Receive Louis Vuitton's digital communications</li>
+        <li className="border-t border-gray-200 py-2 text-xs">Register your wishlist</li>
       </ul>
     </div>
   );
@@ -74,125 +99,134 @@ export const Account = ({ onClose }: AccountProps) => {
         transition={{ type: "tween", duration: 0.3 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-8 md:px-16 lg:px-32">{isLoggedIn ? (
-          // ------------------------------------------------------------------
-          // LOGGED IN
-          // ------------------------------------------------------------------
-          <div className="min-h-full flex  flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">MON COMPTE</h2>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-gray-600 hover:text-[#007B8A] transition-colors"
-              >
-                <LogOut size={20} />
-                <span>Déconnexion</span>
-              </button>
-            </div>
-
-            <p className="text-gray-600">
-              Bienvenue dans votre espace personnel.
-            </p>
-          </div>
-        ) : (
-          // ------------------------------------------------------------------
-          // LOGIN ONLY (NO SIGNUP TAB, NO MULTIPLE SECTIONS)
-          // ------------------------------------------------------------------
-          <div>
-            {/* Close Button */}
-
-           {onClose && (
-          <button
-            onClick={onClose}
-            className="absolute right-8 top-8 text-gray-500 hover:text-black transition"
-          >
-            ✕
-          </button>
-        )}
-            <h2 className="t font-medium text-sm py-6">Identification</h2>
-            
-
-            <p className="py-6 font-medium text-xs">I already have an account.</p>
-
-            {/* Google Login */}
-            <button className="w-full bg-gray-100 py-4 rounded-3xl flex text-sm items-center justify-center gap-2 hover:bg-gray-200 transition mb-4">
-              <SiGoogle size={22} />
-              Sign In With Google
-            </button>
-
-            <div className="flex items-center my-4">
-              <span className="flex-1 border-b border-gray-300" />
-              <span className="px-2 my-6 text-gray-500">OR</span>
-              <span className="flex-1 border-b border-gray-300" />
-            </div>
-
-            <form onSubmit={handleLogin} >
-              <p className="font-regular flex justify-end text-xs ">Required Fields*</p>
-              <p className="font-regular pb-2 text-xs ">login*</p>
-              <input
-                type="email"
-                placeholder="Login*"
-                value={loginData.email}
-                onChange={(e) =>
-                  setLoginData((prev) => ({ ...prev, email: e.target.value }))
-                }
-                className="w-full border border-gray-300 px-4 py-3 mb-6 rounded-md focus:border-[#007B8A]"
-                required
-              />
-              <p className="font-regular pb-2 text-xs ">Password*</p>
-              <input
-                type="password"
-                placeholder="Password*"
-                value={loginData.password}
-                onChange={(e) =>
-                  setLoginData((prev) => ({ ...prev, password: e.target.value }))
-                }
-                className="w-full border border-gray-300 px-4 py-3  rounded-md focus:border-[#007B8A]"
-                required
-              />
-
-              
-
-              <button
-                type="button"
-                className="text-[#007B8A] hover:underline mb-4 text-xs"
-              >
-                Forgot your password?
-              </button>
-
-              <p className="text-sm text-gray-500 mt-2">
-                Or use a one-time login link to sign in. Email me the link.
-              </p>
-            </form>
-            <button
-                type="submit"
-                className="w-full bg-[#000000] text-md text-white py-3 my-4 rounded-3xl hover:bg-[#006170]"
-              >
-                Sign In
-              </button>
-
-            {/* LOWER SECTION */}
-          </div>  
-        )}</div>
-        <div className="mt-8 border-t border-gray-200 pt-6 ">
         <div className="px-8 md:px-16 lg:px-32">
-              <p className="font-medium text-md my-6">I do not have an account.</p>
-              <p className="text-gray-500 font-medium text-xs mb-6">
-                Access your MyLV account to discover your wishlist and order
-                history.
+          {isAuthenticated ? (
+            // ------------------------------------------------------------------
+            // LOGGED IN
+            // ------------------------------------------------------------------
+            <div className="min-h-full flex  flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold">MON COMPTE</h2>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 text-gray-600 hover:text-[#007B8A] transition-colors"
+                >
+                  <LogOut size={20} />
+                  <span>Déconnexion</span>
+                </button>
+              </div>
+
+              <p className="text-gray-600">
+                Bienvenue {user?.firstName || user?.email || ""} dans votre espace personnel.
               </p>
-              <Link to="/compte" onClick={onClose}>
+            </div>
+          ) : (
+            // ------------------------------------------------------------------
+            // LOGIN ONLY (NO SIGNUP TAB, NO MULTIPLE SECTIONS)
+            // ------------------------------------------------------------------
+            <div>
+              {/* Close Button */}
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="absolute right-8 top-8 text-gray-500 hover:text-black transition"
+                >
+                  ✕
+                </button>
+              )}
+              <h2 className="t font-medium text-sm py-6">Identification</h2>
+
+              <p className="py-6 font-medium text-xs">I already have an account.</p>
+
+              {/* Google Login */}
+              <GoogleSignInButton
+                className="bg-gray-100 border border-gray-300 rounded-3xl hover:bg-gray-200 transition py-3 mb-4"
+                text="signin_with"
+                onCredential={handleGoogleCredential}
+                onError={(msg) => setError(msg)}
+              />
+
+              <div className="flex items-center my-4">
+                <span className="flex-1 border-b border-gray-300" />
+                <span className="px-2 my-6 text-gray-500">OR</span>
+                <span className="flex-1 border-b border-gray-300" />
+              </div>
+
+              <form onSubmit={handleLogin}>
+                <p className="font-regular flex justify-end text-xs ">Required Fields*</p>
+                <p className="font-regular pb-2 text-xs ">login*</p>
+                <input
+                  type="email"
+                  placeholder="Login*"
+                  value={loginData.email}
+                  onChange={(e) =>
+                    setLoginData((prev) => ({ ...prev, email: e.target.value }))
+                  }
+                  className="w-full border border-gray-300 px-4 py-3 mb-6 rounded-md focus:border-[#007B8A]"
+                  required
+                />
+                <p className="font-regular pb-2 text-xs ">Password*</p>
+                <input
+                  type="password"
+                  placeholder="Password*"
+                  value={loginData.password}
+                  onChange={(e) =>
+                    setLoginData((prev) => ({ ...prev, password: e.target.value }))
+                  }
+                  className="w-full border border-gray-300 px-4 py-3  rounded-md focus:border-[#007B8A]"
+                  required
+                />
+
+                <div className="flex items-center justify-between mt-4">
+                  <Link
+                    to="/forgot-password"
+                    onClick={onClose}
+                    className="text-[#007B8A] hover:underline text-xs"
+                  >
+                    Forgot your password?
+                  </Link>
+                  <Link
+                    to="/alternative-login"
+                    onClick={onClose}
+                    className="text-xs text-gray-500 hover:underline"
+                  >
+                    Email me the link
+                  </Link>
+                </div>
+
+                {error && <p className="text-red-500 text-xs mt-4">{error}</p>}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#000000] text-md text-white py-3 my-4 rounded-3xl hover:bg-[#006170] disabled:bg-gray-400"
+                >
+                  {loading ? "Connexion..." : "Sign In"}
+                </button>
+              </form>
+
+              {/* LOWER SECTION */}
+            </div>
+          )}
+        </div>
+        <div className="mt-8 border-t border-gray-200 pt-6 ">
+          <div className="px-8 md:px-16 lg:px-32">
+            <p className="font-medium text-md my-6">I do not have an account.</p>
+            <p className="text-gray-500 font-medium text-xs mb-6">
+              Access your MyLV account to discover your wishlist and order
+              history.
+            </p>
+            <Link to="/compte" onClick={onClose}>
               <button className="w-full border-2 border-[#007B8A]  py-2 rounded-3xl hover:bg-[#f0fafa] transition">
                 Create a my Account
-              </button></Link>
-
-              
-            </div>
+              </button>
+            </Link>
           </div>
-          <div className="block md:hidden">
-                <MyLVInfo />
-              </div>
+        </div>
+        <div className="block md:hidden">
+          <MyLVInfo />
+        </div>
       </motion.div>
     </div>
   );
-};                                                                                                                                                                         
+};

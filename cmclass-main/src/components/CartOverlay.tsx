@@ -3,12 +3,15 @@ import { X, Minus, Plus, Trash2, Heart } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
+import { useAuth } from '../contexts/AuthContext';
+import { AuthRequired } from './AuthRequired';
 
 interface CartOverlayProps {
   onClose: () => void;
 }
 
 export const CartOverlay = ({ onClose }: CartOverlayProps) => {
+  const { isAuthenticated } = useAuth();
   const { items, removeFromCart, updateQuantity, total } = useCart();
    const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   
@@ -49,7 +52,15 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {items.length === 0 ? (
+          {!isAuthenticated ? (
+            <div className="py-8 sm:py-12">
+              <AuthRequired
+                title="Connectez-vous pour accéder à votre panier"
+                description="Créez un compte ou connectez-vous pour ajouter des articles au panier."
+                onAction={onClose}
+              />
+            </div>
+          ) : items.length === 0 ? (
             <div className="text-center py-8 sm:py-12">
               <p className="text-sm sm:text-base text-gray-600 mb-6">Votre panier est vide</p>
               <button
@@ -191,7 +202,7 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
         </div>
 
         {/* Footer */}
-        {items.length > 0 && (
+        {isAuthenticated && items.length > 0 && (
           <div className="border-t border-gray-200 p-4 sm:p-6">
             <div className="flex justify-between mb-4 sm:mb-6 text-sm sm:text-base">
               <span>TOTAL</span>

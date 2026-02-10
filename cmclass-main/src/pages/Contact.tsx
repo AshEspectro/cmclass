@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { MapPin, Phone, Mail, Instagram, Facebook, Twitter } from 'lucide-react';
 
+const API_BASE_URL =
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_API_URL ||
+  'http://localhost:3000';
+
 export const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -10,14 +15,37 @@ export const Contact = () => {
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
+    if (submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    setSubmitted(false);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        const message = payload?.message || payload?.error || `Erreur lors de l'envoi (${response.status}).`;
+        throw new Error(Array.isArray(message) ? message.join(', ') : message);
+      }
+
+      setSubmitted(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
-      setSubmitted(false);
-    }, 3000);
+      setTimeout(() => setSubmitted(false), 3000);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -212,10 +240,22 @@ export const Contact = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-[#007B8A] text-white py-4 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                  disabled={submitting}
+                  className="w-full bg-[#007B8A] text-white py-4 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
                 >
-                  ENVOYER
+                  {submitting ? 'ENVOI...' : 'ENVOYER'}
                 </button>
+
+                {submitError && (
+                  <motion.p
+                    className="text-red-600 text-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    {submitError}
+                  </motion.p>
+                )}
 
                 {submitted && (
                   <motion.p

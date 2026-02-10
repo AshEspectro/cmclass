@@ -13,7 +13,6 @@ import { useWishlist } from "../contexts/WishlistContext";
 import { useCart } from "../contexts/CartContext";
 import type { CartItem } from "../contexts/CartContext";
 import { ProductCard } from "../components/Hero_cat";
-import type { Product_cat } from "../data/products";
 import { publicApi } from "../services/publicApi";
 
 // Product shape returned by the public API
@@ -32,6 +31,8 @@ export interface ApiProduct {
   categoryId?: number;
   category?: string | null;
   description?: string | null;
+  careInstructions?: string | null;
+  environmentalInfo?: string | null;
 }
 
 const normalizeAssetUrl = (url?: string | null) => {
@@ -77,9 +78,8 @@ export function ExpandableText({
     <div className="w-full text-gray-700">
       <div className="relative">
         <p
-          className={`text-justify text-sm transition-all duration-300 ${
-            expanded ? "" : `line-clamp-${maxLines}`
-          }`}
+          className={`text-justify text-sm transition-all duration-300 ${expanded ? "" : `line-clamp-${maxLines}`
+            }`}
         >
           {children}
         </p>
@@ -118,9 +118,8 @@ export const ExpandableSection = ({ title, children }: ExpandableSectionProps) =
       </button>
 
       <div
-        className={`mt-3 text-gray-700 text-sm transition-all duration-300 overflow-hidden ${
-          isOpen ? "max-h-96" : "max-h-0"
-        }`}
+        className={`mt-3 text-gray-700 text-sm transition-all duration-300 overflow-hidden ${isOpen ? "max-h-96" : "max-h-0"
+          }`}
       >
         {children}
       </div>
@@ -137,7 +136,19 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
   const [product, setProduct] = useState<ApiProduct | null>(productProp ?? null);
   const [loading, setLoading] = useState(!productProp);
   const [error, setError] = useState<string | null>(null);
-  const [discoveryProducts, setDiscoveryProducts] = useState<Product_cat[]>([]);
+  type DiscoveryItem = {
+    id: number;
+    label: string;
+    name: string;
+    price: string;
+    sizes?: string[];
+    longDescription?: string;
+    productImage: string;
+    mannequinImage: string;
+    colors: { hex: string; images: string[]; name?: string }[];
+  };
+
+  const [discoveryProducts, setDiscoveryProducts] = useState<DiscoveryItem[]>([]);
   const [discoveryLoading, setDiscoveryLoading] = useState(true);
 
   useEffect(() => {
@@ -161,6 +172,7 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
       setLoading(true);
       setError(null);
       const fetched = await publicApi.getProduct(id);
+      console.log("[DEBUG] Fetched product data:", fetched);
       if (!mounted) return;
       if (!fetched) {
         setError("Produit introuvable");
@@ -181,45 +193,37 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
     (async () => {
       setDiscoveryLoading(true);
       try {
-        const data = await publicApi.getProducts();
+        const data = await publicApi.getProducts({ page: 1, pageSize: 100 });
+
         const mapped: Product_cat[] = Array.isArray(data)
-          ? data.map((p: any) => {
-              const price =
-                typeof p.price === "string"
-                  ? p.price
-                  : typeof p.price === "number"
-                    ? `${p.price.toFixed(2)}$`
-                    : typeof p.priceCents === "number"
-                      ? `${(p.priceCents / 100).toFixed(2)}$`
-                      : "0.00$";
-
-              const colors = Array.isArray(p.colors)
-                ? p.colors.map((c: any) =>
-                    typeof c === "string"
-                      ? { hex: c, images: [] }
-                      : {
-                          hex: c?.hex || "#000000",
-                          images: Array.isArray(c?.images) ? c.images : [],
-                        }
-                  )
-                : [];
-
-              return {
-                id: Number(p.id),
-                label: p.label || "",
-                name: p.name || "",
-                price,
-                longDescription: p.longDescription || p.description || "",
-                productImage: p.productImage || p.images?.[0] || "",
-                mannequinImage: p.mannequinImage || p.images?.[1] || p.productImage || "",
-                colors,
-                sizes: Array.isArray(p.sizes) ? p.sizes : [],
-              };
-            })
+          ? data.map((p: any) => ({
+            id: Number(p.id),
+            label: p.label || "",
+            name: p.name || "",
+            price:
+              typeof p.price === "string"
+                ? p.price
+                : typeof p.price === "number"
+                  ? `${p.price.toFixed(2)}$`
+                  : typeof p.priceCents === "number"
+                    ? `${(p.priceCents / 100).toFixed(2)}$`
+                    : "0.00$",
+            longDescription: p.longDescription || p.description || "",
+            productImage: p.productImage || (Array.isArray(p.images) ? p.images[0] : "") || "",
+            mannequinImage:
+              p.mannequinImage || (Array.isArray(p.images) ? p.images[1] : "") || p.productImage || "",
+            colors: Array.isArray(p.colors)
+              ? p.colors.map((c: any) =>
+                typeof c === "string"
+                  ? { hex: c, images: [] }
+                  : { hex: c?.hex || "#000000", images: Array.isArray(c?.images) ? c.images : [] }
+              )
+              : [],
+            sizes: Array.isArray(p.sizes) ? p.sizes : [],
+          }))
           : [];
 
-        const filtered =
-          product?.id != null ? mapped.filter((p) => p.id !== Number(product.id)) : mapped;
+        const filtered = product?.id != null ? mapped.filter((p) => p.id !== Number(product.id)) : mapped;
 
         const picked = filtered.slice(0, 4);
         if (mounted) setDiscoveryProducts(picked);
@@ -250,7 +254,8 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
     if (!product) return;
     const normalized = normalizeColors(product.colors);
     setSelectedColor(normalized[0]?.hex || "#000000");
-    setSelectedSize(product.sizes && product.sizes.length > 0 ? product.sizes[0] : "Unique");
+    // Do not auto-select a size — require user choice when multiple sizes exist
+    setSelectedSize(product.sizes && product.sizes.length > 0 ? null : "Unique");
     setImageIndex(0);
     setDropdownOpen(false);
     setQuantity(1);
@@ -301,7 +306,12 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
   };
 
   const handleAddToCart = () => {
-    if (!effectiveSize || !selectedColor) return;
+    // If product has sizes, require the user to select one
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      setDropdownOpen(true);
+      return;
+    }
+    if (!selectedColor) return;
     const parsedPrice = Number(String(product.price ?? 0).replace(/[^0-9.-]+/g, ""));
     addToCart(
       { ...(product as unknown as Partial<CartItem>), price: parsedPrice } as Partial<CartItem>,
@@ -319,18 +329,16 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
           <div className="relative w-full aspect-[4/5]">
             <img
               src={mainImage}
-              className={`absolute inset-0 w-full bg-black/10 h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto ${
-                hoveringImage ? "opacity-0" : "opacity-100"
-              }`}
+              className={`absolute inset-0 w-full bg-black/10 h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto ${hoveringImage ? "opacity-0" : "opacity-100"
+                }`}
               onMouseEnter={() => setHoveringImage(true)}
               onMouseLeave={() => setHoveringImage(false)}
               alt={product.name}
             />
             <img
               src={mannequinImage}
-              className={`absolute inset-0 w-full h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto ${
-                hoveringImage ? "opacity-100" : "opacity-0"
-              }`}
+              className={`absolute inset-0 w-full h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto ${hoveringImage ? "opacity-100" : "opacity-0"
+                }`}
               alt={`${product.name} mannequin`}
             />
 
@@ -370,9 +378,8 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
                   <button onClick={toggleWishlist} className="">
                     <Heart
                       size={18}
-                      className={`transition-colors ${
-                        inWishlist ? "text-[#007B8A]" : "text-black"
-                      }`}
+                      className={`transition-colors ${inWishlist ? "text-[#007B8A]" : "text-black"
+                        }`}
                     />
                   </button>
                 </div>
@@ -401,9 +408,8 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
                           setSelectedColor(c.hex);
                           setImageIndex(0);
                         }}
-                        className={`w-12 h-12 hover:border hover:border-[#007B8A] rounded-sm ${
-                          selectedColor === c.hex ? "ring-2 ring-[#007B8A]" : "border-gray-300"
-                        }`}
+                        className={`w-12 h-12 hover:border hover:border-[#007B8A] rounded-sm ${selectedColor === c.hex ? "ring-2 ring-[#007B8A]" : "border-gray-300"
+                          }`}
                         style={{ backgroundColor: c.hex }}
                       />
                     ))}
@@ -422,9 +428,8 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
                       {selectedSize || "Sélectionner"}
                       <ChevronDown
                         size={16}
-                        className={`transition-transform duration-300 ${
-                          dropdownOpen ? "rotate-180" : ""
-                        }`}
+                        className={`transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""
+                          }`}
                       />
                     </button>
                   </div>
@@ -438,9 +443,8 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
                             <button
                               key={idx}
                               onClick={() => handleSizeClick(item.size)}
-                              className={`w-full text-left px-6 py-2 text-sm flex justify-between items-center transition-colors ${
-                                !isSelected ? "hover:bg-gray-100" : "bg-gray-50"
-                              }`}
+                              className={`w-full text-left px-6 py-2 text-sm flex justify-between items-center transition-colors ${!isSelected ? "hover:bg-gray-100" : "bg-gray-50"
+                                }`}
                             >
                               <span>{item.size}</span>
                               {isSelected && <Check size={18} />}
@@ -573,31 +577,21 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
         </div>
 
         <div className="w-full md:w-sm px-8">
-          <ExpandableSection title="Caractéristiques environnementales">
-            <p>Traçabilité</p>
-            <ul className="text-sm mb-2">
-              <li>- Lavage à la main ou en machine à 30°C</li>
-              <li>- Utiliser un détergent doux</li>
-              <li>- Ne pas utiliser d'eau de Javel</li>
-              <li>- Séchage à l'air libre, éviter le sèche-linge</li>
-              <li>- Repassage à basse température si nécessaire</li>
-            </ul>
-          </ExpandableSection>
-          <ExpandableSection title="Entretien du produit">
-            <div>
-              <p className="text-sm mb-2">
-                Afin de préserver la qualité de ce vêtement, il est recommandé de respecter les
-                consignes d'entretien :
+          {product.environmentalInfo && (
+            <ExpandableSection title="Caractéristiques environnementales">
+              <p className="text-sm whitespace-pre-line leading-relaxed">
+                {product.environmentalInfo}
               </p>
-              <ul className="text-sm mb-2">
-                <li>- Lavage à la main ou en machine à 30°C</li>
-                <li>- Utiliser un détergent doux</li>
-                <li>- Ne pas utiliser d'eau de Javel</li>
-                <li>- Séchage à l'air libre, éviter le sèche-linge</li>
-                <li>- Repassage à basse température si nécessaire</li>
-              </ul>
-            </div>
-          </ExpandableSection>
+            </ExpandableSection>
+          )}
+
+          {product.careInstructions && (
+            <ExpandableSection title="Entretien du produit">
+              <p className="text-sm whitespace-pre-line leading-relaxed">
+                {product.careInstructions}
+              </p>
+            </ExpandableSection>
+          )}
         </div>
       </div>
 

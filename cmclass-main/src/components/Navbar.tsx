@@ -29,8 +29,9 @@ export const Navbar = () => {
         const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/brand');
         if (!response.ok) throw new Error('Failed to fetch brand');
         const data = await response.json();
-        if (data.logoUrl) {
-          setBrandLogo(data.logoUrl);
+        const logo = data.logoLightUrl || data.logoUrl || data.logoDarkUrl;
+        if (logo) {
+          setBrandLogo(logo);
         }
       } catch (err) {
         console.error('Failed to fetch brand logo:', err);
@@ -181,6 +182,7 @@ export const Navbar = () => {
                     placeholder="Rechercher "
                     value={mobileSearchQuery}
                     onChange={(e) => setMobileSearchQuery(e.target.value)}
+                    onFocus={() => setIsSearchOpen(true)}
                     className="w-full border border-gray-300 py-3 px-6 pr-10 text-sm rounded-4xl focus:outline-none focus:border-[#007B8A] transition-colors duration-300"
                   />
                   <Search

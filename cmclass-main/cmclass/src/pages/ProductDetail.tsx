@@ -1,24 +1,113 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { products } from '../data/products';
+import { publicApi } from '../services/publicApi';
 import { useCart } from '../contexts/CartContext';
 import type { CartItem } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { ProductCard } from '../components/ProductCard';
 import { QuickViewModal } from '../components/QuickViewModal';
-import type { Product } from '../data/products';
+import type { Product_cat } from '../types/api';
 
 export const ProductDetail = () => {
   const { id } = useParams();
-  const product = products.find(p => p.id === id);
+  const [product, setProduct] = useState<Product_cat | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product_cat | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product_cat[]>([]);
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const data = await publicApi.getProduct(id);
+        if (data) {
+          // Map to Product_cat
+          const mapped: Product_cat = {
+            id: Number(data.id),
+            label: data.label || "",
+            name: data.name || "",
+            price: typeof data.price === "string" ? data.price : typeof data.price === "number" ? `${data.price.toFixed(2)}$` : "0.00$",
+            longDescription: data.longDescription || data.description || "",
+            productImage: data.productImage || (Array.isArray(data.images) ? data.images[0] : "") || "",
+            mannequinImage: data.mannequinImage || (Array.isArray(data.images) ? data.images[1] : "") || data.productImage || "",
+            colors: Array.isArray(data.colors)
+              ? data.colors.map((c: any) =>
+                typeof c === "string"
+                  ? { hex: c, images: [] }
+                  : { hex: c?.hex || "#000000", images: Array.isArray(c?.images) ? c.images : [] }
+              )
+              : [],
+            sizes: Array.isArray(data.sizes) ? data.sizes : [],
+          };
+          setProduct(mapped);
+
+          // Set initial selections
+          if (mapped.colors && mapped.colors.length > 0) {
+            setSelectedColor(mapped.colors[0].hex);
+          }
+          if (mapped.sizes && mapped.sizes.length > 0) {
+            setSelectedSize(mapped.sizes[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  useEffect(() => {
+    // Fetch related products
+    const fetchRelated = async () => {
+      try {
+        const data = await publicApi.getProducts({ pageSize: 8 });
+        const mapped: Product_cat[] = (data || []).map((p: any) => ({
+          id: Number(p.id),
+          label: p.label || "",
+          name: p.name || "",
+          price: typeof p.price === "string" ? p.price : typeof p.price === "number" ? `${p.price.toFixed(2)}$` : "0.00$",
+          longDescription: p.longDescription || p.description || "",
+          productImage: p.productImage || (Array.isArray(p.images) ? p.images[0] : "") || "",
+          mannequinImage: p.mannequinImage || (Array.isArray(p.images) ? p.images[1] : "") || p.productImage || "",
+          colors: Array.isArray(p.colors)
+            ? p.colors.map((c: any) =>
+              typeof c === "string"
+                ? { hex: c, images: [] }
+                : { hex: c?.hex || "#000000", images: Array.isArray(c?.images) ? c.images : [] }
+            )
+            : [],
+          sizes: Array.isArray(p.sizes) ? p.sizes : [],
+        }));
+
+        // Filter out current product
+        const filtered = mapped.filter(p => p.id !== Number(id)).slice(0, 4);
+        setRelatedProducts(filtered);
+      } catch (error) {
+        console.error('Failed to fetch related products:', error);
+      }
+    };
+
+    if (id) fetchRelated();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="pt-20 sm:pt-24 min-h-screen flex items-center justify-center">
+        <div className="text-center">Chargement...</div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -33,23 +122,19 @@ export const ProductDetail = () => {
     );
   }
 
-  const inWishlist = isInWishlist(product.id);
-  const relatedProducts = products
-    .filter(p => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
+  const productIdStr = product.id.toString();
+  const inWishlist = isInWishlist(productIdStr);
 
   const handleAddToCart = () => {
     if (selectedSize && selectedColor) {
-      // Convert Product -> Partial<CartItem> to match addToCart signature
       const cartProduct: Partial<CartItem> = {
-        id: product.id,
+        id: productIdStr,
         name: product.name,
-        price: product.price,
-        label: (product as unknown as { label?: string }).label ?? undefined,
-        productImage: product.image ?? product.images?.[0] ?? undefined,
-        mannequinImage: product.images?.[1] ?? undefined,
-        // Map string[] colors to expected { hex, images[] }[] shape
-        colors: product.colors?.map((c) => ({ hex: String(c), images: [] })),
+        price: Number(product.price.replace(/[^0-9.-]+/g, "")),
+        label: product.label,
+        productImage: product.productImage,
+        mannequinImage: product.mannequinImage,
+        colors: product.colors,
       };
 
       addToCart(cartProduct, selectedSize, selectedColor, quantity);
@@ -58,7 +143,7 @@ export const ProductDetail = () => {
 
   const handleWishlistClick = () => {
     if (inWishlist) {
-      removeFromWishlist(product.id);
+      removeFromWishlist(productIdStr);
     } else {
       addToWishlist(product);
     }
@@ -75,7 +160,7 @@ export const ProductDetail = () => {
             </Link>
             <span>/</span>
             <Link to="/homme" className="hover:text-[#007B8A] transition-colors duration-300">
-              {product.category}
+              Collection
             </Link>
             <span>/</span>
             <span className="text-black">{product.name}</span>
@@ -90,14 +175,22 @@ export const ProductDetail = () => {
             {/* Images */}
             <div>
               <motion.div
-                className="aspect-[3/4] bg-gray-100 mb-3 sm:mb-4"
+                className="aspect-[3/4] bg-gray-100 mb-3 sm:mb-4 overflow-hidden"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6 }}
-              />
+              >
+                {product.productImage && (
+                  <img src={product.productImage} alt={product.name} className="w-full h-full object-cover" />
+                )}
+              </motion.div>
               <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="aspect-square bg-gray-100 cursor-pointer hover:opacity-75 transition-opacity duration-300" />
+                {product.colors.slice(0, 4).map((colorObj, i) => (
+                  <div key={i} className="aspect-square bg-gray-100 cursor-pointer hover:opacity-75 transition-opacity duration-300 overflow-hidden">
+                    {colorObj.images && colorObj.images[0] && (
+                      <img src={colorObj.images[0]} alt={`Color ${i + 1}`} className="w-full h-full object-cover" />
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -109,12 +202,12 @@ export const ProductDetail = () => {
               transition={{ duration: 0.6 }}
             >
               <h1 className="mb-3 sm:mb-4">{product.name}</h1>
-              <p className="text-2xl sm:text-3xl mb-4 sm:mb-6">{product.price.toLocaleString('fr-FR')} FC</p>
+              <p className="text-2xl sm:text-3xl mb-4 sm:mb-6">{product.price}</p>
 
-              <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">{product.description}</p>
+              <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">{product.longDescription}</p>
 
               {/* Size Selection */}
-              {product.sizes.length > 0 && (
+              {product.sizes && product.sizes.length > 0 && (
                 <div className="mb-5 sm:mb-6">
                   <label className="block text-xs sm:text-sm mb-2 sm:mb-3">TAILLE</label>
                   <div className="flex flex-wrap gap-2">
@@ -122,11 +215,10 @@ export const ProductDetail = () => {
                       <button
                         key={size}
                         onClick={() => setSelectedSize(size)}
-                        className={`px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base border transition-all duration-300 ${
-                          selectedSize === size
-                            ? 'border-[#007B8A] bg-[#007B8A] text-white'
-                            : 'border-gray-300 hover:border-black'
-                        }`}
+                        className={`px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base border transition-all duration-300 ${selectedSize === size
+                          ? 'border-[#007B8A] bg-[#007B8A] text-white'
+                          : 'border-gray-300 hover:border-black'
+                          }`}
                       >
                         {size}
                       </button>
@@ -136,23 +228,25 @@ export const ProductDetail = () => {
               )}
 
               {/* Color Selection */}
-              {product.colors.length > 0 && (
+              {product.colors && product.colors.length > 0 && (
                 <div className="mb-6 sm:mb-8">
                   <label className="block text-xs sm:text-sm mb-2 sm:mb-3">COULEUR</label>
                   <div className="flex flex-wrap gap-2">
-                    {product.colors.map(color => (
-                      <button
-                        key={color}
-                        onClick={() => setSelectedColor(color)}
-                        className={`px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base border transition-all duration-300 ${
-                          selectedColor === color
-                            ? 'border-[#007B8A] bg-[#007B8A] text-white'
+                    {product.colors.map((colorObj, idx) => {
+                      const hex = typeof colorObj === 'string' ? colorObj : colorObj.hex;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => setSelectedColor(hex)}
+                          className={`w-10 h-10 rounded-full border-2 transition-all duration-300 ${selectedColor === hex
+                            ? 'ring-2 ring-offset-2 ring-[#007B8A]'
                             : 'border-gray-300 hover:border-black'
-                        }`}
-                      >
-                        {color}
-                      </button>
-                    ))}
+                            }`}
+                          style={{ backgroundColor: hex }}
+                          title={hex}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -181,13 +275,13 @@ export const ProductDetail = () => {
               <div className="flex gap-2 sm:gap-3 mb-6 sm:mb-8">
                 <button
                   onClick={handleAddToCart}
-                  disabled={!product.inStock || !selectedSize || !selectedColor}
+                  disabled={!selectedSize || !selectedColor}
                   className="flex-1 bg-[#007B8A] text-white py-3 sm:py-4 text-xs sm:text-sm md:text-base flex items-center justify-center gap-2 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   <ShoppingBag size={18} className="sm:hidden" />
                   <ShoppingBag size={20} className="hidden sm:block" />
-                  <span className="hidden sm:inline">{product.inStock ? 'AJOUTER AU PANIER' : 'ÉPUISÉ'}</span>
-                  <span className="sm:hidden">{product.inStock ? 'AJOUTER' : 'ÉPUISÉ'}</span>
+                  <span className="hidden sm:inline">AJOUTER AU PANIER</span>
+                  <span className="sm:hidden">AJOUTER</span>
                 </button>
                 <button
                   onClick={handleWishlistClick}

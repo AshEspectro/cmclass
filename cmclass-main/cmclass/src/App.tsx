@@ -47,9 +47,9 @@ function AppWrapper() {
 
   return (
     <BrandProvider>
-    <CartProvider>
       <AuthProvider>
-      <WishlistProvider>
+        <CartProvider>
+          <WishlistProvider>
         <ProtectedRoute>
           <div className="flex flex-col min-h-screen">
             {/* Navbar par défaut */}
@@ -92,9 +92,9 @@ function AppWrapper() {
             {!hideNavAndFooter && <Footer />}
           </div>
         </ProtectedRoute>
-      </WishlistProvider>
+          </WishlistProvider>
+        </CartProvider>
       </AuthProvider>
-    </CartProvider>
     </BrandProvider>
   );
 }

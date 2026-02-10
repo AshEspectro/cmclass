@@ -18,11 +18,19 @@ import { CampaignService } from './campaign.service';
 import { ServiceController } from './service.controller';
 import { ServiceService } from './service.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { AboutController } from './about.controller';
+import { DashboardController } from './dashboard.controller';
+import { OrdersController } from './orders.controller';
+import { AboutService } from '../about/about.service';
+import { FooterController } from './footer.controller';
+import { FooterService } from '../footer/footer.service';
+import { NotificationsController } from './notifications.controller';
+import { NotificationService } from '../notification/notification.service';
 
 @Module({
   imports: [AuthModule, PrismaModule],
-  controllers: [AdminController, UsersController, AuditController, SignupRequestsController, BrandController, CategoryController, ProductController, HeroController, CampaignController, ServiceController],
-  providers: [MailService, BrandService, CategoryService, ProductService, HeroService, CampaignService, ServiceService],
-  exports: [BrandService, CategoryService, ProductService, HeroService, CampaignService, ServiceService],
+  controllers: [AdminController, UsersController, AuditController, SignupRequestsController, BrandController, CategoryController, ProductController, HeroController, CampaignController, ServiceController, AboutController, DashboardController, OrdersController, FooterController, NotificationsController],
+  providers: [MailService, BrandService, CategoryService, ProductService, HeroService, CampaignService, ServiceService, AboutService, FooterService, NotificationService],
+  exports: [MailService, BrandService, CategoryService, ProductService, HeroService, CampaignService, ServiceService, AboutService, FooterService, NotificationService],
 })
 export class AdminModule {}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Eye } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { Product } from '../data/products';
+import type { Product_cat } from '../types/api';
 import { useWishlist } from '../contexts/WishlistContext';
 
 const normalizeAssetUrl = (url?: string | null) => {
@@ -13,29 +13,31 @@ const normalizeAssetUrl = (url?: string | null) => {
 };
 
 interface ProductCardProps {
-  product: Product;
-  onQuickView: (product: Product) => void;
+  product: Product_cat;
+  onQuickView: (product: Product_cat) => void;
 }
 
 export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
-  const inWishlist = isInWishlist(product.id);
+  const productIdStr = product.id.toString();
+  const inWishlist = isInWishlist(productIdStr);
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (inWishlist) {
-      removeFromWishlist(product.id);
+      removeFromWishlist(productIdStr);
     } else {
-      addToWishlist(product);
+      addToWishlist(product as any);
     }
   };
 
   const imageSrc = normalizeAssetUrl(
-    (product as unknown as { productImage?: string }).productImage ||
-      product.image ||
-      product.images?.[0]
+    product.productImage || (product.colors && product.colors[0]?.images[0]) || ''
   );
+
+  // Fallback for inStock since it might not be in Product_cat yet, assume true if undefined
+  const inStock = true;
 
   return (
     <motion.div
@@ -90,7 +92,7 @@ export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
           </button>
 
           {/* Out of Stock Badge */}
-          {!product.inStock && (
+          {!inStock && (
             <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs">
               ÉPUISÉ
             </div>
@@ -99,10 +101,9 @@ export const ProductCard = ({ product, onQuickView }: ProductCardProps) => {
 
         {/* Product Info */}
         <div className="mt-4">
-  <p className="text-sm font-medium">{product.name}</p>
-  <p className="hidden text-cyan-700 text-sm md:block">{product.price.toLocaleString('fr-FR')} FC</p>
-</div>
-
+          <p className="text-sm font-medium">{product.name}</p>
+          <p className="hidden text-cyan-700 text-sm md:block">{product.price}</p>
+        </div>
       </Link>
     </motion.div>
   );

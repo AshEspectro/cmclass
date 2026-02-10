@@ -1,8 +1,9 @@
-import  { useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Search } from 'lucide-react';
 import { motion } from 'motion/react';
-import { products } from '../data/products';
+import { publicApi } from '../services/publicApi';
+import type { ApiProduct } from './ProductCard';
 
 interface SearchPanelProps {
   onClose: () => void;
@@ -10,14 +11,40 @@ interface SearchPanelProps {
 
 export const SearchPanel = ({ onClose }: SearchPanelProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [results, setResults] = useState<ApiProduct[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredProducts = searchQuery.trim()
-    ? products.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.subcategory.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) {
+      setResults([]);
+      setError(null);
+      return;
+    }
+    const ctrl = new AbortController();
+    setLoading(true);
+    setError(null);
+    const handler = setTimeout(async () => {
+      try {
+        const data = await publicApi.getProducts(1, 12, q);
+        const items: ApiProduct[] = Array.isArray(data)
+          ? data
+          : Array.isArray((data as any).data)
+            ? (data as any).data
+            : [];
+        setResults(items);
+      } catch (e: any) {
+        if (!ctrl.signal.aborted) setError(e?.message || 'Erreur de recherche');
+      } finally {
+        if (!ctrl.signal.aborted) setLoading(false);
+      }
+    }, 250);
+    return () => {
+      ctrl.abort();
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
   const suggestedSearches = [
     'Chemises Homme',
@@ -94,10 +121,11 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
           {searchQuery.trim() && (
             <div>
               <p className="text-xs text-gray-600 mb-4 tracking-wide">
-                {filteredProducts.length} RÉSULTAT{filteredProducts.length !== 1 ? 'S' : ''}
+                {loading ? 'Recherche...' : `${results.length} RESULTAT${results.length !== 1 ? 'S' : ''}`}
               </p>
+              {error && <p className="text-sm text-red-600">{error}</p>}
               <div className="space-y-4">
-                {filteredProducts.map((product, index) => (
+                {results.map((product, index) => (
                   <motion.div
                     key={product.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -105,19 +133,28 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
                     transition={{ delay: index * 0.05 }}
                   >
                     <Link
-                      to={`/produit/${product.id}`}
+                      to={`/product/${product.id}`}
                       onClick={onClose}
                       className="flex gap-4 hover:bg-gray-50 p-2 -mx-2 transition-colors duration-300 group"
                     >
-                      <div className="w-20 h-20 bg-gray-100 flex-shrink-0">
-                        {/* Product image placeholder */}
+                      <div className="w-20 h-20 bg-gray-100 flex-shrink-0 overflow-hidden">
+                        {product.productImage && (
+                          <img src={product.productImage} alt={product.name} className="w-full h-full object-cover" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm mb-1 truncate group-hover:text-[#007B8A] transition-colors duration-300">
                           {product.name}
                         </h4>
-                        <p className="text-xs text-gray-600 mb-1">{product.subcategory}</p>
-                        <p className="text-sm">{product.price.toLocaleString('fr-FR')} FC</p>
+                        <p className="text-xs text-gray-600 mb-1">{(product as any).category || ''}</p>
+                        <p className="text-sm">
+                          {product.price
+                            ? product.price.toLocaleString('fr-FR')
+                            : product.priceCents
+                            ? (product.priceCents / 100).toLocaleString('fr-FR')
+                            : 0}{' '}
+                          FC
+                        </p>
                       </div>
                     </Link>
                   </motion.div>
@@ -126,7 +163,7 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
             </div>
           )}
 
-          {searchQuery.trim() && filteredProducts.length === 0 && (
+          {searchQuery.trim() && !loading && results.length === 0 && (
             <div className="text-center py-8">
               <p className="text-gray-600 mb-4">Aucun produit trouvé</p>
               <p className="text-sm text-gray-500">
