@@ -103,6 +103,23 @@ export function Settings({ brand }: SettingsProps) {
     return `https://${domain}/${normalized}`;
   };
 
+  const normalizeWhatsAppUrl = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (
+      trimmed.startsWith('http://') ||
+      trimmed.startsWith('https://') ||
+      trimmed.startsWith('whatsapp://')
+    ) {
+      return trimmed;
+    }
+
+    let normalized = trimmed.replace(/[^\d+]/g, '');
+    if (normalized.startsWith('+')) normalized = normalized.slice(1);
+    if (normalized.startsWith('00')) normalized = normalized.slice(2);
+    return normalized ? `https://wa.me/${normalized}` : '';
+  };
+
   // Sync brand data when it changes
   useEffect(() => {
     if (brand) {
@@ -222,7 +239,7 @@ export function Settings({ brand }: SettingsProps) {
         instagramUrl: normalizeSocialUrl('instagram', brandForm.instagramUrl),
         facebookUrl: normalizeSocialUrl('facebook', brandForm.facebookUrl),
         twitterUrl: normalizeSocialUrl('twitter', brandForm.twitterUrl),
-        pinterestUrl: normalizeSocialUrl('pinterest', brandForm.pinterestUrl),
+        pinterestUrl: normalizeWhatsAppUrl(brandForm.pinterestUrl),
       };
       const logoLightUrl = brandLogoLight.trim();
       const logoDarkUrl = brandLogoDark.trim();
@@ -877,10 +894,10 @@ export function Settings({ brand }: SettingsProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-gray-700">Pinterest</label>
+                  <label className="block text-sm mb-2 text-gray-700">WhatsApp</label>
                   <input
                     type="text"
-                    placeholder="pinterest.com/votremarque"
+                    placeholder="+243XXXXXXXXX ou wa.me/243XXXXXXXXX"
                     value={brandForm.pinterestUrl}
                     onChange={(e) => handleBrandInputChange('pinterestUrl', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"

@@ -27,7 +27,10 @@ export default function CreateAccount() {
   const [success, setSuccess] = useState(false);
 
   const passwordWrapperRef = useRef<HTMLDivElement | null>(null);
-  const { redirectToGoogle } = useGoogleOAuth();
+  const { redirectToGoogle } = useGoogleOAuth({
+    onSuccess: () => navigate("/home"),
+    onError: (msg) => setError(msg),
+  });
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -138,7 +141,7 @@ export default function CreateAccount() {
 
   return (
     <div className="w-full min-h-screen bg-white flex flex-col">
-      {console.log("💎 CreateAccount component rendered")}
+      
       <main className="w-full flex justify-center px-6 md:px-16 py-10 mt-24">
         <div className="w-full max-w-7xl">
           <h2 className="text-xl font-semibold mb-4 text-[#007B8A]">Créez votre compte</h2>
@@ -147,7 +150,7 @@ export default function CreateAccount() {
           <button
             type="button"
             onClick={redirectToGoogle}
-            className="w-full bg-gray-100 py-3 rounded-4xl flex items-center justify-center gap-3 hover:bg-gray-200 transition mb-6"
+            className="w-full bg-black py-3 rounded-4xl flex items-center justify-center gap-3 hover:bg-gray-200 transition mb-6"
           >
             <img
               src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"

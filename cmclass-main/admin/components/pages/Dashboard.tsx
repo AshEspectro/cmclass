@@ -2,36 +2,31 @@ import { useEffect, useMemo, useState } from 'react';
 import { StatCard } from '../StatCard';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
-import { DollarSign, ShoppingBag, Users, TrendingUp, Plus, Edit, Upload, Bell } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, TrendingUp, Package, Plus, Edit, Upload, Bell } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { fetchWithAuth, createFetchOptions } from '../../services/api';
-
-const salesData = [
-  { month: 'Jan', revenue: 45000, orders: 120 },
-  { month: 'Fév', revenue: 52000, orders: 145 },
-  { month: 'Mar', revenue: 48000, orders: 132 },
-  { month: 'Avr', revenue: 61000, orders: 168 },
-  { month: 'Mai', revenue: 55000, orders: 151 },
-  { month: 'Juin', revenue: 67000, orders: 187 },
-];
-
-const topProducts = [
-  { name: 'Robe de Soirée en Soie', sales: 45, revenue: '22 500 €' },
-  { name: 'Sac à Main en Cuir', sales: 38, revenue: '19 000 €' },
-  { name: 'Manteau en Cachemire', sales: 32, revenue: '48 000 €' },
-  { name: 'Boucles d\'Oreilles Diamant', sales: 28, revenue: '56 000 €' },
-  { name: 'Lunettes de Créateur', sales: 25, revenue: '12 500 €' },
-];
-
-const contentAlerts = [
-  { type: 'Bannière Héro', message: 'Mettre à jour la campagne Printemps 2025', priority: 'high' },
-  { type: 'Description Produit', message: 'Nouveautés nécessitent des descriptions', priority: 'medium' },
-  { type: 'Page Collection', message: 'Texte du lookbook d\'été en attente', priority: 'low' },
-];
+import { setPendingQuickAction, type QuickActionKey } from '../../services/quickActions';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 type AlertPriority = 'high' | 'medium' | 'low';
+type TrendDirection = 'up' | 'down';
+
+type MoMChange = {
+  value: number | null;
+  trend: TrendDirection;
+};
+
+type DashboardPageKey = 'content' | 'products' | 'media';
+type AdminRole = 'USER' | 'SUPPORT' | 'MODERATOR' | 'ADMIN' | 'SUPER_ADMIN';
+
+type QuickActionItem = {
+  id: QuickActionKey;
+  label: string;
+  icon: typeof Plus;
+  targetPage: DashboardPageKey;
+  minRole: AdminRole;
+};
 
 type DashboardPayload = {
   stats: {
@@ -39,6 +34,14 @@ type DashboardPayload = {
     totalOrders: number;
     totalCustomers: number;
     conversionRate: number;
+    totalProducts: number;
+  };
+  mom: {
+    totalRevenue: MoMChange;
+    totalOrders: MoMChange;
+    totalCustomers: MoMChange;
+    totalProducts: MoMChange;
+    conversionRate: MoMChange;
   };
   salesData: { month: string; revenue: number; orders: number }[];
   topProducts: { name: string; sales: number; revenue: number }[];
@@ -47,10 +50,53 @@ type DashboardPayload = {
   unreadNotifications?: number;
 };
 
-export function Dashboard() {
+interface DashboardProps {
+  onNavigate?: (page: DashboardPageKey) => void;
+}
+
+const quickActions: QuickActionItem[] = [
+  { id: 'add-product', label: 'Ajouter un Produit', icon: Plus, targetPage: 'products', minRole: 'ADMIN' },
+  { id: 'upload-media', label: 'Télécharger des Médias', icon: Upload, targetPage: 'media', minRole: 'ADMIN' },
+  { id: 'edit-homepage', label: 'Modifier la Page d\'Accueil', icon: Edit, targetPage: 'content', minRole: 'ADMIN' },
+  { id: 'new-campaign', label: 'Nouvelle Campagne', icon: Plus, targetPage: 'content', minRole: 'ADMIN' },
+];
+
+export function Dashboard({ onNavigate }: DashboardProps) {
   const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const roleRank: Record<AdminRole, number> = {
+    USER: 0,
+    SUPPORT: 1,
+    MODERATOR: 2,
+    ADMIN: 3,
+    SUPER_ADMIN: 4,
+  };
+
+  const getUserRoleFromToken = (): AdminRole | null => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      if (!token) return null;
+
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+
+      const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+      const payload = JSON.parse(atob(padded));
+      const role = payload?.role as string | undefined;
+      if (!role || !(role in roleRank)) return null;
+      return role as AdminRole;
+    } catch {
+      return null;
+    }
+  };
+
+  const canAccessAction = (action: QuickActionItem, role: AdminRole | null) => {
+    if (!role) return false;
+    return roleRank[role] >= roleRank[action.minRole];
+  };
 
   useEffect(() => {
     let active = true;
@@ -83,16 +129,48 @@ export function Dashboard() {
   }, []);
 
   const stats = dashboard?.stats;
-  const chartData = dashboard?.salesData?.length ? dashboard.salesData : salesData;
-  const products = dashboard?.topProducts?.length ? dashboard.topProducts : topProducts;
-  const alerts = dashboard?.contentAlerts?.length ? dashboard.contentAlerts : contentAlerts;
+  const mom = dashboard?.mom;
+  const chartData = dashboard?.salesData || [];
+  const products = dashboard?.topProducts || [];
+  const alerts = dashboard?.contentAlerts || [];
   const notifications = dashboard?.notifications || [];
   const unreadCount = dashboard?.unreadNotifications || 0;
+
+  const formatChange = (change?: MoMChange) => {
+    if (!change || change.value === null || Number.isNaN(change.value)) {
+      return { label: 'N/A', trend: 'up' as TrendDirection };
+    }
+    const sign = change.value >= 0 ? '+' : '';
+    const label = `${sign}${change.value.toFixed(1).replace('.', ',')}% vs 30 jours précédents`;
+    return { label, trend: change.trend };
+  };
+
+  const revenueChange = formatChange(mom?.totalRevenue);
+  const ordersChange = formatChange(mom?.totalOrders);
+  const customersChange = formatChange(mom?.totalCustomers);
+  const productsChange = formatChange(mom?.totalProducts);
+  const conversionChange = formatChange(mom?.conversionRate);
 
   const formatCurrency = useMemo(() => {
     return (value: number) =>
       new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
   }, []);
+
+  const currentRole = useMemo(() => getUserRoleFromToken(), []);
+  const availableQuickActions = useMemo(
+    () => quickActions.filter((action) => canAccessAction(action, currentRole)),
+    [currentRole],
+  );
+  const canEditHomepage = useMemo(
+    () => availableQuickActions.some((action) => action.id === 'edit-homepage'),
+    [availableQuickActions],
+  );
+
+  const handleQuickAction = (targetPage: DashboardPageKey, action: QuickActionKey) => {
+    if (!onNavigate) return;
+    setPendingQuickAction(action);
+    onNavigate(targetPage);
+  };
 
   return (
     <div className="space-y-8">
@@ -102,33 +180,40 @@ export function Dashboard() {
         </div>
       )}
       {/* Stats Grid */}
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
         <StatCard
           title="Revenu Total"
           value={stats ? formatCurrency(stats.totalRevenue) : "—"}
-          change="12,5% du mois dernier"
-          trend="up"
+          change={revenueChange.label}
+          trend={revenueChange.trend}
           icon={DollarSign}
         />
         <StatCard
           title="Commandes"
           value={stats ? stats.totalOrders.toLocaleString('fr-FR') : "—"}
-          change="8,2% du mois dernier"
-          trend="up"
+          change={ordersChange.label}
+          trend={ordersChange.trend}
           icon={ShoppingBag}
         />
         <StatCard
           title="Clients"
           value={stats ? stats.totalCustomers.toLocaleString('fr-FR') : "—"}
-          change="15,3% du mois dernier"
-          trend="up"
+          change={customersChange.label}
+          trend={customersChange.trend}
           icon={Users}
+        />
+        <StatCard
+          title="Produits"
+          value={stats ? stats.totalProducts.toLocaleString('fr-FR') : "—"}
+          change={productsChange.label}
+          trend={productsChange.trend}
+          icon={Package}
         />
         <StatCard
           title="Taux de Conversion"
           value={stats ? `${stats.conversionRate.toFixed(1)}%` : "—"}
-          change="2,1% du mois dernier"
-          trend="down"
+          change={conversionChange.label}
+          trend={conversionChange.trend}
           icon={TrendingUp}
         />
       </div>
@@ -212,15 +297,23 @@ export function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product, index) => (
-                  <tr key={index} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">{product.name}</td>
-                    <td className="px-6 py-4 text-right">{product.sales}</td>
-                    <td className="px-6 py-4 text-right">
-                      {typeof product.revenue === 'number' ? formatCurrency(product.revenue) : product.revenue}
+                {products.length === 0 ? (
+                  <tr>
+                    <td className="px-6 py-6 text-sm text-gray-500" colSpan={3}>
+                      Aucun produit vendu pour le moment.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  products.map((product, index) => (
+                    <tr key={index} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">{product.name}</td>
+                      <td className="px-6 py-4 text-right">{product.sales}</td>
+                      <td className="px-6 py-4 text-right">
+                        {typeof product.revenue === 'number' ? formatCurrency(product.revenue) : product.revenue}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </CardContent>
@@ -233,27 +326,39 @@ export function Dashboard() {
             <p className="text-sm text-gray-500 mt-1">Éléments nécessitant attention</p>
           </CardHeader>
           <CardContent className="space-y-3">
-            {alerts.map((alert, index) => (
-              <div key={index} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-                <div className="flex items-start justify-between mb-1">
-                  <p className="text-sm">{alert.type}</p>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    alert.priority === 'high' 
-                      ? 'bg-red-50 text-red-600' 
-                      : alert.priority === 'medium'
-                      ? 'bg-yellow-50 text-yellow-700'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {alert.priority === 'high' ? 'urgent' : alert.priority === 'medium' ? 'moyen' : 'faible'}
-                  </span>
+            {alerts.length === 0 ? (
+              <p className="text-sm text-gray-500">Aucune alerte pour le moment.</p>
+            ) : (
+              alerts.map((alert, index) => (
+                <div key={index} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-sm">{alert.type}</p>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      alert.priority === 'high' 
+                        ? 'bg-red-50 text-red-600' 
+                        : alert.priority === 'medium'
+                        ? 'bg-yellow-50 text-yellow-700'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {alert.priority === 'high' ? 'urgent' : alert.priority === 'medium' ? 'moyen' : 'faible'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">{alert.message}</p>
                 </div>
-                <p className="text-sm text-gray-600">{alert.message}</p>
-              </div>
-            ))}
-            <Button variant="primary" size="sm" className="w-full mt-4">
-              <Edit size={16} />
-              Aller à la Gestion de Contenu
-            </Button>
+              ))
+            )}
+            {canEditHomepage && (
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-full mt-4"
+                onClick={() => handleQuickAction('content', 'edit-homepage')}
+                disabled={!onNavigate}
+              >
+                <Edit size={16} />
+                Aller à la Gestion de Contenu
+              </Button>
+            )}
             {loading && (
               <p className="text-xs text-gray-400 mt-2 text-center">Chargement des statistiques...</p>
             )}
@@ -305,22 +410,27 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-4 gap-4">
-            <Button variant="outline" className="justify-start">
-              <Plus size={18} />
-              Ajouter un Produit
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <Upload size={18} />
-              Télécharger des Médias
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <Edit size={18} />
-              Modifier la Page d'Accueil
-            </Button>
-            <Button variant="outline" className="justify-start">
-              <Plus size={18} />
-              Nouvelle Campagne
-            </Button>
+            {availableQuickActions.length === 0 ? (
+              <p className="col-span-4 text-sm text-gray-500">
+                Aucune action rapide disponible pour votre rôle.
+              </p>
+            ) : (
+              availableQuickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Button
+                    key={action.id}
+                    variant="outline"
+                    className="justify-start"
+                    onClick={() => handleQuickAction(action.targetPage, action.id)}
+                    disabled={!onNavigate}
+                  >
+                    <Icon size={18} />
+                    {action.label}
+                  </Button>
+                );
+              })
+            )}
           </div>
         </CardContent>
       </Card>

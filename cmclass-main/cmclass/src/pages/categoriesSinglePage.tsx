@@ -3,6 +3,7 @@ import { useSearchParams, useLocation } from "react-router-dom";
 import HandbagsPage from "../components/CardLayout";
 import HeroSection, { ProductGrid } from "../components/Hero_cat";
 import { ViewMoreButton } from "../components/ViewMoreBttn";
+import { Skeleton, SkeletonProductCard } from "../components/Skeleton";
 import { publicApi } from "../services/publicApi";
 import { campaignsApi } from "../services/campaignsApi";
 
@@ -63,8 +64,11 @@ export default function Category() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full border-4 border-t-transparent border-[#007B8A] animate-spin" />
+      <div className="mt-8 space-y-12">
+        <Skeleton className="w-full h-[60vh] lg:h-[70vh] xl:h-[100vh]" />
+        <div className="max-w-[1440px] mx-auto px-4 md:px-12 grid grid-cols-2 md:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonProductCard key={i} />)}
+        </div>
       </div>
     );
   }

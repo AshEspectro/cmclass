@@ -14,6 +14,7 @@ import { useCart } from "../contexts/CartContext";
 import type { CartItem } from "../contexts/CartContext";
 import { ProductGrid } from "../components/Hero_cat";
 import { publicApi } from "../services/publicApi";
+import { Skeleton } from "../components/Skeleton";
 
 // Product shape returned by the public API
 export interface ApiProduct {
@@ -135,6 +136,16 @@ interface SingleProductPageProps {
   product?: ApiProduct | null;
 }
 
+type StatusError = Error & { status?: number };
+
+const RETRY_DELAY_MS = 3000;
+
+const isNotFoundError = (error: unknown) =>
+  typeof error === "object" &&
+  error !== null &&
+  "status" in error &&
+  Number((error as StatusError).status) === 404;
+
 export function SingleProductPage({ product: productProp }: SingleProductPageProps) {
   const { id } = useParams();
   const [product, setProduct] = useState<ApiProduct | null>(productProp ?? null);
@@ -158,22 +169,41 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
     }
 
     let mounted = true;
-    (async () => {
+    let retryTimer: number | undefined;
+
+    const fetchProduct = async () => {
+      if (!mounted) return;
       setLoading(true);
       setError(null);
-      const fetched = await publicApi.getProduct(id);
-      if (!mounted) return;
-      if (!fetched) {
-        setError("Produit introuvable");
-        setProduct(null);
-      } else {
+      try {
+        const fetched = await publicApi.getProduct(id, { throwOnError: true });
+        if (!mounted) return;
+        if (!fetched) {
+          setError("Produit introuvable");
+          setProduct(null);
+          setLoading(false);
+          return;
+        }
         setProduct(fetched);
+        setLoading(false);
+      } catch (err) {
+        if (!mounted) return;
+        if (isNotFoundError(err)) {
+          setError("Produit introuvable");
+          setProduct(null);
+          setLoading(false);
+          return;
+        }
+        console.error("Failed to fetch product:", err);
+        retryTimer = window.setTimeout(fetchProduct, RETRY_DELAY_MS);
       }
-      setLoading(false);
-    })();
+    };
+
+    fetchProduct();
 
     return () => {
       mounted = false;
+      if (retryTimer) window.clearTimeout(retryTimer);
     };
   }, [id, productProp]);
 
@@ -198,7 +228,18 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
   }, [product?.id]);
 
   if (loading) {
-    return <div className="p-8">Chargement...</div>;
+    return (
+      <div className="max-w-8xl mx-auto px-0 md:px-8 grid grid-cols-1 pt-32 md:pt-24 md:grid-cols-2 gap-6">
+        <Skeleton className="w-full aspect-[4/5]" />
+        <div className="px-4 md:px-8 w-full space-y-4">
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-6 w-2/3" />
+          <Skeleton className="h-6 w-1/3" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-12 w-full rounded-full" />
+        </div>
+      </div>
+    );
   }
 
   if (!product) {

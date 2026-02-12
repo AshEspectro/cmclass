@@ -43,92 +43,92 @@ export const heroContent: Record<string, { img: string; title: string; text: str
     text: "Une empreinte olfactive, un art de séduire.",
   },
 };
-export   const mainCategories: MenuItem[] = [
-    {
-      title: "Cadeaux et Personnalisation",
-      link: "/cadeaux",
-      subcategories: [
-        { name: "Cadeaux pour Lui", link: "/cadeaux/lui" },
-        { name: "Personnalisation", link: "/cadeaux/personnalisation" },
-      ],
-    },
-    {
-      title: "Nouveautés",
-      link: "/nouveautes",
-      subcategories: [
-        { name: "Dernières Créations", link: "/nouveautes/creations" },
-        { name: "Collection Capsule", link: "/nouveautes/capsule" },
-      ],
-    },
-    {
-      title: "Sacs et Petite Maroquinerie",
-      link: "/sacs",
-      subcategories: [
-        { name: "Sacs à Main", link: "/sacs/main" },
-        { name: "Petite Maroquinerie", link: "/sacs/maroquinerie" },
-      ],
-    },
-    {
-      title: "Femme",
-  link: "/femme",
-  subcategories: [
-    { name: "Robes", link: "/femme/robes" },
-    { name: "Pantalons", link: "/femme/pantalons" },
-    { name: "Vestes", link: "/femme/vestes" },
-    { name: "Chemisiers", link: "/femme/chemisiers" },
-    { name: "Jupes", link: "/femme/jupes" },
-    { name: "Accessoires", link: "/femme/accessoires" },
-    { name: "Tout Voir", link: "/femme" }
-  ]
-    },
-    {
-      title: "Homme",
-      link: "/homme",
-      subcategories: [
-        { name: "Chemises", link: "/homme/chemises" },
-        { name: "Pantalons", link: "/homme/pantalons" },
-        { name: "Vestes", link: "/homme/vestes" },
-        { name: "Tout Voir", link: "/homme" },
-      ],
-    },
-    {
-      title: "Parfums et Beauté",
-      link: "/parfums",
-      subcategories: [
-        { name: "Parfums", link: "/parfums/parfums" },
-        { name: "Soins", link: "/parfums/soins" },
-      ],
-    },
-    {
-      title: "Joaillerie",
-      link: "/joaillerie",
-      subcategories: [{ name: "Bijoux", link: "/joaillerie/bijoux" }],
-    },
-    {
-      title: "Montres",
-      link: "/montres",
-      subcategories: [{ name: "Collections", link: "/montres/collections" }],
-    },
-    {
-      title: "Malles, Voyage et Maison",
-      link: "/voyage",
-      subcategories: [{ name: "Articles de Voyage", link: "/voyage/articles" }],
-    },
-    {
-      title: "Services",
-      link: "/services",
-      subcategories: [],
-    },
-    {
-      title: "La Maison CM CLASS",
-      link: "/a-propos",
-      subcategories: [
-        { name: "Notre Histoire", link: "/a-propos" },
-        { name: "Nos Valeurs", link: "/a-propos" },
-        { name: "Stories", link: "/stories" },
-      ],
-    },
-  ];
+export const mainCategories: MenuItem[] = [
+  {
+    title: "Cadeaux et Personnalisation",
+    link: "/cadeaux",
+    subcategories: [
+      { name: "Cadeaux pour Lui", link: "/cadeaux/lui" },
+      { name: "Personnalisation", link: "/cadeaux/personnalisation" },
+    ],
+  },
+  {
+    title: "Nouveautés",
+    link: "/nouveautes",
+    subcategories: [
+      { name: "Dernières Créations", link: "/nouveautes/creations" },
+      { name: "Collection Capsule", link: "/nouveautes/capsule" },
+    ],
+  },
+  {
+    title: "Sacs et Petite Maroquinerie",
+    link: "/sacs",
+    subcategories: [
+      { name: "Sacs à Main", link: "/sacs/main" },
+      { name: "Petite Maroquinerie", link: "/sacs/maroquinerie" },
+    ],
+  },
+  {
+    title: "Femme",
+    link: "/femme",
+    subcategories: [
+      { name: "Robes", link: "/femme/robes" },
+      { name: "Pantalons", link: "/femme/pantalons" },
+      { name: "Vestes", link: "/femme/vestes" },
+      { name: "Chemisiers", link: "/femme/chemisiers" },
+      { name: "Jupes", link: "/femme/jupes" },
+      { name: "Accessoires", link: "/femme/accessoires" },
+      { name: "Tout Voir", link: "/femme" }
+    ]
+  },
+  {
+    title: "Homme",
+    link: "/homme",
+    subcategories: [
+      { name: "Chemises", link: "/homme/chemises" },
+      { name: "Pantalons", link: "/homme/pantalons" },
+      { name: "Vestes", link: "/homme/vestes" },
+      { name: "Tout Voir", link: "/homme" },
+    ],
+  },
+  {
+    title: "Parfums et Beauté",
+    link: "/parfums",
+    subcategories: [
+      { name: "Parfums", link: "/parfums/parfums" },
+      { name: "Soins", link: "/parfums/soins" },
+    ],
+  },
+  {
+    title: "Joaillerie",
+    link: "/joaillerie",
+    subcategories: [{ name: "Bijoux", link: "/joaillerie/bijoux" }],
+  },
+  {
+    title: "Montres",
+    link: "/montres",
+    subcategories: [{ name: "Collections", link: "/montres/collections" }],
+  },
+  {
+    title: "Malles, Voyage et Maison",
+    link: "/voyage",
+    subcategories: [{ name: "Articles de Voyage", link: "/voyage/articles" }],
+  },
+  {
+    title: "Services",
+    link: "/services",
+    subcategories: [],
+  },
+  {
+    title: "La Maison CM CLASS",
+    link: "/a-propos",
+    subcategories: [
+      { name: "Notre Histoire", link: "/a-propos" },
+      { name: "Nos Valeurs", link: "/a-propos" },
+      { name: "Stories", link: "/stories" },
+    ],
+  },
+];
 export const MegaMenu = ({ onClose }: MegaMenuProps) => {
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
@@ -143,7 +143,7 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
         const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/categories');
         if (!response.ok) throw new Error('Failed to fetch categories');
         const data = await response.json();
-        
+
         // Transform API response to match MenuItem structure
         const transformedCategories = (data.mainCategories || []).map((cat: any) => {
           const firstSubId = cat?.subcategories?.[0]?.id;
@@ -159,7 +159,7 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
               })) || [],
           };
         });
-        
+
         setCategories(transformedCategories);
         setApiHeroContent(data.heroContent || {});
       } catch (err) {
@@ -242,12 +242,12 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
                     animate={{
                       opacity:
                         hoveredCategory === item.title &&
-                        item.subcategories?.length
+                          item.subcategories?.length
                           ? 1
                           : 0,
                       x:
                         hoveredCategory === item.title &&
-                        item.subcategories?.length
+                          item.subcategories?.length
                           ? 0
                           : 10,
                     }}
@@ -256,9 +256,8 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
                     {item.subcategories && item.subcategories.length > 0 && (
                       <ChevronRight
                         size={18}
-                        className={`transition-transform duration-300 ${
-                          activeSubmenu === item.title ? "rotate-90" : ""
-                        }`}
+                        className={`transition-transform duration-300 ${activeSubmenu === item.title ? "rotate-90" : ""
+                          }`}
                       />
                     )}
                   </motion.div>
@@ -279,7 +278,7 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
                 <Phone size={18} />
                 <span>Besoin d'aide ? +243 99 123 4567</span>
               </button>
-              
+
               <Link
                 to="/compte"
                 onClick={onClose}
@@ -369,77 +368,77 @@ export const MegaMenu = ({ onClose }: MegaMenuProps) => {
 
       {/* Mobile Submenu */}
       <AnimatePresence>
-  {activeSubmenu && (
-    <motion.div
-      className="md:hidden fixed inset-0 bg-white z-10 overflow-y-auto"
-      initial={{ x: "100%" }}
-      animate={{ x: 0 }}
-      exit={{ x: "100%" }}
-      transition={{ type: "spring", damping: 30, stiffness: 300 }}
-    >
-      <div className="px-0 py-0">
-        {/* Hero Section for Mobile */}
-        {heroContent[activeSubmenu] && (
-          <motion.div className="w-full overflow-hidden relative">
-            <img
-              src={heroContent[activeSubmenu].img}
-              alt={activeSubmenu}
-              className="w-full h-56 object-cover"
-            />
-            <div className="absolute inset-0 bg-black/30 flex flex-col justify-end p-6">
-              <h3 className="text-white text-2xl font-semibold mb-2">
-                {heroContent[activeSubmenu].title}
-              </h3>
-              <p className="text-white/90 text-sm">
-                {heroContent[activeSubmenu].text}
-              </p>
+        {activeSubmenu && (
+          <motion.div
+            className="md:hidden fixed inset-0 bg-white z-10 overflow-y-auto"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+          >
+            <div className="px-0 py-0">
+              {/* Hero Section for Mobile */}
+              {heroContent[activeSubmenu] && (
+                <motion.div className="w-full overflow-hidden relative">
+                  <img
+                    src={heroContent[activeSubmenu].img}
+                    alt={activeSubmenu}
+                    className="w-full h-56 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/30 flex flex-col justify-end p-6">
+                    <h3 className="text-white text-2xl font-semibold mb-2">
+                      {heroContent[activeSubmenu].title}
+                    </h3>
+                    <p className="text-white/90 text-sm">
+                      {heroContent[activeSubmenu].text}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Header & Close Button */}
+              <div className="flex items-center justify-between px-6 py-4">
+                <h3 className="text-xl font-semibold">{activeSubmenu}</h3>
+                <button
+                  onClick={() => setActiveSubmenu(null)}
+                  className="hover:text-[#007B8A] transition-colors duration-300"
+                  aria-label="Retour"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Subcategories */}
+              <div className="px-6 py-4 space-y-6">
+                {categories
+                  .find((cat) => cat.title === activeSubmenu)
+                  ?.subcategories?.map((sub, index) => (
+                    <motion.div
+                      key={sub.name}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1, duration: 0.4 }}
+                    >
+                      <Link
+                        to={sub.link}
+                        onClick={onClose}
+                        className="block text-lg font-medium text-gray-800 relative hover:text-[#007B8A] transition-colors duration-300"
+                      >
+                        {sub.name}
+                        <motion.span
+                          className="absolute bottom-0 left-0 h-[1.5px] bg-[#007B8A]"
+                          initial={{ width: 0 }}
+                          whileHover={{ width: "100%" }}
+                          transition={{ duration: 0.3 }}
+                        />
+                      </Link>
+                    </motion.div>
+                  ))}
+              </div>
             </div>
           </motion.div>
         )}
-
-        {/* Header & Close Button */}
-        <div className="flex items-center justify-between px-6 py-4">
-          <h3 className="text-xl font-semibold">{activeSubmenu}</h3>
-          <button
-            onClick={() => setActiveSubmenu(null)}
-            className="hover:text-[#007B8A] transition-colors duration-300"
-            aria-label="Retour"
-          >
-            <X size={24} />
-          </button>
-        </div>
-
-        {/* Subcategories */}
-        <div className="px-6 py-4 space-y-6">
-          {categories
-            .find((cat) => cat.title === activeSubmenu)
-            ?.subcategories?.map((sub, index) => (
-              <motion.div
-                key={sub.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.4 }}
-              >
-                <Link
-                  to={sub.link}
-                  onClick={onClose}
-                  className="block text-lg font-medium text-gray-800 relative hover:text-[#007B8A] transition-colors duration-300"
-                >
-                  {sub.name}
-                  <motion.span
-                    className="absolute bottom-0 left-0 h-[1.5px] bg-[#007B8A]"
-                    initial={{ width: 0 }}
-                    whileHover={{ width: "100%" }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </Link>
-              </motion.div>
-            ))}
-        </div>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
+      </AnimatePresence>
 
     </motion.div>
   );

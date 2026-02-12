@@ -140,7 +140,7 @@ export const Account = ({ onClose }: AccountProps) => {
 
               {/* Google Login */}
               <GoogleSignInButton
-                className="bg-gray-100 border border-gray-300 rounded-3xl hover:bg-gray-200 transition py-3 mb-4"
+                className=" hover:bg-gray-200 transition py-3 mb-4"
                 text="signin_with"
                 onCredential={handleGoogleCredential}
                 onError={(msg) => setError(msg)}
@@ -211,16 +211,20 @@ export const Account = ({ onClose }: AccountProps) => {
         </div>
         <div className="mt-8 border-t border-gray-200 pt-6 ">
           <div className="px-8 md:px-16 lg:px-32">
-            <p className="font-medium text-md my-6">I do not have an account.</p>
-            <p className="text-gray-500 font-medium text-xs mb-6">
-              Access your MyLV account to discover your wishlist and order
-              history.
-            </p>
-            <Link to="/compte" onClick={onClose}>
-              <button className="w-full border-2 border-[#007B8A]  py-2 rounded-3xl hover:bg-[#f0fafa] transition">
-                Create a my Account
-              </button>
-            </Link>
+            
+            {isAuthenticated ? (
+              <Link to="/monprofil" onClick={onClose}>
+                <button className="w-full border-2 border-[#007B8A] py-2 rounded-3xl hover:bg-[#f0fafa] transition">
+                  Consulter mon profil CMclass
+                </button>
+              </Link>
+            ) : (
+              <Link to="/compte" onClick={onClose}>
+                <button className="w-full border-2 border-[#007B8A] py-2 rounded-3xl hover:bg-[#f0fafa] transition">
+                  Créer un compte
+                </button>
+              </Link>
+            )}
           </div>
         </div>
         <div className="block md:hidden">

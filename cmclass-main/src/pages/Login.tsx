@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import MonProfile from "./MonProfile";
 
 export default function AccountPage() {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { login, oauthLogin } = useAuth();
+  const { login, oauthLogin, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -38,6 +39,10 @@ export default function AccountPage() {
     }
   };
 
+  if (isAuthenticated) {
+    return <MonProfile />;
+  }
+
   const Info = () => (
     <div className="bg-gray-50 border border-none px-8 py-10 w-full max-w-lg mx-auto">
       <p className="font-regular text-xs tracking-wider uppercase text-gray-700 mb-6">
@@ -47,7 +52,7 @@ export default function AccountPage() {
       <ul className="space-y-6 text-gray-700 text-sm leading-relaxed">
         <li>Suivez vos commandes, réparations et accédez à vos factures.</li>
         <li className="pt-6 border-t border-gray-300">Gérez vos informations personnelles.</li>
-        <li className="pt-6 border-t border-gray-300">Recevez les emails de Louis Vuitton.</li>
+        <li className="pt-6 border-t border-gray-300">Recevez les emails de CMclass.</li>
         <li className="pt-6 border-t border-gray-300">Créez votre wishlist, parcourez les looks et partagez.</li>
       </ul>
     </div>
@@ -67,7 +72,7 @@ export default function AccountPage() {
 
           {/* Google Sign In */}
           <GoogleSignInButton
-            className="bg-gray-100 border border-gray-300 rounded-4xl hover:bg-gray-200 transition py-3 mb-6"
+            className="  transition mb-6"
             text="signin_with"
             onCredential={handleGoogleCredential}
             onError={(msg) => setError(msg)}
@@ -139,9 +144,9 @@ export default function AccountPage() {
               {/* Create Account */}
               <div className="flex flex-col items-center justify-center md:items-start pr-0 md:pr-32 mt-4">
                 <p className="font-medium text-sm">Vous n’avez pas de compte  ?</p>
-                <Link to="/compte">
+                <Link to={isAuthenticated ? "/monprofil" : "/compte"}>
                   <span className="font-medium text-sm underline hover:text-black transition">
-                    Créer un compte
+                    {isAuthenticated ? "Mon profil CMclass" : "Créer un compte"}
                   </span>
                 </Link>
               </div>

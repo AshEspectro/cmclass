@@ -2,8 +2,18 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { publicApi } from '../services/publicApi';
+import { Skeleton } from '../components/Skeleton';
 
 type ValueItem = { title: string; description: string };
+type StatusError = Error & { status?: number };
+
+const RETRY_DELAY_MS = 3000;
+
+const isNotFoundError = (error: unknown) =>
+  typeof error === 'object' &&
+  error !== null &&
+  'status' in error &&
+  Number((error as StatusError).status) === 404;
 
 interface AboutData {
   heroTitle: string;
@@ -122,24 +132,52 @@ export const About = () => {
 
   useEffect(() => {
     let active = true;
+    let retryTimer: number | undefined;
 
     const fetchAbout = async () => {
+      if (!active) return;
       try {
-        const data = await publicApi.getAbout();
+        setLoading(true);
+        const data = await publicApi.getAbout({ throwOnError: true });
         if (!active) return;
         setAbout(normalizeAbout(data as Partial<AboutData>));
+        setLoading(false);
       } catch (error) {
+        if (!active) return;
+        if (isNotFoundError(error)) {
+          setAbout(FALLBACK_ABOUT);
+          setLoading(false);
+          return;
+        }
         console.error('Error fetching about content:', error);
-      } finally {
-        if (active) setLoading(false);
+        retryTimer = window.setTimeout(fetchAbout, RETRY_DELAY_MS);
       }
     };
 
     fetchAbout();
     return () => {
       active = false;
+      if (retryTimer) window.clearTimeout(retryTimer);
     };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="pt-20 sm:pt-24" aria-busy>
+        <section className="relative h-[80vh] overflow-hidden">
+          <Skeleton className="absolute inset-0 h-full w-full" />
+        </section>
+        <section className="py-20 lg:py-32">
+          <div className="max-w-[1440px] mx-auto px-6 lg:px-12 space-y-5">
+            <Skeleton className="h-10 w-72 mx-auto" />
+            <Skeleton className="h-5 w-full max-w-4xl mx-auto" />
+            <Skeleton className="h-5 w-full max-w-4xl mx-auto" />
+            <Skeleton className="h-5 w-4/5 max-w-4xl mx-auto" />
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-20 sm:pt-24" aria-busy={loading}>

@@ -74,5 +74,39 @@ export const publicApi = {
       console.error('Error fetching categories', err);
       return { mainCategories: [], heroContent: {} };
     }
+  },
+
+  async getLeafCategories() {
+    try {
+      const res = await fetch(`${BACKEND_URL}/categories`, { headers: { 'Content-Type': 'application/json' } });
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      const json = await res.json();
+      const categories = Array.isArray(json?.data) ? json.data : Array.isArray(json?.mainCategories) ? json.mainCategories : [];
+
+      const leaves: any[] = [];
+      const extractLeaves = (cats: any[]) => {
+        (cats || []).forEach((cat) => {
+          const subcategories = Array.isArray(cat?.subcategories) ? cat.subcategories : [];
+          if (subcategories.length === 0) {
+            leaves.push(cat);
+            return;
+          }
+          subcategories.forEach((subcat: any) => {
+            const children = Array.isArray(subcat?.children) ? subcat.children : [];
+            if (children.length > 0) {
+              leaves.push(...children);
+            } else {
+              leaves.push(subcat);
+            }
+          });
+        });
+      };
+
+      extractLeaves(categories);
+      return leaves;
+    } catch (err) {
+      console.error('Error fetching leaf categories', err);
+      return [];
+    }
   }
 };

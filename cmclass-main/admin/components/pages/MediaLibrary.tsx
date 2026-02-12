@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { Upload, Grid3x3, List, Trash2, Download, Search, Filter } from 'lucide-react';
+import { consumePendingQuickAction } from '../../services/quickActions';
 
 const mediaItems = [
   { id: 1, name: 'campagne-printemps-hero.jpg', type: 'image', size: '2.4 MB', date: '2025-12-08', url: 'https://images.unsplash.com/photo-1719518411339-5158cea86caf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBmYXNoaW9uJTIwZWRpdG9yaWFsfGVufDF8fHx8MTc2NTIwODQ4Nnww&ixlib=rb-4.1.0&q=80&w=1080' },
@@ -15,6 +16,19 @@ const mediaItems = [
 export function MediaLibrary() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [highlightUploadZone, setHighlightUploadZone] = useState(false);
+
+  useEffect(() => {
+    const shouldHighlightUpload = consumePendingQuickAction('upload-media') === 'upload-media';
+    if (!shouldHighlightUpload) return;
+
+    setHighlightUploadZone(true);
+    const timer = window.setTimeout(() => {
+      setHighlightUploadZone(false);
+    }, 1800);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const toggleSelection = (id: number) => {
     setSelectedItems(prev => 
@@ -27,7 +41,13 @@ export function MediaLibrary() {
       {/* Upload Area */}
       <Card>
         <CardContent>
-          <div className="border-2 border-dashed border-gray-300 rounded p-12 text-center hover:border-[#007B8A] transition-colors cursor-pointer">
+          <div
+            className={`border-2 border-dashed rounded p-12 text-center transition-colors cursor-pointer ${
+              highlightUploadZone
+                ? 'border-[#007B8A] bg-[#e6f4f6]'
+                : 'border-gray-300 hover:border-[#007B8A]'
+            }`}
+          >
             <Upload size={48} className="mx-auto mb-4 text-gray-400" strokeWidth={1.5} />
             <h3 className="mb-2">Télécharger des Médias</h3>
             <p className="text-sm text-gray-600 mb-4">

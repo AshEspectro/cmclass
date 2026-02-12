@@ -97,6 +97,27 @@ model ContactMessage {
   createdAt DateTime @default(now())
 }
 
+model InboundEmail {
+  id          Int      @id @default(autoincrement())
+  messageId   String?  @unique
+  sourceId    String?
+  protocol    String   @default("imap")
+  mailbox     String   @default("INBOX")
+  fromName    String?
+  fromEmail   String?
+  toEmails    String[] @default([])
+  ccEmails    String[] @default([])
+  subject     String?
+  text        String?
+  html        String?
+  receivedAt  DateTime?
+  attachments Json?
+  archived    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([protocol, sourceId, mailbox])
+}
+
 // Account bound data models
 model CartItem {
   id        Int      @id @default(autoincrement())
@@ -330,4 +351,12 @@ model FooterLink {
   isActive   Boolean       @default(true)
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
+}
+
+model LegalContent {
+  id        Int      @id @default(autoincrement())
+  type      String   @unique // e.g., 'mentions-legales', 'privacy-policy', 'cgv'
+  title     String
+  content   String   @db.Text
+  updatedAt DateTime @updatedAt
 }

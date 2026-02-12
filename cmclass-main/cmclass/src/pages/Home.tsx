@@ -9,6 +9,7 @@ import { CategoryHero } from '../components/CollectionHero';
 import { Services } from '../components/ServiceSection';
 import { campaignsApi, type Campaign } from '../services/campaignsApi';
 import { publicApi } from '../services/publicApi';
+import { Skeleton, SkeletonProductCard, SkeletonCategoryItem } from '../components/Skeleton';
 
 const heroVideo = '/videos/homme-hero1.mp4';
 const collectionImage1 = 'https://images.unsplash.com/photo-1596216180471-61379344936c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxibGFjayUyMG1hbiUyMGZhc2hpb24lMjBtaW5pbWFsJTIwd2hpdGV8ZW58MXx8fHwxNzYyMjU1NzQ2fDA&ixlib=rb-4.1.0&q=80&w=1080';
@@ -21,14 +22,32 @@ export const Home = () => {
   const [servicesItems, setServicesItems] = useState<any[]>([]);
   const [productsData, setProductsData] = useState<Product_cat[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [campaignsLoading, setCampaignsLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  const isCampaignActive = (status?: string) => {
+    if (!status) return true;
+    const normalized = status.trim().toLowerCase();
+    return ['actif', 'active', 'published', 'publie', 'publiee', 'public'].includes(normalized);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
-      const campData = await campaignsApi.getCampaigns();
-      setCampaigns(campData);
+      try {
+        setCampaignsLoading(true);
+        setCategoriesLoading(true);
+        const campData = await campaignsApi.getCampaigns();
+        setCampaigns(campData);
+        setCampaignsLoading(false);
 
-      const { mainCategories } = await publicApi.getCategories();
-      setExploreCategories(mainCategories.slice(0, 8)); // Show up to 8 collections
+        const leafCategories = await publicApi.getLeafCategories();
+        setExploreCategories((Array.isArray(leafCategories) ? leafCategories : []).slice(0, 8)); // Show up to 8 leaf collections
+        setCategoriesLoading(false);
+      } catch (err) {
+        console.error('Failed to load initial data', err);
+        setCampaignsLoading(false);
+        setCategoriesLoading(false);
+      }
     };
     fetchData();
   }, []);
@@ -101,18 +120,24 @@ export const Home = () => {
   }, []); // Only fetch on mount
 
   // Use the latest campaign for the main Hero if available
-  const latestCampaign = campaigns.length > 0 ? campaigns[0] : null;
+  const activeCampaigns = campaigns.filter((campaign) => isCampaignActive(campaign.status));
+  const latestCampaign = activeCampaigns.length > 0 ? activeCampaigns[0] : (campaigns.length > 0 ? campaigns[0] : null);
+  const campaignsForSections = activeCampaigns;
 
   return (
     <div className="overflow-hidden">
-      <Hero
-        video={heroVideo}
-        image={latestCampaign?.imageUrl || collectionImage1}
-        title={latestCampaign?.title || "COLLECTION AUTOMNE 2024"}
-        subtitle={latestCampaign?.genreText || "Héritage & Modernité"}
-        ctaText={latestCampaign?.buttonText || "DÉCOUVRIR"}
-        ctaLink={latestCampaign ? `/category?campaign=${latestCampaign.id}` : "/category"}
-      />
+      {campaignsLoading ? (
+        <Skeleton className="w-full aspect-video lg:aspect-[21/9]" />
+      ) : (
+        <Hero
+          video={heroVideo}
+          image={latestCampaign?.imageUrl || collectionImage1}
+          title={latestCampaign?.title || "COLLECTION AUTOMNE 2024"}
+          subtitle={latestCampaign?.genreText || "Héritage & Modernité"}
+          ctaText={latestCampaign?.buttonText || "DÉCOUVRIR"}
+          ctaLink={latestCampaign ? `/category?campaign=${latestCampaign.id}` : "/category"}
+        />
+      )}
 
       {/* Explore Section */}
       <section className="py-8 lg:py-16">
@@ -127,69 +152,93 @@ export const Home = () => {
           </motion.h3>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {exploreCategories.map((cat, i) => (
-              <motion.div
-                key={cat.id}
-                className="relative group overflow-hidden"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 * i }}
-              >
-                <Link to={`/category?category=${cat.slug}`} className="block">
-                  <div className="aspect-4/5 bg-gray-100 overflow-hidden rounded-sm">
-                    <img
-                      src={cat.imageUrl || "/placeholder.jpg"}
-                      alt={cat.title || cat.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
-                  </div>
-                  <div className="mt-4 text-center">
-                    <p className="text-sm font-bold uppercase tracking-widest group-hover:text-[#007B8A] transition-colors">
-                      {cat.title || cat.name}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">{cat.description?.substring(0, 40)}...</p>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+            {categoriesLoading
+              ? Array.from({ length: 8 }).map((_, i) => <SkeletonCategoryItem key={i} />)
+              : exploreCategories.map((cat, i) => (
+                <motion.div
+                  key={cat.id}
+                  className="relative group overflow-hidden"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.1 * i }}
+                >
+                  <Link to={`/category?category=${cat.slug}`} className="block">
+                    <div className="aspect-4/5 bg-gray-100 overflow-hidden rounded-sm">
+                      <img
+                        src={cat.imageUrl || "/placeholder.jpg"}
+                        alt={cat.title || cat.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    </div>
+                    <div className="mt-4 text-center">
+                      <p className="text-sm font-bold  tracking-widest group-hover:text-[#007B8A] transition-colors">
+                        {cat.title || cat.name}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">{cat.description?.substring(0, 40)}...</p>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
           </div>
         </div>
       </section>
 
       {/* Individual Campaigns */}
-      {campaigns.slice(1).map((campaign) => (
-        <section key={campaign.id} className='mb-32'>
-          <CategoryHero
-            categoryTitle={campaign.genreText || 'Exclusivité'}
-            campaignImage={campaign.imageUrl || collectionImage1}
-            campaignTitle={campaign.title}
-          />
-
-          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 mt-12">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-              {productsLoading ? (
-                <p className="col-span-full text-center text-gray-500">Chargement...</p>
-              ) : productsData.filter(p => campaign.selectedProductIds?.includes(Number(p.id))).length > 0 ? (
-                productsData.filter(p => campaign.selectedProductIds?.includes(Number(p.id))).slice(0, 4).map((product) => (
-                  <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
-                ))
-              ) : (
-                <p className="col-span-full text-center text-gray-400 italic">Aucune pièce sélectionnée pour cette exposition</p>
-              )}
+      {campaignsLoading
+        ? Array.from({ length: 2 }).map((_, i) => (
+          <section key={i} className='mb-32'>
+            <Skeleton className="w-full aspect-[21/9] mb-12" />
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                {Array.from({ length: 4 }).map((_, j) => <SkeletonProductCard key={j} />)}
+              </div>
             </div>
+          </section>
+        ))
+        : campaignsForSections.map((campaign) => {
+          const selectedIds = Array.isArray(campaign.selectedProductIds)
+            ? new Set(
+                campaign.selectedProductIds
+                  .map((id) => Number(id))
+                  .filter((id) => !Number.isNaN(id))
+              )
+            : new Set<number>();
+          const campaignProducts = productsData.filter((p) => selectedIds.has(Number(p.id)));
 
-            <div className="text-center mt-12">
-              <Link
-                to={`/category?campaign=${campaign.title}`}
-                className="inline-block border border-black hover:bg-black hover:text-white font-medium px-10 py-3 text-sm transition-all duration-300 rounded-full uppercase tracking-widest"
-              >
-                {campaign.buttonText || 'Découvrir la collection'}
-              </Link>
+          return (
+          <section key={campaign.id} className='mb-32'>
+            <CategoryHero
+              categoryTitle={campaign.genreText || 'Exclusivité'}
+              campaignImage={campaign.imageUrl }
+              campaignTitle={campaign.title}
+            />
+
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 mt-12">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                {productsLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => <SkeletonProductCard key={i} />)
+                ) : campaignProducts.length > 0 ? (
+                  campaignProducts.slice(0, 4).map((product) => (
+                    <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
+                  ))
+                ) : (
+                  <p className="col-span-full text-center text-gray-400 italic">Aucune pièce sélectionnée pour cette exposition</p>
+                )}
+              </div>
+
+              <div className="text-center mt-12">
+                <Link
+                  to={`/category?campaign=${campaign.id}`}
+                  className="inline-block border border-black hover:bg-black hover:text-white font-medium px-10 py-3 text-sm transition-all duration-300 rounded-full uppercase tracking-widest"
+                >
+                  {campaign.buttonText || 'Découvrir la collection'}
+                </Link>
+              </div>
             </div>
-          </div>
-        </section>
-      ))}
+          </section>
+        );
+      })}
 
       <Services
         title={servicesHeader.title}

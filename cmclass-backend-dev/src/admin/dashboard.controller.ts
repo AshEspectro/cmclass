@@ -6,6 +6,7 @@ import { Roles } from '../auth/roles.decorator';
 import { NotificationService } from '../notification/notification.service';
 
 type AlertPriority = 'high' | 'medium' | 'low';
+type TrendDirection = 'up' | 'down';
 
 @Controller('admin/dashboard')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -17,16 +18,29 @@ export class DashboardController {
     return ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
   }
 
+  private calcMoM(current: number, previous: number) {
+    if (previous === 0) {
+      if (current === 0) {
+        return { value: 0, trend: 'up' as TrendDirection };
+      }
+      return { value: null as number | null, trend: 'up' as TrendDirection };
+    }
+    const diff = ((current - previous) / previous) * 100;
+    const rounded = Math.round(diff * 10) / 10;
+    return { value: rounded, trend: diff >= 0 ? ('up' as TrendDirection) : ('down' as TrendDirection) };
+  }
+
   @Get()
   async getDashboard() {
     const [usersCount, ordersCount, productsCount, notifSummary] = await Promise.all([
       this.prisma.user.count({ where: { role: 'USER' } }),
-      this.prisma.order.count(),
+      this.prisma.order.count({ where: { status: { not: 'CANCELLED' } } }),
       this.prisma.product.count(),
       this.notifications.summary(),
     ]);
 
     const orders = await this.prisma.order.findMany({
+      where: { status: { not: 'CANCELLED' } },
       include: {
         items: {
           include: { product: true },
@@ -34,12 +48,44 @@ export class DashboardController {
       },
     });
 
+    const now = new Date();
+    const currentWindowStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const previousWindowStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+    const [
+      currentOrdersAgg,
+      prevOrdersAgg,
+      currentUsersCount,
+      prevUsersCount,
+      currentProductsCount,
+      prevProductsCount,
+    ] = await Promise.all([
+      this.prisma.order.aggregate({
+        _sum: { totalCents: true },
+        _count: { _all: true },
+        where: { status: { not: 'CANCELLED' }, createdAt: { gte: currentWindowStart } },
+      }),
+      this.prisma.order.aggregate({
+        _sum: { totalCents: true },
+        _count: { _all: true },
+        where: {
+          status: { not: 'CANCELLED' },
+          createdAt: { gte: previousWindowStart, lt: currentWindowStart },
+        },
+      }),
+      this.prisma.user.count({ where: { role: 'USER', createdAt: { gte: currentWindowStart } } }),
+      this.prisma.user.count({
+        where: { role: 'USER', createdAt: { gte: previousWindowStart, lt: currentWindowStart } },
+      }),
+      this.prisma.product.count({ where: { createdAt: { gte: currentWindowStart } } }),
+      this.prisma.product.count({ where: { createdAt: { gte: previousWindowStart, lt: currentWindowStart } } }),
+    ]);
+
     const totalRevenue = orders.reduce((sum, order) => sum + order.totalCents / 100, 0);
 
     const conversionRate = usersCount > 0 ? (ordersCount / usersCount) * 100 : 0;
 
     // Sales data for the last 6 months (based on orders)
-    const now = new Date();
     const months = [];
     for (let i = 5; i >= 0; i -= 1) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -121,6 +167,13 @@ export class DashboardController {
       });
     }
 
+    const revenueCurrent = (currentOrdersAgg._sum.totalCents || 0) / 100;
+    const revenuePrev = (prevOrdersAgg._sum.totalCents || 0) / 100;
+    const ordersCurrent = currentOrdersAgg._count._all || 0;
+    const ordersPrev = prevOrdersAgg._count._all || 0;
+    const conversionCurrent = currentUsersCount > 0 ? (ordersCurrent / currentUsersCount) * 100 : 0;
+    const conversionPrev = prevUsersCount > 0 ? (ordersPrev / prevUsersCount) * 100 : 0;
+
     return {
       stats: {
         totalRevenue,
@@ -128,6 +181,13 @@ export class DashboardController {
         totalCustomers: usersCount,
         conversionRate,
         totalProducts: productsCount,
+      },
+      mom: {
+        totalRevenue: this.calcMoM(revenueCurrent, revenuePrev),
+        totalOrders: this.calcMoM(ordersCurrent, ordersPrev),
+        totalCustomers: this.calcMoM(currentUsersCount, prevUsersCount),
+        totalProducts: this.calcMoM(currentProductsCount, prevProductsCount),
+        conversionRate: this.calcMoM(conversionCurrent, conversionPrev),
       },
       salesData,
       topProducts,

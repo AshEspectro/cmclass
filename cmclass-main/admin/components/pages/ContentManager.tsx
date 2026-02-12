@@ -7,6 +7,7 @@ import { campaignApi, type Campaign } from '../../services/campaignApi';
 import { serviceApi, type AdminService } from '../../services/serviceApi';
 import { catalogApi, type Category, type Product as BackendProduct } from '../../services/catalogApi';
 import { brandAPI } from '../../services/api';
+import { consumePendingQuickAction } from '../../services/quickActions';
 import { motion } from 'motion/react';
 
 const contentBlocks = [
@@ -357,6 +358,19 @@ export function ContentManager() {
       setCampaignLoading(false);
     }
   }
+
+  useEffect(() => {
+    const shouldOpenCampaignModal = consumePendingQuickAction('new-campaign') === 'new-campaign';
+    const shouldFocusHomepageEditor = consumePendingQuickAction('edit-homepage') === 'edit-homepage';
+
+    if (shouldOpenCampaignModal) {
+      openCampaignModal();
+    }
+
+    if (shouldFocusHomepageEditor) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -850,7 +864,7 @@ export function ContentManager() {
                     </div>
 
                     <div>
-                      <label className="block text-sm mb-1 text-gray-700">Catégorie / Genre (texte)</label>
+                      <label className="block text-sm mb-1 text-gray-700">Genre (texte)</label>
                       <input type="text" value={campaignForm.genreText} onChange={(e) => setCampaignForm(prev => ({...prev, genreText: e.target.value}))} className="w-full px-3 py-2 border border-gray-200 rounded" />
                     </div>
 

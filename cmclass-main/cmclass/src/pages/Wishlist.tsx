@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { useWishlist } from "../contexts/WishlistContext";
 import { ProductGrid } from "../components/Hero_cat";
+import { SkeletonProductCard } from "../components/Skeleton";
 import { ShoppingBag, X } from "lucide-react";
 
 export default function WishlistPage() {
@@ -37,7 +38,9 @@ export default function WishlistPage() {
 
       {/* --- LOADING --- */}
       {loading && (
-        <div className="mt-12 text-gray-500 text-sm">Chargement de votre wishlist...</div>
+        <div className="w-full max-w-[1440px] px-4 md:px-12 lg:px-20 mt-12 grid grid-cols-2 md:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonProductCard key={i} />)}
+        </div>
       )}
 
       {/* --- SI VIDE --- */}

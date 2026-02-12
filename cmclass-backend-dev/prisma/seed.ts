@@ -142,6 +142,20 @@ async function main() {
       marketingSms: false,
       marketingTargetedAds: false,
     },
+    {
+      username: 'test.user',
+      email: 'user@cmclass.com',
+      title: 'M.',
+      firstName: 'Test',
+      lastName: 'User',
+      phoneCountryCode: '+243',
+      phoneNumber: '999999999',
+      dateOfBirth: new Date('2000-01-01'),
+      marketingOptIn: true,
+      marketingEmails: true,
+      marketingSms: true,
+      marketingTargetedAds: true,
+    },
   ];
 
   for (const u of clientUsers) {
@@ -829,12 +843,12 @@ async function main() {
           };
         })
         .filter(Boolean) as {
-        productId: number;
-        quantity: number;
-        priceCents: number;
-        size: string;
-        color: string;
-      }[];
+          productId: number;
+          quantity: number;
+          priceCents: number;
+          size: string;
+          color: string;
+        }[];
 
       if (orderItems.length === 0) continue;
 
@@ -854,6 +868,144 @@ async function main() {
         },
       });
     }
+  }
+
+  // Signup Requests
+  const signupReqCount = await prisma.signupRequest.count();
+  if (signupReqCount === 0) {
+    const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+    await prisma.signupRequest.createMany({
+      data: [
+        {
+          name: 'Marc Zinga',
+          email: 'marc.zinga@cinema.cd',
+          roleRequested: 'ADMIN',
+          message: 'Demande d acces pour la gestion des relations presse.',
+          status: 'PENDING',
+        },
+        {
+          name: 'Fally Ipupa',
+          email: 'fally@aigle.cd',
+          roleRequested: 'USER',
+          message: 'Je souhaite acceder a la collection privee.',
+          status: 'APPROVED',
+          processedById: admin?.id,
+          processedAt: monthsAgo(1),
+        },
+        {
+          name: 'Inconnu Malveillant',
+          email: 'spam@bot.com',
+          roleRequested: 'SUPER_ADMIN',
+          message: 'Give me access!',
+          status: 'DENIED',
+          processedById: admin?.id,
+          processedAt: new Date(),
+        },
+        {
+          name: 'Elvire Kabuya',
+          email: 'elvire.kabuya@style.com',
+          roleRequested: 'MODERATOR',
+          message: 'Creation de contenu pour le blog.',
+          status: 'PENDING',
+        },
+      ],
+    });
+  }
+
+  // Audit Logs
+  const auditLogCount = await prisma.auditLog.count();
+  if (auditLogCount === 0) {
+    const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+    await prisma.auditLog.createMany({
+      data: [
+        { actorId: admin?.id, action: 'USER_LOGIN', meta: { ip: '127.0.0.1', userAgent: 'Mozilla/5.0' } as any },
+        { actorId: admin?.id, action: 'PRODUCT_UPDATE', meta: { productId: 1, field: 'priceCents', old: 89000, new: 95000 } as any },
+        { actorId: admin?.id, action: 'ORDER_STATUS_CHANGE', meta: { orderId: 1, from: 'PENDING', to: 'SHIPPED' } as any },
+        { action: 'SIGNUP_REQUEST_CREATED', meta: { email: 'marc.zinga@cinema.cd' } as any },
+      ],
+    });
+  }
+
+  // Inbound Emails
+  const emailCount = await prisma.inboundEmail.count();
+  if (emailCount === 0) {
+    await prisma.inboundEmail.createMany({
+      data: [
+        {
+          messageId: 'msg_123456',
+          fromName: 'Service Clients CMClass',
+          fromEmail: 'noreply@cmclass.com',
+          subject: 'Confirmation de votre abonnement',
+          text: 'Votre abonnement a la newsletter a ete confirme.',
+          html: '<p>Votre abonnement a la <b>newsletter</b> a ete confirme.</p>',
+          receivedAt: new Date(),
+        },
+        {
+          messageId: 'msg_789012',
+          fromName: 'Press Agency',
+          fromEmail: 'press@fashion.com',
+          subject: 'Article sur la nouvelle collection',
+          text: 'Nous souhaiterions publier un article sur vos createurs.',
+          receivedAt: monthsAgo(1),
+        },
+        {
+          messageId: 'msg_345678',
+          fromName: 'Kivu Dev',
+          fromEmail: 'support@kivudev.com',
+          subject: 'Maintenance prevue',
+          text: 'Une maintenance est prevue ce week-end.',
+          receivedAt: monthsAgo(2),
+        },
+      ],
+    });
+  }
+
+  // Legal Content
+  const legalCount = await prisma.legalContent.count();
+  if (legalCount === 0) {
+    await prisma.legalContent.create({
+      data: {
+        type: 'mentions-legales',
+        title: 'Mentions Legales',
+        content: `
+          <h3>Propriete et Edition</h3>
+          <p>Le site CMClass est edite par la Societe CM CLASS SARL, au capital de 10.000 USD.</p>
+          <p>Siege social : Goma, Nord-Kivu, Republique Democratique du Congo.</p>
+          <h3>Hebergement</h3>
+          <p>Le site est heberge par Kivu Cloud Services.</p>
+          <h3>Propriete Intellectuelle</h3>
+          <p>Tous les elements du site sont la propriete exclusive de CM CLASS.</p>
+        `,
+      },
+    });
+    await prisma.legalContent.create({
+      data: {
+        type: 'politique-protection-donnees',
+        title: 'Protection des Donnees',
+        content: `
+          <h3>Collecte des donnees</h3>
+          <p>Nous collectons vos donnees lors de la creation de votre compte et de vos commandes.</p>
+          <h3>Utilisation des donnees</h3>
+          <p>Vos donnees sont utilisees pour la gestion des commandes et l'amelioration de nos services.</p>
+          <h3>Vos droits</h3>
+          <p>Vous disposez d'un droit d'acces, de rectification et de suppression de vos donnees.</p>
+        `,
+      },
+    });
+    await prisma.legalContent.create({
+      data: {
+        type: 'cgv',
+        title: 'Conditions Generales de Vente',
+        content: `
+          <h3>Objet</h3>
+          <p>Les presentes CGV regissent les relations contractuelles entre CM CLASS et ses clients.</p>
+          <h3>Prix</h3>
+          <p>Les prix sont indiques en USD ou en CDF.</p>
+          <h3>Livraison</h3>
+          <p>Les delais de livraison varient selon la destination.</p>
+        `,
+      },
+    });
   }
 
   // Contact messages

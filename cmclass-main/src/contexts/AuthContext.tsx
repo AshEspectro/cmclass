@@ -11,24 +11,30 @@ interface User {
   username?: string;
   firstName?: string;
   lastName?: string;
+  title?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
   role?: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: any) => Promise<void>;
-  register: (payload: any) => Promise<void>;
+  register: (payload: any) => Promise<any>;
   oauthLogin: (payload: { provider: 'google'; token: string; remember?: boolean }) => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(localStorage.getItem("auth_token"));
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -38,9 +44,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           const data = await authApi.getMe(token);
           setUser(data.user);
+          setAccessToken(token);
         } catch (error) {
           console.error("Initial auth check failed:", error);
           localStorage.removeItem("auth_token");
+          setAccessToken(null);
         }
       }
       setIsLoading(false);
@@ -53,6 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await authApi.login(credentials);
       if (data.access_token) {
         localStorage.setItem("auth_token", data.access_token);
+        setAccessToken(data.access_token);
         let resolvedUser = data.user;
         if (!resolvedUser) {
           try {
@@ -85,6 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await authApi.oauthLogin(payload);
       if (data.access_token) {
         localStorage.setItem("auth_token", data.access_token);
+        setAccessToken(data.access_token);
         let resolvedUser = data.user;
         if (!resolvedUser) {
           try {
@@ -107,6 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await authApi.verifyEmail(token);
       if (data.access_token) {
         localStorage.setItem("auth_token", data.access_token);
+        setAccessToken(data.access_token);
         let resolvedUser = data.user;
         if (!resolvedUser) {
           try {
@@ -126,13 +137,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     localStorage.removeItem("auth_token");
+    setAccessToken(null);
     setUser(null);
+  };
+
+  const refreshUser = async () => {
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      try {
+        const data = await authApi.getMe(token);
+        setUser(data.user);
+      } catch (error) {
+        console.error("Failed to refresh user data:", error);
+      }
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        accessToken,
         isAuthenticated: !!user,
         isLoading,
         login,
@@ -140,6 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         oauthLogin,
         verifyEmail,
         logout,
+        refreshUser,
       }}
     >
       {children}

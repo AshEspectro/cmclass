@@ -1,22 +1,24 @@
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Package, 
-  FolderTree, 
-  Image, 
-  ShoppingCart, 
-  Users, 
+import {
+  LayoutDashboard,
+  FileText,
+  Package,
+  FolderTree,
+  Image,
+  ShoppingCart,
+  Users,
   Settings,
+  Mail,
   Info,
   LogOut,
   X
 } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from './Button';
 
 interface SidebarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
-  brand?: { name?: string; logoUrl?: string } | null;
+  brand?: { name?: string; logoDarkUrl?: string } | null;
   onLogout: () => void;
 }
 
@@ -29,6 +31,8 @@ const menuItems = [
   { id: 'media', label: 'Médiathèque', icon: Image },
   { id: 'orders', label: 'Commandes', icon: ShoppingCart },
   { id: 'customers', label: 'Clients', icon: Users },
+  { id: 'inbox', label: 'Boîte Mail', icon: Mail },
+  { id: 'legal', label: 'Pages Légales', icon: FileText },
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ];
 
@@ -70,28 +74,27 @@ export function Sidebar({ currentPage, onNavigate, brand, onLogout }: SidebarPro
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 flex flex-col">
       <div className="px-8 py-8 border-b border-gray-100">
-        {brand?.logoUrl ? (
-          <img src={brand.logoUrl} alt={brand?.name || 'Brand'} className="h-22 " />
+        {brand?.logoDarkUrl ? (
+          <img src={brand.logoDarkUrl} alt={brand?.name || 'Brand'} className="h-22 " />
         ) : (
           <h1 className="text-2xl tracking-tight">{brand?.name || 'MAISON'}</h1>
         )}
         <p className="text-xs text-gray-500  tracking-wide uppercase">Admin Dashboard</p>
       </div>
-      
+
       <nav className="flex-1 px-4 py-6 space-y-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
-          
+
           return (
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded transition-colors duration-200 ${
-                isActive 
-                  ? 'bg-[#e6f4f6] text-[#007B8A]' 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded transition-colors duration-200 ${isActive
+                  ? 'bg-[#e6f4f6] text-[#007B8A]'
                   : 'text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <Icon size={20} strokeWidth={1.5} />
               <span className="text-sm">{item.label}</span>
@@ -99,13 +102,13 @@ export function Sidebar({ currentPage, onNavigate, brand, onLogout }: SidebarPro
           );
         })}
       </nav>
-      
+
       <div className="px-8 py-6 border-t border-gray-100 space-y-4">
         <button
           onClick={handleProfileClick}
           className="w-full flex items-center gap-3 p-2 rounded hover:bg-gray-50 transition-colors"
         >
-          <div 
+          <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0"
             style={{ backgroundColor: avatarColor }}
           >
@@ -132,17 +135,17 @@ export function Sidebar({ currentPage, onNavigate, brand, onLogout }: SidebarPro
           <div className="bg-white rounded-lg shadow-lg w-96 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Mon Profil</h2>
-              <button
+              <Button
                 onClick={() => setShowProfileModal(false)}
                 className="p-1 hover:bg-gray-100 rounded transition-colors"
               >
                 <X size={20} />
-              </button>
+              </Button>
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-center mb-4">
-                <div 
+                <div
                   className="w-16 h-16 rounded-full flex items-center justify-center text-white text-lg font-medium"
                   style={{ backgroundColor: avatarColor }}
                 >

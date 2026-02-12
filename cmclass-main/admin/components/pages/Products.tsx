@@ -3,6 +3,7 @@ import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { Plus, Edit, Trash2, Search, Filter, X, Eye } from 'lucide-react';
 import { productsAPI, categoriesAPI } from '../../services/api';
+import { consumePendingQuickAction } from '../../services/quickActions';
 
 interface Product {
   id: number;
@@ -70,6 +71,15 @@ export function Products() {
   useEffect(() => {
     loadProducts();
     loadCategories();
+  }, []);
+
+  useEffect(() => {
+    const pendingAction = consumePendingQuickAction('add-product');
+    if (pendingAction !== 'add-product') return;
+
+    setSelectedProduct(null);
+    setViewingProduct(null);
+    setIsCreating(true);
   }, []);
 
   const loadProducts = async () => {

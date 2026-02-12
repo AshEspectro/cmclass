@@ -1,45 +1,100 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID";
-const REDIRECT_URI = "https://yourdomain.com/auth/google/callback";
-
-function generateRandomString(length: number) {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+declare global {
+  interface Window {
+    google?: any;
   }
-  return result;
 }
 
-function base64UrlEncode(str: ArrayBuffer) {
-  return btoa(String.fromCharCode(...new Uint8Array(str)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
+let googleScriptPromise: Promise<void> | null = null;
 
-async function generateCodeChallenge(codeVerifier: string) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(codeVerifier);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return base64UrlEncode(digest);
-}
+const loadGoogleScript = () => {
+  if (googleScriptPromise) return googleScriptPromise;
+  googleScriptPromise = new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) {
+      resolve();
+      return;
+    }
+    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("Failed to load Google script")));
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Google script"));
+    document.head.appendChild(script);
+  });
+  return googleScriptPromise;
+};
 
-export function useGoogleOAuth() {
-  const redirectToGoogle = useCallback(async () => {
-    const codeVerifier = generateRandomString(128);
-    sessionStorage.setItem("code_verifier", codeVerifier);
+type UseGoogleOAuthOptions = {
+  remember?: boolean;
+  onSuccess?: () => void;
+  onError?: (message: string) => void;
+};
 
-    const codeChallenge = await generateCodeChallenge(codeVerifier);
-    const state = generateRandomString(16);
+export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}) {
+  const { oauthLogin } = useAuth();
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+  const [ready, setReady] = useState(false);
+  const initRef = useRef(false);
 
-    const scope = encodeURIComponent("openid email profile");
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&state=${state}&code_challenge=${codeChallenge}&code_challenge_method=S256&access_type=offline&prompt=consent`;
+  useEffect(() => {
+    let mounted = true;
+    if (!clientId || initRef.current) return;
 
-    window.location.href = googleAuthUrl;
-  }, []);
+    loadGoogleScript()
+      .then(() => {
+        if (!mounted || !window.google?.accounts?.id) return;
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: async (response: { credential?: string }) => {
+            if (!response?.credential) {
+              options.onError?.("Google authentication failed.");
+              return;
+            }
+            try {
+              await oauthLogin({
+                provider: "google",
+                token: response.credential,
+                remember: options.remember ?? true,
+              });
+              options.onSuccess?.();
+            } catch (err: any) {
+              options.onError?.(err?.message || "Google authentication failed.");
+            }
+          },
+        });
+        initRef.current = true;
+        setReady(true);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        options.onError?.(err?.message || "Failed to load Google Sign-In.");
+      });
 
-  return { redirectToGoogle };
+    return () => {
+      mounted = false;
+    };
+  }, [clientId, oauthLogin, options]);
+
+  const redirectToGoogle = useCallback(() => {
+    if (!clientId) {
+      options.onError?.("Google Sign-In indisponible (client ID manquant).");
+      return;
+    }
+    if (!window.google?.accounts?.id) {
+      options.onError?.("Google Sign-In n'est pas prêt.");
+      return;
+    }
+    window.google.accounts.id.prompt();
+  }, [clientId, options]);
+
+  return { redirectToGoogle, ready };
 }

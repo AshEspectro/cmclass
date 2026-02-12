@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Instagram, Facebook, Twitter, Plus } from "lucide-react";
+import { publicApi } from "../services/publicApi";
 
 interface FooterMenuProps {
   title: string;
@@ -19,9 +20,8 @@ const FooterMenu = ({ title, links, isOpen, onToggle }: FooterMenuProps) => {
         <h4 className="text-white mb-2 md:mb-4 text-xs md:text-base">{title}</h4>
         <div className="md:hidden transition-transform duration-300">
           <span
-            className={`block transform transition-transform duration-300 ${
-              isOpen ? "rotate-45" : "rotate-0"
-            }`}
+            className={`block transform transition-transform duration-300 ${isOpen ? "rotate-45" : "rotate-0"
+              }`}
           >
             <Plus size={20} className="text-gray-400" />
           </span>
@@ -29,9 +29,8 @@ const FooterMenu = ({ title, links, isOpen, onToggle }: FooterMenuProps) => {
       </div>
 
       <ul
-        className={`overflow-hidden transition-all duration-300 ${
-          isOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
-        } md:max-h-full md:opacity-100 md:mt-0 space-y-8 md:space-y-3 text-xs md:text-sm`}
+        className={`overflow-hidden transition-all duration-300 ${isOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
+          } md:max-h-full md:opacity-100 md:mt-0 space-y-8 md:space-y-3 text-xs md:text-sm`}
       >
         {links.map((link, i) => (
           <li key={i}>
@@ -50,6 +49,26 @@ const FooterMenu = ({ title, links, isOpen, onToggle }: FooterMenuProps) => {
 
 export const Footer = () => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [brand, setBrand] = useState<{
+    logoUrl?: string | null;
+    logoLightUrl?: string | null;
+  }>({});
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const data = await publicApi.getBrand();
+      if (!active) return;
+      setBrand({
+        logoUrl: data?.logoUrl || null,
+        logoLightUrl: data?.logoLightUrl || null,
+      });
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleToggle = (menuTitle: string) => {
     setOpenMenu((prev) => (prev === menuTitle ? null : menuTitle));
@@ -62,7 +81,7 @@ export const Footer = () => {
         {/* Logo for mobile/tablet */}
         <div className="flex justify-center mb-8 sm:mb-12 lg:hidden">
           <img
-            src="/cmclass@.svg"
+            src={brand.logoUrl || brand.logoLightUrl || "/cmclass@.svg"}
             alt="CMClass Logo"
             className="h-12 sm:h-12 object-contain"
           />
@@ -160,12 +179,16 @@ export const Footer = () => {
                 Plan du Site
               </Link>
               <span className="text-gray-600">|</span>
-              <Link to="/mentions-legales" className="text-gray-400 hover:text-[#007B8A] transition-colors">
+              <Link to="/legal/mentions-legales" className="text-gray-400 hover:text-[#007B8A] transition-colors">
                 Mentions légales
               </Link>
               <span className="text-gray-600">|</span>
-              <Link to="/accessibilite" className="text-gray-400 hover:text-[#007B8A] transition-colors">
-                Accessibilité
+              <Link to="/legal/politique-protection-donnees" className="text-gray-400 hover:text-[#007B8A] transition-colors">
+                Protection des données
+              </Link>
+              <span className="text-gray-600">|</span>
+              <Link to="/legal/cgv" className="text-gray-400 hover:text-[#007B8A] transition-colors">
+                CGV
               </Link>
               <span className="text-gray-600">|</span>
               <Link to="/cookies" className="text-gray-400 hover:text-[#007B8A] transition-colors">
@@ -186,7 +209,7 @@ export const Footer = () => {
           {/* Logo pour desktop */}
           <div className="hidden lg:flex justify-center mt-4">
             <img
-              src="/cmclass@.svg"
+              src={brand.logoUrl || brand.logoLightUrl || "/cmclass@.svg"}
               alt="CMClass Logo"
               className="h-6 sm:h-4 lg:h-12 object-contain"
             />

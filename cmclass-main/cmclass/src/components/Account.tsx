@@ -37,7 +37,10 @@ interface AccountProps {
 
 export const Account = ({ onClose }: AccountProps) => {
   const { user, isAuthenticated, login, logout, loading: authLoading } = useAuth();
-  const { redirectToGoogle } = useGoogleOAuth();
+  const { redirectToGoogle } = useGoogleOAuth({
+    onSuccess: () => onClose(),
+    onError: (msg) => setError(msg),
+  });
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -155,10 +158,9 @@ export const Account = ({ onClose }: AccountProps) => {
               <button
                 type="button"
                 onClick={() => {
-                  console.log("🔵 [Account Overlay] Google login clicked");
                   redirectToGoogle();
                 }}
-                className="w-full bg-gray-100 py-4 rounded-3xl flex text-sm items-center justify-center gap-2 hover:bg-gray-200 transition mb-4"
+                
               >
                 <SiGoogle size={22} />
                 Se connecter avec Google

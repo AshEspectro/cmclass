@@ -108,7 +108,7 @@ export const Navbar = () => {
               isScrolled ? 'w-28 sm:w-32 md:w-36 xl:w-40' : 'w-32 sm:w-32 md:w-36 xl:w-40'
             }`}
           >
-            CM
+            CM class
           </div>
         )}
       </motion.div>

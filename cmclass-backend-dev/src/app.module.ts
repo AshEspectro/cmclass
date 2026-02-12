@@ -17,10 +17,13 @@ import { PublicContactController } from './public/contact.controller';
 import { OrdersModule } from './orders/orders.module';
 import { PublicFooterController } from './public/footer.controller';
 import { FooterService } from './footer/footer.service';
+import { MailReceiverService } from './mail/mail-receiver.service';
+import { LegalModule } from './legal/legal.module';
+import { PublicLegalController } from './public/legal.controller';
 
 @Module({
-  imports: [PrismaModule, AuthModule, AdminModule, UsersModule, CartModule, WishlistModule, OrdersModule],
-  controllers: [PublicBrandController, PublicCategoryController, PublicHeroController, PublicProductController, CampaignsController, PublicServicesController, PublicAboutController, PublicContactController, PublicFooterController],
-  providers: [FooterService],
+  imports: [PrismaModule, AuthModule, AdminModule, UsersModule, CartModule, WishlistModule, OrdersModule, LegalModule],
+  controllers: [PublicBrandController, PublicCategoryController, PublicHeroController, PublicProductController, CampaignsController, PublicServicesController, PublicAboutController, PublicContactController, PublicFooterController, PublicLegalController],
+  providers: [FooterService, MailReceiverService],
 })
 export class AppModule { }

@@ -101,4 +101,21 @@ export const authApi = {
 
         return response.json();
     },
+    async updateMe(token: string, data: any) {
+        const response = await fetch(`${API_BASE_URL}/users/me`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to update profile');
+        }
+
+        return response.json();
+    },
 };

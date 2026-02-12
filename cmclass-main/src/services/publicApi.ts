@@ -3,6 +3,18 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   'http://localhost:3000';
 
+type RequestOptions = {
+  throwOnError?: boolean;
+};
+
+type HttpError = Error & { status?: number };
+
+const createHttpError = (message: string, status?: number): HttpError => {
+  const error = new Error(message) as HttpError;
+  error.status = status;
+  return error;
+};
+
 export const publicApi = {
   // Get all campaigns
   async getCampaigns() {
@@ -15,7 +27,7 @@ export const publicApi = {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch campaigns: ${response.status}`);
+        throw createHttpError(`Failed to fetch campaigns: ${response.status}`, response.status);
       }
 
       const json = await response.json();
@@ -27,7 +39,7 @@ export const publicApi = {
   },
 
   // Get all categories (with hierarchy)
-  async getCategories() {
+  async getCategories(options: RequestOptions = {}) {
     try {
       const response = await fetch(`${API_BASE_URL}/categories`, {
         method: 'GET',
@@ -37,19 +49,20 @@ export const publicApi = {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch categories: ${response.status}`);
+        throw createHttpError(`Failed to fetch categories: ${response.status}`, response.status);
       }
 
       const json = await response.json();
       return json.data || json;
     } catch (error) {
+      if (options.throwOnError) throw error;
       console.error('Error fetching categories:', error);
       return [];
     }
   },
 
   // Get all leaf categories (filtered for display)
-  async getLeafCategories() {
+  async getLeafCategories(options: RequestOptions = {}) {
     try {
       const response = await fetch(`${API_BASE_URL}/categories`, {
         method: 'GET',
@@ -59,11 +72,17 @@ export const publicApi = {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch categories: ${response.status}`);
+        throw createHttpError(`Failed to fetch categories: ${response.status}`, response.status);
       }
 
       const json = await response.json();
-      const categories = json.data || json;
+      const categories = Array.isArray(json?.data)
+        ? json.data
+        : Array.isArray(json?.mainCategories)
+          ? json.mainCategories
+          : Array.isArray(json)
+            ? json
+            : [];
 
       // Extract leaf categories from the hierarchy
       const leaves: Record<string, unknown>[] = [];
@@ -89,13 +108,14 @@ export const publicApi = {
       extractLeaves(categories);
       return leaves;
     } catch (error) {
+      if (options.throwOnError) throw error;
       console.error('Error fetching leaf categories:', error);
       return [];
     }
   },
 
   // Get all products
-  async getProducts(page = 1, pageSize = 100, search = '') {
+  async getProducts(page = 1, pageSize = 100, search = '', options: RequestOptions = {}) {
     try {
       const response = await fetch(
         `${API_BASE_URL}/products?page=${page}&pageSize=${pageSize}${search ? `&search=${encodeURIComponent(search)}` : ''}`,
@@ -108,19 +128,20 @@ export const publicApi = {
       );
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch products: ${response.status}`);
+        throw createHttpError(`Failed to fetch products: ${response.status}`, response.status);
       }
 
       const json = await response.json();
       return json.data || json;
     } catch (error) {
+      if (options.throwOnError) throw error;
       console.error('Error fetching products:', error);
       return { items: [], total: 0 };
     }
   },
 
   // Get products by category
-  async getProductsByCategory(categoryId: number | string) {
+  async getProductsByCategory(categoryId: number | string, options: RequestOptions = {}) {
     try {
       const response = await fetch(
         `${API_BASE_URL}/products?categoryId=${categoryId}`,
@@ -133,12 +154,13 @@ export const publicApi = {
       );
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch products: ${response.status}`);
+        throw createHttpError(`Failed to fetch products: ${response.status}`, response.status);
       }
 
       const json = await response.json();
       return json.data || json;
     } catch (error) {
+      if (options.throwOnError) throw error;
       console.error('Error fetching products:', error);
       return { items: [], total: 0 };
     }
@@ -158,7 +180,7 @@ export const publicApi = {
       );
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch campaign catalog: ${response.status}`);
+        throw createHttpError(`Failed to fetch campaign catalog: ${response.status}`, response.status);
       }
 
       const json = await response.json();
@@ -170,31 +192,33 @@ export const publicApi = {
   },
 
   // Get public services for homepage
-  async getServices() {
+  async getServices(options: RequestOptions = {}) {
     try {
       const response = await fetch(`${API_BASE_URL}/services`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!response.ok) throw new Error(`Failed to fetch services: ${response.status}`);
+      if (!response.ok) throw createHttpError(`Failed to fetch services: ${response.status}`, response.status);
       const json = await response.json();
       return json.data || [];
     } catch (error) {
+      if (options.throwOnError) throw error;
       console.error('Error fetching services:', error);
       return [];
     }
   },
   // Get public brand (slogan/description)
-  async getBrand() {
+  async getBrand(options: RequestOptions = {}) {
     try {
       const response = await fetch(`${API_BASE_URL}/brand`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!response.ok) throw new Error(`Failed to fetch brand: ${response.status}`);
+      if (!response.ok) throw createHttpError(`Failed to fetch brand: ${response.status}`, response.status);
       const json = await response.json();
       return json || {};
     } catch (error) {
+      if (options.throwOnError) throw error;
       console.error('Error fetching brand:', error);
       return {};
     }
@@ -206,7 +230,7 @@ export const publicApi = {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!response.ok) throw new Error(`Failed to fetch footer: ${response.status}`);
+      if (!response.ok) throw createHttpError(`Failed to fetch footer: ${response.status}`, response.status);
       const json = await response.json();
       return json.data || [];
     } catch (error) {
@@ -215,46 +239,55 @@ export const publicApi = {
     }
   },
   // Get about page content
-  async getAbout() {
+  async getAbout(options: RequestOptions = {}) {
     try {
       const response = await fetch(`${API_BASE_URL}/about`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!response.ok) throw new Error(`Failed to fetch about content: ${response.status}`);
+      if (!response.ok) {
+        throw createHttpError(`Failed to fetch about content: ${response.status}`, response.status);
+      }
       const json = await response.json();
       return json.data || json || {};
     } catch (error) {
+      if (options.throwOnError) throw error;
       console.error('Error fetching about content:', error);
       return {};
     }
   },
   // Get single product by id
-  async getProduct(id: number | string) {
+  async getProduct(id: number | string, options: RequestOptions = {}) {
     try {
       const response = await fetch(`${API_BASE_URL}/products/${id}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!response.ok) throw new Error(`Failed to fetch product: ${response.status}`);
+      if (!response.ok) {
+        throw createHttpError(`Failed to fetch product: ${response.status}`, response.status);
+      }
       const json = await response.json();
       return json.data || null;
     } catch (error) {
+      if (options.throwOnError) throw error;
       console.error('Error fetching product:', error);
       return null;
     }
   },
   // Get single category by id
-  async getCategory(id: number | string) {
+  async getCategory(id: number | string, options: RequestOptions = {}) {
     try {
       const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!response.ok) throw new Error(`Failed to fetch category: ${response.status}`);
+      if (!response.ok) {
+        throw createHttpError(`Failed to fetch category: ${response.status}`, response.status);
+      }
       const json = await response.json();
       return json.data || json || null;
     } catch (error) {
+      if (options.throwOnError) throw error;
       console.error('Error fetching category:', error);
       return null;
     }

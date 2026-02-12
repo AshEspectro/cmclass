@@ -9,6 +9,12 @@ interface User {
   username?: string;
   role?: string;
   name?: string;
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneCountryCode?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
 }
 
 interface AuthContextType {
@@ -18,6 +24,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string, remember?: boolean) => Promise<void>;
   adminLogin: (email: string, password: string) => Promise<void>;
+  oauthLogin: (payload: { provider: "google"; token: string; remember?: boolean }) => Promise<void>;
   register: (payload: {
     email: string;
     password: string;
@@ -34,6 +41,7 @@ interface AuthContextType {
     marketingTargetedAds?: boolean;
   }) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -139,6 +147,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const oauthLogin = async (payload: { provider: "google"; token: string; remember?: boolean }) => {
+    const data = await authApi.oauthLogin(payload);
+    const token = data.access_token;
+    if (!token) throw new Error("Token manquant dans la réponse.");
+
+    const remember = payload.remember ?? true;
+    if (remember) {
+      localStorage.setItem("access_token", token);
+      sessionStorage.removeItem("access_token");
+    } else {
+      sessionStorage.setItem("access_token", token);
+      localStorage.removeItem("access_token");
+    }
+
+    const me = await authApi.me(token);
+    console.log("📡 [AuthContext] OAuth Login me response:", me);
+    setUser(me.user);
+    setAccessToken(token);
+  };
+
   const logout = async () => {
     try {
       if (accessToken) {
@@ -154,6 +182,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const refreshUser = async () => {
+    const token = getStoredToken();
+    if (token) {
+      const me = await authApi.me(token);
+      setUser(me.user);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -163,8 +199,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading,
         login,
         adminLogin,
+        oauthLogin,
         register,
         logout,
+        refreshUser,
       }}
     >
       {children}

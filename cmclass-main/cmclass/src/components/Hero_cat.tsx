@@ -88,13 +88,14 @@ import type { Product_cat } from "../types/api";
 
 
 import { publicApi } from "../services/publicApi";
+import { SkeletonProductCard } from "./Skeleton";
 
 interface ProductGridProps {
   limit?: number; // optional
   categoryId?: number; // optional
 }
 
-export function ProductGrid({ limit }: ProductGridProps) {
+export function ProductGrid({ limit, categoryId }: ProductGridProps) {
   const [items, setItems] = useState<Product_cat[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -165,9 +166,7 @@ export function ProductGrid({ limit }: ProductGridProps) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 w-full">
       {loading ? (
-        <div className="col-span-full text-center text-gray-500 py-6">
-          Chargement des produits...
-        </div>
+        Array.from({ length: 4 }).map((_, i) => <SkeletonProductCard key={i} />)
       ) : limitedItems.length === 0 ? (
         <div className="col-span-full text-center text-gray-500 py-6">
           Aucun produit à afficher.

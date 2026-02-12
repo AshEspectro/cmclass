@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
@@ -25,8 +25,14 @@ export default function CreateAccount() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const passwordWrapperRef = useRef<HTMLDivElement | null>(null);
-  const { register, oauthLogin } = useAuth();
+  const { register, oauthLogin, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/monprofil");
+    }
+  }, [isAuthenticated, navigate]);
 
   const passwordRules = [
     { id: "length", label: "Au moins 8 caractères", test: (v: string) => v.length >= 8 },
@@ -280,7 +286,7 @@ export default function CreateAccount() {
                   checked={form.marketingOptIn}
                   onChange={(e) => setForm(prev => ({ ...prev, marketingOptIn: e.target.checked }))}
                 />
-                J’accepte de recevoir des communications marketing de Louis Vuitton.
+                J’accepte de recevoir des communications marketing de CMclass.
               </label>
               <div className="pl-12">
                 <p className="text-sm font-medium mt-4">Mes préférences :</p>

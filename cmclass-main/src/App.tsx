@@ -20,6 +20,7 @@ import ForgotPwd from './pages/forgot-password';
 import BagsPage from './pages/Bags';
 import Index from '../admin/Admin';
 import VerifyEmail from './pages/VerifyEmail';
+import MonProfile from './pages/MonProfile';
 
 //import { useConditionalNavbar } from './hooks/useConditionalNavbar';
 
@@ -32,7 +33,7 @@ import WishlistPage from './pages/Wishlist';
 import { AuthProvider } from './contexts/AuthContext';
 import { LocaleProvider } from './contexts/LocaleContext';
 import PlanDuSite from './pages/PlanDuSite';
-import MentionsLegales from './pages/MentionsLegales';
+import LegalPage from './pages/LegalPage';
 import Accessibilite from './pages/Accessibilite';
 import Cookies from './pages/Cookies';
 import FAQ from './pages/FAQ';
@@ -40,10 +41,10 @@ import SuiviCommande from './pages/SuiviCommande';
 
 function AppWrapper() {
   const location = useLocation();
-  const hideNavAndFooter = ['/','/admin'].includes(location.pathname);
- // Coming Soon page
+  const hideNavAndFooter = ['/', '/admin'].includes(location.pathname);
+  // Coming Soon page
 
-// Exemple : cacher navbar sur /homme et /bagsPage avec scroll
+  // Exemple : cacher navbar sur /homme et /bagsPage avec scroll
   useConditionalNavbar({
     routesWithHide: ['/homme', '/bagsPage'],
     enableScrollHide: true,
@@ -66,30 +67,32 @@ function AppWrapper() {
                     <Route path="/" element={<Coming_soon />} />
                     <Route path="/home" element={<Home />} />
                     <Route path="/homme" element={<Category />} />
-                    <Route path="/homme/:subcategory" element={<BagsPage/>} />
+                    <Route path="/homme/:subcategory" element={<BagsPage />} />
                     <Route path="/produit/:id" element={<SingleProductPage />} />
                     <Route path="/stories" element={<Stories />} />
                     <Route path="/alternative-login" element={<AccountPage_A />} />
                     <Route path="/a-propos" element={<About />} />
-                    <Route path="/LoginPage" element={<AccountPage/>} />
-                    <Route path="/bagsPage" element={<BagsPage/>} />
+                    <Route path="/LoginPage" element={<AccountPage />} />
+                    <Route path="/bagsPage" element={<BagsPage />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/compte" element={<CreateAccount />} />
                     <Route path="/login" element={<LoginPage />} />
-                    <Route path="/category" element={<Category/>} />
+                    <Route path="/category" element={<Category />} />
                     <Route path="/panier" element={<Cartpage />} />
                     <Route path="/femme" element={<Category />} />
                     <Route path="/accessoires" element={<Category />} />
                     <Route path="/nouveautes" element={<Category />} />
                     <Route path="/wishlist" element={<WishlistPage />} />
                     <Route path="/plan-du-site" element={<PlanDuSite />} />
-                    <Route path="/mentions-legales" element={<MentionsLegales />} />
+                    <Route path="/legal/:type" element={<LegalPage />} />
+                    <Route path="/mentions-legales" element={<LegalPage />} />
                     <Route path="/accessibilite" element={<Accessibilite />} />
                     <Route path="/cookies" element={<Cookies />} />
                     <Route path="/faq" element={<FAQ />} />
                     <Route path="/suivi" element={<SuiviCommande />} />
-                <Route path="/forgot-password" element={<ForgotPwd/>} />
-                <Route path="/verify-email" element={<VerifyEmail />} />
+                    <Route path="/forgot-password" element={<ForgotPwd />} />
+                    <Route path="/verify-email" element={<VerifyEmail />} />
+                    <Route path="/monprofil" element={<MonProfile />} />
                     <Route path="*" element={<Home />} />
                     <Route path="/admin" element={<Index />} />
 

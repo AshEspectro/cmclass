@@ -5,6 +5,23 @@ import HeroSection, { HeroProduct, ProductGrid } from "../components/Hero_cat";
 import { ViewMoreButton } from "../components/ViewMoreBttn";
 import { publicApi } from "../services/publicApi";
 import { ProductCard, type ApiProduct } from "../components/ProductCard";
+import { Skeleton, SkeletonProductCard } from "../components/Skeleton";
+
+type StatusError = Error & { status?: number };
+
+const RETRY_DELAY_MS = 3000;
+
+const createHttpError = (message: string, status?: number): StatusError => {
+  const error = new Error(message) as StatusError;
+  error.status = status;
+  return error;
+};
+
+const isNotFoundError = (error: unknown) =>
+  typeof error === "object" &&
+  error !== null &&
+  "status" in error &&
+  Number((error as StatusError).status) === 404;
 
 
 export default function Category() {
@@ -15,106 +32,176 @@ export default function Category() {
   const [productsByCategory, setProductsByCategory] = useState<Record<string, ApiProduct[]>>({});
   const [campaignCategories, setCampaignCategories] = useState<Array<Record<string, unknown>>>([]);
   const [isStandaloneCategory, setIsStandaloneCategory] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const campaignId = params.get("campaignId");
-    const categoryId = params.get("categoryId");
-    let mounted = true;
-    
-    // If viewing a standalone category (no campaignId but has categoryId)
-    if (!campaignId && categoryId) {
-      const catId = Number(categoryId);
-      // Validate that categoryId is a valid number
-      if (isNaN(catId) || catId <= 0) {
-        console.warn('Invalid categoryId:', categoryId);
-        setIsStandaloneCategory(false);
-        return () => { mounted = false; };
-      }
-      
-      setIsStandaloneCategory(true);
-      (async () => {
-        try {
-          const resp = await publicApi.getProductsByCategory(catId);
-          const items: ApiProduct[] = Array.isArray(resp) ? resp : (resp.items || resp.data || []);
-          if (mounted) {
-            setProducts(items);
-            // Fetch category details
-            const catResp = await publicApi.getCategory(catId);
-            if (mounted) setSingleCategory(catResp as Record<string, unknown>);
-          }
-        } catch (err) {
-          console.error('Failed to load standalone category', err);
-        }
-      })();
-    }
-    
-    return () => { mounted = false; };
-  }, [location.search]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const campaignId = params.get("campaignId");
-    if (!campaignId) return;
+    const campaignId = params.get("campaignId") || params.get("campaign");
+    const categoryParam = params.get("categoryId") || params.get("category");
+    const apiBase =
+      import.meta.env.VITE_BACKEND_URL ||
+      import.meta.env.VITE_API_URL ||
+      "http://localhost:3000";
 
     let mounted = true;
-    (async () => {
+    let retryTimer: number | undefined;
+
+    const loadCategoryPage = async () => {
+      if (!mounted) return;
+      setLoading(true);
+
       try {
-        const apiBase = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        if (!campaignId && categoryParam) {
+          let catId = Number(categoryParam);
+          let resolvedCategory: Record<string, unknown> | null = null;
 
-        // Fetch campaign categories and campaign details from the new endpoint
-        const resp = await fetch(`${apiBase}/campaigns/${campaignId}/categories`);
-        if (!resp.ok) {
-          console.warn('Campaign not found or has no categories, using fallback', resp.status);
-          // Don't return—let the page render with fallback content (HeaderPage)
-        } else {
+          if (isNaN(catId) || catId <= 0) {
+            const categorySlug = String(categoryParam).trim().toLowerCase();
+            const leafCategories = await publicApi.getLeafCategories({ throwOnError: true });
+            const matched = Array.isArray(leafCategories)
+              ? (leafCategories as Array<Record<string, unknown>>).find(
+                  (cat) => String((cat as any)?.slug || "").trim().toLowerCase() === categorySlug
+                )
+              : undefined;
 
-        const payload = await resp.json();
-        const cats = Array.isArray(payload.data) ? payload.data : (payload.data || []);
-        const campaignObj = payload.campaign || null;
+            if (!matched) {
+              setIsStandaloneCategory(false);
+              setSingleCategory(null);
+              setProducts([]);
+              setLoading(false);
+              return;
+            }
 
-        if (mounted) setCampaign(campaignObj);
+            resolvedCategory = matched;
+            catId = Number((matched as any)?.id);
+            if (isNaN(catId) || catId <= 0) {
+              setIsStandaloneCategory(false);
+              setSingleCategory(null);
+              setProducts([]);
+              setLoading(false);
+              return;
+            }
+          }
 
-        // Save category summaries
-        if (mounted) setCampaignCategories(cats as Record<string, unknown>[]);
+          setIsStandaloneCategory(true);
+          setCampaign(null);
+          setCampaignCategories([]);
+          setProductsByCategory({});
 
-        // For each category (in campaign order), fetch its products via the campaign-position endpoint
-        const byCatMap: Record<string, ApiProduct[]> = {};
-        await Promise.all(
-          (cats || []).map(async (cat: any, idx: number) => {
-            const pos = idx + 1; // 1-based position required by the server
-            try {
-              const det = await fetch(`${apiBase}/campaigns/${campaignId}/categories/${pos}`);
-              if (!det.ok) {
-                byCatMap[Number(cat?.id)] = [];
-                return;
+          const categoryPromise = resolvedCategory
+            ? Promise.resolve(resolvedCategory)
+            : publicApi.getCategory(catId, { throwOnError: true });
+
+          const [resp, catResp] = await Promise.all([
+            publicApi.getProductsByCategory(catId, { throwOnError: true }),
+            categoryPromise,
+          ]);
+          if (!mounted) return;
+
+          const items: ApiProduct[] = Array.isArray(resp)
+            ? resp
+            : Array.isArray((resp as any).items)
+              ? (resp as any).items
+              : Array.isArray((resp as any).data)
+                ? (resp as any).data
+                : [];
+
+          setProducts(items);
+          setSingleCategory((catResp as Record<string, unknown>) || resolvedCategory || null);
+          setLoading(false);
+          return;
+        }
+
+        if (campaignId) {
+          setIsStandaloneCategory(false);
+          setSingleCategory(null);
+
+          const resp = await fetch(`${apiBase}/campaigns/${campaignId}/categories`);
+          if (!resp.ok) {
+            if (resp.status === 404) {
+              setCampaign(null);
+              setCampaignCategories([]);
+              setProductsByCategory({});
+              setProducts([]);
+              setLoading(false);
+              return;
+            }
+            throw createHttpError(
+              `Failed to fetch campaign categories: ${resp.status}`,
+              resp.status
+            );
+          }
+
+          const payload = await resp.json();
+          const cats = Array.isArray(payload.data) ? payload.data : payload.data || [];
+          const campaignObj = payload.campaign || null;
+
+          const byCatMap: Record<string, ApiProduct[]> = {};
+          await Promise.all(
+            (cats || []).map(async (cat: any, idx: number) => {
+              const pos = idx + 1;
+              const detailResponse = await fetch(
+                `${apiBase}/campaigns/${campaignId}/categories/${pos}`
+              );
+
+              if (!detailResponse.ok) {
+                if (detailResponse.status === 404) {
+                  byCatMap[Number(cat?.id)] = [];
+                  return;
+                }
+                throw createHttpError(
+                  `Failed to fetch campaign category detail: ${detailResponse.status}`,
+                  detailResponse.status
+                );
               }
-              const detBody = await det.json();
-              const catData = detBody.data || detBody;
-              const items: ApiProduct[] = Array.isArray(catData.products)
-                ? catData.products
-                : (Array.isArray(catData.items) ? catData.items : (Array.isArray(catData.data) ? catData.data : []));
+
+              const detailBody = await detailResponse.json();
+              const categoryData = detailBody.data || detailBody;
+              const items: ApiProduct[] = Array.isArray(categoryData.products)
+                ? categoryData.products
+                : Array.isArray(categoryData.items)
+                  ? categoryData.items
+                  : Array.isArray(categoryData.data)
+                    ? categoryData.data
+                    : [];
 
               byCatMap[Number(cat?.id)] = (items || []).slice(0, 9);
-            } catch (e) {
-              byCatMap[Number(cat?.id)] = [];
-            }
-          })
-        );
+            })
+          );
 
-        if (mounted) {
+          if (!mounted) return;
+          setCampaign(campaignObj);
+          setCampaignCategories(cats as Record<string, unknown>[]);
           setProductsByCategory(byCatMap);
           const firstList = Object.values(byCatMap)[0] || [];
           setProducts((firstList as ApiProduct[]).slice(0, 9));
+          setLoading(false);
+          return;
         }
-        }
+
+        setIsStandaloneCategory(false);
+        setCampaign(null);
+        setSingleCategory(null);
+        setCampaignCategories([]);
+        setProductsByCategory({});
+        setProducts([]);
+        setLoading(false);
       } catch (err) {
-        console.error('Failed to load campaign categories', err);
+        if (!mounted) return;
+        if (isNotFoundError(err)) {
+          setLoading(false);
+          return;
+        }
+        console.error("Failed to load category page data:", err);
+        retryTimer = window.setTimeout(loadCategoryPage, RETRY_DELAY_MS);
       }
-    })();
+    };
+
+    loadCategoryPage();
 
     return () => {
       mounted = false;
+      if (retryTimer) window.clearTimeout(retryTimer);
     };
   }, [location.search]);
 
@@ -163,6 +250,21 @@ export default function Category() {
       }
     })();
   }, [campaign]);
+
+  if (loading) {
+    return (
+      <div className="mt-8">
+        <Skeleton className="w-full aspect-[21/9]" />
+        <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <SkeletonProductCard key={index} />
+            ))}
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className=" mt-8  ">

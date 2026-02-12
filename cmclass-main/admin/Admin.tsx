@@ -10,6 +10,8 @@ import { MediaLibrary } from './components/pages/MediaLibrary';
 import { Orders } from './components/pages/Orders';
 import { Customers } from './components/pages/Customers';
 import { Settings } from './components/pages/Settings';
+import { Inbox } from './components/pages/Inbox';
+import { LegalPageManager } from './components/pages/LegalPageManager';
 import { Login } from './components/auth/Login';
 import { Signup } from './components/auth/Signup';
 
@@ -58,7 +60,7 @@ function Index() {
     dashboard: {
       title: 'Tableau de Bord',
       subtitle: 'Aperçu de votre entreprise de mode de luxe',
-      component: <Dashboard />
+      component: <Dashboard onNavigate={setCurrentPage} />
     },
     content: {
       title: 'Gestion de Contenu',
@@ -95,10 +97,20 @@ function Index() {
       subtitle: 'Voir et gérer les relations clients',
       component: <Customers />
     },
+    legal: {
+      title: 'Pages Légales',
+      subtitle: 'Gérer les mentions légales, CGV et confidentialité',
+      component: <LegalPageManager />
+    },
     settings: {
       title: 'Paramètres',
       subtitle: 'Configurer la marque, l\'équipe et les préférences du tableau de bord',
       component: <Settings brand={brand} />
+    },
+    inbox: {
+      title: 'Boîte Mail',
+      subtitle: 'Consulter les emails entrants',
+      component: <Inbox />
     },
   };
 

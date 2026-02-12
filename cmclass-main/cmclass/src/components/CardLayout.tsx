@@ -4,6 +4,13 @@ import { useSearchParams } from "react-router-dom";
 import ResponsiveFilter from "./Filter_wrapper";
 import { publicApi } from "../services/publicApi";
 import { campaignsApi } from "../services/campaignsApi";
+import { Skeleton, SkeletonCircle } from "./Skeleton";
+
+interface FilterOption {
+  label: string;
+  type?: string;
+  options?: string[];
+}
 
 interface FilterNavbarProps {
   categories: any[];
@@ -212,7 +219,7 @@ const HandbagsPage: FC<{ onCategoriesLoaded?: (cats: any[]) => void }> = ({ onCa
 
   // Dynamically build filters based on loaded categories
   const dynamicFilters = useMemo(() => {
-    const filters = [
+    const filters: FilterOption[] = [
       { label: "Disponible en ligne", type: "toggle" }
     ];
 
@@ -229,7 +236,24 @@ const HandbagsPage: FC<{ onCategoriesLoaded?: (cats: any[]) => void }> = ({ onCa
     return filters;
   }, [categories]);
 
-  if (loading || categories.length <= 1) return null;
+  if (loading) {
+    return (
+      <section className="w-full px-8 md:px-4 sm:px-6 md:px-12 lg:px-16 xl:px-24">
+        <div className="max-w-full md:w-1/2 mx-auto py-4 mt-32 relative">
+          <div className="flex justify-center gap-8 px-8 overflow-hidden">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center space-y-2">
+                <SkeletonCircle size="16 md:w-20 md:h-20" />
+                <Skeleton className="h-2 w-10" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (categories.length <= 1) return null;
 
   const carouselCards: CardData[] = categories.map((c) => ({
     id: c.id,
