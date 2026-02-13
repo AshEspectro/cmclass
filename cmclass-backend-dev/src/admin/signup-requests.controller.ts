@@ -7,10 +7,16 @@ import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 
+import { NotificationService } from '../notification/notification.service';
+
 @Controller('admin/signup-requests')
 @Roles('ADMIN')
 export class SignupRequestsController {
-  constructor(private prisma: PrismaService, private mail: MailService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mail: MailService,
+    private notificationService: NotificationService
+  ) { }
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -51,6 +57,12 @@ export class SignupRequestsController {
 
     // Mark request processed and clear sensitive password field
     await this.prisma.signupRequest.update({ where: { id: parsed }, data: { status: 'APPROVED', processedAt: new Date(), processedById: req.user?.sub ?? null, password: null } });
+
+    await this.notificationService.create({
+      title: 'Demande d\'admin approuvée',
+      message: `La demande de ${sr.name} (${sr.email}) a été approuvée par ${req.user.username}.`,
+      type: 'SIGNUP_APPROVE',
+    });
 
     try {
       await this.mail.sendApprovalEmail(user.email, user.username, rawPassword, roleToAssign);

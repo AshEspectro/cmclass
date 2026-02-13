@@ -29,7 +29,7 @@ export class MailReceiverService implements OnModuleInit, OnModuleDestroy {
   private timer: NodeJS.Timeout | null = null;
   private running = false;
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   onModuleInit() {
     const cfg = this.getConfig();
@@ -102,6 +102,10 @@ export class MailReceiverService implements OnModuleInit, OnModuleDestroy {
       port: cfg.port,
       secure: cfg.tls,
       auth: { user: cfg.user!, pass: cfg.pass! },
+    });
+
+    client.on('error', (err) => {
+      this.logger.error('ImapFlow Client Error', err);
     });
 
     await client.connect();

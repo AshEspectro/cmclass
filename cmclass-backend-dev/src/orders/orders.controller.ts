@@ -1,11 +1,15 @@
 import { BadRequestException, Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { NotificationService } from '../notification/notification.service';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
 export class OrdersController {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService
+  ) { }
 
   @Get('me')
   async listMine(@Req() req) {
@@ -74,8 +78,27 @@ export class OrdersController {
           })),
         },
       },
-      include: { items: true },
+      include: { items: { include: { product: true } } },
     });
+
+    // Notify admin about new order
+    const user = await this.prisma.user.findUnique({ where: { id: req.user.id } });
+    await this.notificationService.create({
+      title: 'Nouvelle commande',
+      message: `${user?.firstName || user?.username} a passé une commande (#${order.id}) pour ${totalCents / 100} ${order.currency}.`,
+      type: 'ORDER',
+    });
+
+    // Check for low stock items
+    for (const item of order.items) {
+      if (item.product && item.product.stock <= 5) {
+        await this.notificationService.create({
+          title: 'Stock faible',
+          message: `Le produit "${item.product.name}" est presque épuisé (${item.product.stock} restants).`,
+          type: 'STOCK',
+        });
+      }
+    }
 
     await this.prisma.cartItem.deleteMany({ where: { userId: req.user.id } });
 

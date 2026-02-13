@@ -10,6 +10,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Request } from 'express';
+import { NotificationService } from '../notification/notification.service';
 
 function filename(req: Request, file: any, cb: (err: any, name: string) => void) {
   const ext = file.originalname.split('.').pop();
@@ -20,7 +21,10 @@ function filename(req: Request, file: any, cb: (err: any, name: string) => void)
 @Controller('admin/products')
 @Roles('ADMIN')
 export class ProductController {
-  constructor(private svc: ProductService) {}
+  constructor(
+    private svc: ProductService,
+    private notificationService: NotificationService
+  ) { }
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -37,22 +41,43 @@ export class ProductController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async create(@Body() body: CreateProductDto) {
+  async create(@Body() body: CreateProductDto, @Req() req: any) {
     const c = await this.svc.create(body as any);
+
+    await this.notificationService.create({
+      title: 'Nouveau produit ajouté',
+      message: `Le produit "${c.name}" a été ajouté par ${req.user.username}.`,
+      type: 'PRODUCT_CREATE',
+    });
+
     return { data: c };
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async update(@Param('id') id: string, @Body() body: UpdateProductDto) {
+  async update(@Param('id') id: string, @Body() body: UpdateProductDto, @Req() req: any) {
     const c = await this.svc.update(Number(id), body as any);
+
+    await this.notificationService.create({
+      title: 'Produit mis à jour',
+      message: `Le produit "${c.name}" (#${id}) a été mis à jour par ${req.user.username}.`,
+      type: 'PRODUCT_UPDATE',
+    });
+
     return { data: c };
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @Req() req: any) {
     await this.svc.delete(Number(id));
+
+    await this.notificationService.create({
+      title: 'Produit supprimé',
+      message: `Le produit #${id} a été supprimé par ${req.user.username}.`,
+      type: 'PRODUCT_DELETE',
+    });
+
     return { success: true };
   }
 

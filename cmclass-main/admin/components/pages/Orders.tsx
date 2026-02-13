@@ -111,11 +111,41 @@ export function Orders() {
     );
   });
 
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    setActionLoading(true);
+    try {
+      const numericId = parseInt(orderId.replace('#CMD-', ''), 10);
+      const res = await fetchWithAuth(`${BACKEND_URL}/admin/orders/${numericId}/status`, {
+        ...createFetchOptions('PATCH'),
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) throw new Error('Failed to update status');
+
+      // Refresh orders
+      const ordersRes = await fetchWithAuth(`${BACKEND_URL}/admin/orders`, createFetchOptions('GET'));
+      const data = await ordersRes.json();
+      setOrders(data?.orders || []);
+      setStats(data?.stats || null);
+      if (selectedOrder?.id === orderId) {
+        const updated = (data?.orders || []).find((o: Order) => o.id === orderId);
+        setSelectedOrder(updated || null);
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Une erreur est survenue lors de la mise à jour.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-          {error}
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-900 font-bold">dismiss</button>
         </div>
       )}
       {/* Stats Cards */}
@@ -198,9 +228,9 @@ export function Orders() {
             </thead>
             <tbody>
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <tr key={order.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${selectedOrder?.id === order.id ? 'bg-blue-50/30' : ''}`}>
                   <td className="px-6 py-4">
-                    <span className="text-[#007B8A]">{order.id}</span>
+                    <span className="text-[#007B8A] font-medium">{order.id}</span>
                   </td>
                   <td className="px-6 py-4">{order.customer}</td>
                   <td className="px-6 py-4 text-gray-600">{order.date}</td>
@@ -219,10 +249,11 @@ export function Orders() {
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2 hover:bg-[#007B8A]/10 rounded-full transition-colors group"
                         onClick={() => setSelectedOrder(order)}
+                        title="Voir détails"
                       >
-                        <ExternalLink size={16} className="text-gray-600" strokeWidth={1.5} />
+                        <ExternalLink size={16} className="text-gray-400 group-hover:text-[#007B8A]" strokeWidth={1.5} />
                       </button>
                     </div>
                   </td>
@@ -241,7 +272,7 @@ export function Orders() {
       </Card>
 
       {/* Order Details Panel */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-3 gap-6 pb-12">
         <Card className="col-span-2">
           <CardHeader>
             <h3>Détails de la Commande {selectedOrder?.id || ''}</h3>
@@ -252,16 +283,18 @@ export function Orders() {
                 <div className="flex items-start justify-between pb-4 border-b border-gray-100">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Client</p>
-                    <p>{selectedOrder.customer}</p>
+                    <p className="font-medium">{selectedOrder.customer}</p>
                     <p className="text-sm text-gray-600">{selectedOrder.email || '—'}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-500 mb-1">Statut</p>
-                    <p className="text-sm">{selectedOrder.status}</p>
-                    <p className="text-sm text-gray-600">{selectedOrder.payment}</p>
+                    <p className="text-sm text-gray-500 mb-1">Statut Actuel</p>
+                    <span className={`text-xs px-3 py-1 rounded-full ${getStatusColor(selectedOrder.status)}`}>
+                      {selectedOrder.status}
+                    </span>
+                    <p className="text-sm text-gray-600 mt-2">{selectedOrder.payment}</p>
                   </div>
                 </div>
-                
+
                 <div>
                   <p className="text-sm text-gray-500 mb-3">Articles Commandés</p>
                   <div className="space-y-3">
@@ -274,39 +307,42 @@ export function Orders() {
                             ) : null}
                           </div>
                           <div>
-                            <p className="text-sm">{line.name}</p>
+                            <p className="text-sm font-medium">{line.name}</p>
                             <p className="text-xs text-gray-500">
-                              {line.size ? `Taille: ${line.size}` : ''}{line.size && line.color ? ', ' : ''}
-                              {line.color ? `Couleur: ${line.color}` : ''}
+                              Quantité: {line.quantity}
+                              {line.size ? ` • Taille: ${line.size}` : ''}
+                              {line.color ? ` • Couleur: ${line.color}` : ''}
                             </p>
                           </div>
                         </div>
-                        <p>{formatCurrency(line.price * line.quantity)}</p>
+                        <p className="font-medium">{formatCurrency(line.price * line.quantity)}</p>
                       </div>
                     ))}
                     {(!selectedOrder.lines || selectedOrder.lines.length === 0) && (
-                      <p className="text-sm text-gray-500">Aucun article.</p>
+                      <p className="text-sm text-gray-500 italic">Aucun détail d'article disponible.</p>
                     )}
                   </div>
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Sous-total</span>
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Sous-total</span>
                     <span>{formatCurrency(selectedOrder.total)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Livraison</span>
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Livraison</span>
                     <span>Gratuite</span>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-gray-100">
+                  <div className="flex justify-between pt-2 border-t border-gray-100 text-lg font-medium">
                     <span>Total</span>
-                    <span>{formatCurrency(selectedOrder.total)}</span>
+                    <span className="text-[#007B8A]">{formatCurrency(selectedOrder.total)}</span>
                   </div>
                 </div>
               </>
             ) : (
-              <p className="text-sm text-gray-500">Aucune commande sélectionnée.</p>
+              <div className="py-12 text-center text-gray-500">
+                <p>Sélectionnez une commande pour voir les détails.</p>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -316,19 +352,39 @@ export function Orders() {
             <h3>Actions de Commande</h3>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button variant="primary" className="w-full">
-              Marquer comme Livrée
+            <Button
+              variant="primary"
+              className="w-full"
+              disabled={!selectedOrder || selectedOrder.status === 'Livrée' || actionLoading}
+              onClick={() => handleUpdateStatus(selectedOrder!.id, 'DELIVERED')}
+            >
+              {actionLoading ? 'Mise à jour...' : 'Marquer comme Livrée'}
             </Button>
-            <Button variant="outline" className="w-full">
-              Modifier la Commande
-            </Button>
+
+            {selectedOrder?.status === 'En Préparation' && (
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={actionLoading}
+                onClick={() => handleUpdateStatus(selectedOrder.id, 'SHIPPED')}
+              >
+                Passer en Livraison
+              </Button>
+            )}
+
             <Button variant="outline" className="w-full">
               Imprimer le Bordereau
             </Button>
             <Button variant="outline" className="w-full">
               Envoyer un Email au Client
             </Button>
-            <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50">
+
+            <Button
+              variant="outline"
+              className="w-full text-red-600 border-red-200 hover:bg-red-50"
+              disabled={!selectedOrder || selectedOrder.status === 'Annulée' || actionLoading}
+              onClick={() => handleUpdateStatus(selectedOrder!.id, 'CANCELLED')}
+            >
               Annuler la Commande
             </Button>
           </CardContent>

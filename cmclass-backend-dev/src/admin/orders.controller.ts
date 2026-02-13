@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -11,7 +11,7 @@ type PaymentStatus = 'Payée' | 'Remboursée' | 'En attente';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'SUPER_ADMIN', 'MODERATOR', 'SUPPORT')
 export class OrdersController {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   @Get()
   async list() {
@@ -76,5 +76,17 @@ export class OrdersController {
       },
       orders: mapped,
     };
+  }
+
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { status: 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' }
+  ) {
+    const order = await this.prisma.order.update({
+      where: { id },
+      data: { status: body.status },
+    });
+    return { data: order };
   }
 }

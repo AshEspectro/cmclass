@@ -23,12 +23,17 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { MailService } from '../mail/mail.service';
+import { NotificationService } from '../notification/notification.service';
 
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
 export class UsersController {
-  constructor(private prisma: PrismaService, private mail: MailService) { }
+  constructor(
+    private prisma: PrismaService,
+    private mail: MailService,
+    private notificationService: NotificationService
+  ) { }
 
   @Get()
   async list(
@@ -209,6 +214,19 @@ export class UsersController {
 
     const user = await this.prisma.user.update({ where: { id: parsed }, data: updateData });
     const { password, ...rest } = user as any;
+
+    // Trigger notification if it's an admin user being updated
+    if (user.role !== 'USER') {
+      try {
+        await this.notificationService.create({
+          title: 'Infos admin modifiées',
+          message: `Les informations du compte admin "${user.username}" (${user.email}) ont été mises à jour par ${req.user.username}.`,
+          type: 'ADMIN_UPDATE',
+        });
+      } catch (e) {
+        console.error('Failed to create notification', e);
+      }
+    }
 
     // Audit
     try {

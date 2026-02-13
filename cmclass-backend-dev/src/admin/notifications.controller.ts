@@ -8,13 +8,18 @@ import { NotificationService } from '../notification/notification.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'SUPER_ADMIN', 'MODERATOR', 'SUPPORT')
 export class NotificationsController {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(private readonly notificationService: NotificationService) { }
 
   @Get()
   async list(@Query('unreadOnly') unreadOnly?: string) {
     const unread = unreadOnly === 'true';
     const data = await this.notificationService.list(unread);
     return { data };
+  }
+
+  @Get('summary')
+  async summary() {
+    return this.notificationService.summary();
   }
 
   @Post()

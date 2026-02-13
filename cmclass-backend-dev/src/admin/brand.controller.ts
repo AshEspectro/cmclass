@@ -9,6 +9,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Request } from 'express';
 import { existsSync, mkdirSync } from 'fs';
+import { NotificationService } from '../notification/notification.service';
 
 function filename(req: Request, file: Express.Multer.File, cb: (err: any, name: string) => void) {
   const ext = file.originalname.split('.').pop();
@@ -17,9 +18,12 @@ function filename(req: Request, file: Express.Multer.File, cb: (err: any, name: 
 }
 
 @Controller('admin/brand')
-@Roles('ADMIN','SUPER_ADMIN')
+@Roles('ADMIN', 'SUPER_ADMIN')
 export class BrandController {
-  constructor(private brandService: BrandService) {}
+  constructor(
+    private brandService: BrandService,
+    private notificationService: NotificationService
+  ) { }
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -29,8 +33,15 @@ export class BrandController {
 
   @Patch()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async update(@Body() body: UpdateBrandDto) {
+  async update(@Body() body: UpdateBrandDto, @Req() req: any) {
     const brand = await this.brandService.upsert(body);
+
+    await this.notificationService.create({
+      title: 'Configuration de marque mise à jour',
+      message: `L'administrateur ${req.user.username} a mis à jour les paramètres de la marque.`,
+      type: 'BRAND_UPDATE',
+    });
+
     return { data: brand };
   }
 
@@ -49,7 +60,6 @@ export class BrandController {
   }))
   async uploadFile(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
     if (!file) throw new BadRequestException('No file uploaded');
-    // Serve uploads from root '/uploads' (Nest static assets are mounted at '/'), not '/public/uploads'
     const url = `${req.protocol}://${req.get('host')}/uploads/brand/${file.filename}`;
     return { url };
   }

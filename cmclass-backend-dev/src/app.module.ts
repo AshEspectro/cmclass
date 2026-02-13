@@ -20,9 +20,12 @@ import { FooterService } from './footer/footer.service';
 import { MailReceiverService } from './mail/mail-receiver.service';
 import { LegalModule } from './legal/legal.module';
 import { PublicLegalController } from './public/legal.controller';
+import { MaxicashModule } from './maxicash/maxicash.module';
+import { NotificationModule } from './notification/notification.module';
+
 
 @Module({
-  imports: [PrismaModule, AuthModule, AdminModule, UsersModule, CartModule, WishlistModule, OrdersModule, LegalModule],
+  imports: [PrismaModule, AuthModule, AdminModule, UsersModule, CartModule, WishlistModule, OrdersModule, LegalModule, MaxicashModule, NotificationModule],
   controllers: [PublicBrandController, PublicCategoryController, PublicHeroController, PublicProductController, CampaignsController, PublicServicesController, PublicAboutController, PublicContactController, PublicFooterController, PublicLegalController],
   providers: [FooterService, MailReceiverService],
 })

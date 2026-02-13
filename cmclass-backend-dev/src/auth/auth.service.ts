@@ -6,10 +6,16 @@ import * as crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwtService: JwtService, private mail: MailService) { }
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+    private mail: MailService,
+    private notificationService: NotificationService
+  ) { }
 
   private getGoogleClient() {
     const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
@@ -166,6 +172,17 @@ export class AuthService {
     if (existingReq) throw new BadRequestException('A signup request with this email already exists');
 
     const req = await this.prisma.signupRequest.create({ data: { name: dto.name, email: dto.email, roleRequested: dto.roleRequested, message: dto.message, password: dto.password || null } });
+
+    try {
+      // PROACTIVELY NOTIFY ADMINS
+      await this.notificationService.create({
+        title: 'Nouvelle demande d\'admin',
+        message: `${dto.name} (${dto.email}) souhaite devenir ${dto.roleRequested}.`,
+        type: 'SIGNUP_REQUEST',
+      });
+    } catch (e) {
+      console.error('Failed to create in-app notification', e);
+    }
 
     const superEmail = process.env.SUPERADMIN_EMAIL || 'espectro.ash@gmail.com';
     try {
