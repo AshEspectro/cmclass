@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "build": "npm --prefix cmclass-backend-dev install --include=dev && npm --prefix cmclass-backend-dev run prisma:generate && npm --prefix cmclass-backend-dev run build",
+    "start:prod": "npm --prefix cmclass-backend-dev run start:prod"
+  },
   "dependencies": {
     "cookie-parser": "^1.4.7",
     "google-auth-library": "^10.5.0"
