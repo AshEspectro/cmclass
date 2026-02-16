@@ -1,0 +1,8 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "npm run start:prod"
+
+[environments.production]
+rootDirectory = "cmclass-backend-dev"
