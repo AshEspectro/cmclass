@@ -1,7 +1,11 @@
 // Hero section API service
-import { fetchWithAuth } from './api';
+import { fetchWithAuth, uploadWithAuth, type UploadProgressCallback } from './api';
+import { optimizeImageForUpload } from './uploadUtils';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const BACKEND_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3000';
+const BACKEND_URL =
+  (import.meta as any).env.VITE_API_URL ||
+  (import.meta as any).env.VITE_BACKEND_URL ||
+  'http://localhost:3000';
 
 export interface HeroData {
   id?: number;
@@ -49,38 +53,25 @@ export const heroApi = {
   },
 
   // Upload hero background image
-  async uploadBackgroundImage(file: File): Promise<string> {
+  async uploadBackgroundImage(file: File, onProgress?: UploadProgressCallback): Promise<string> {
+    const optimized = await optimizeImageForUpload(file);
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', optimized);
 
-    const response = await fetchWithAuth(`${BACKEND_URL}/admin/hero/upload`, {
-      method: 'POST',
-      body: formData,
+    const result = await uploadWithAuth<{ url: string }>(`${BACKEND_URL}/admin/hero/upload`, formData, {
+      onProgress,
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to upload image');
-    }
-
-    const result = await response.json();
     return result.url;
   },
 
   // Upload hero background video
-  async uploadBackgroundVideo(file: File): Promise<string> {
+  async uploadBackgroundVideo(file: File, onProgress?: UploadProgressCallback): Promise<string> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetchWithAuth(`${BACKEND_URL}/admin/hero/upload-video`, {
-      method: 'POST',
-      body: formData,
+    const result = await uploadWithAuth<{ url: string }>(`${BACKEND_URL}/admin/hero/upload-video`, formData, {
+      onProgress,
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to upload video');
-    }
-
-    const result = await response.json();
     return result.url;
   },
 };

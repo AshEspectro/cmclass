@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
-import { Plus, Edit, Trash2, Search, Filter, X, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, X, Eye } from 'lucide-react';
 import { productsAPI, categoriesAPI } from '../../services/api';
 import { consumePendingQuickAction } from '../../services/quickActions';
 
@@ -32,6 +32,10 @@ interface Category {
   name: string;
 }
 
+const PRODUCT_IMAGE_WARN_BYTES = 3 * 1024 * 1024;
+const PRODUCT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const formatFileSizeMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+
 export function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -58,6 +62,7 @@ export function Products() {
     environmentalInfo: '',
   });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const [dragActiveType, setDragActiveType] = useState<string | null>(null);
   const [newSize, setNewSize] = useState('');
@@ -65,6 +70,7 @@ export function Products() {
   const [newColorHex, setNewColorHex] = useState('#000000');
   const [newColorImageUrl, setNewColorImageUrl] = useState('');
   const [uploadingColorImage, setUploadingColorImage] = useState(false);
+  const [colorUploadProgress, setColorUploadProgress] = useState(0);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
 
   // Fetch products on mount and when search/page changes
@@ -190,29 +196,40 @@ export function Products() {
     return 'Actif';
   };
 
-  const handleImageUpload = async (file: File, imageType: string = 'product') => {
-    if (!file) return;
-
-    // Validate file type
+  const validateUploadImage = (file: File) => {
     if (!file.type.startsWith('image/')) {
       setError('Veuillez sélectionner une image valide');
-      return;
+      return false;
     }
+    if (file.size > PRODUCT_IMAGE_MAX_BYTES) {
+      setError(`L'image doit faire moins de ${formatFileSizeMb(PRODUCT_IMAGE_MAX_BYTES)}`);
+      return false;
+    }
+    if (file.size > PRODUCT_IMAGE_WARN_BYTES) {
+      alert(`⚠️ Image volumineuse (${formatFileSizeMb(file.size)}). L’upload peut être plus lent.`);
+    }
+    return true;
+  };
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('L\'image doit faire moins de 5MB');
+  const handleImageUpload = async (file: File, imageType: string = 'product') => {
+    if (!file) return;
+    if (!validateUploadImage(file)) {
       return;
     }
 
     try {
       if (imageType === 'colorImage') {
         setUploadingColorImage(true);
+        setColorUploadProgress(0);
       } else {
         setUploadingImage(true);
+        setUploadProgress(0);
       }
       setError(null);
-      const result = await productsAPI.upload(file);
+      const result = await productsAPI.upload(
+        file,
+        imageType === 'colorImage' ? setColorUploadProgress : setUploadProgress,
+      );
 
       switch (imageType) {
         case 'product':
@@ -233,9 +250,35 @@ export function Products() {
     } finally {
       if (imageType === 'colorImage') {
         setUploadingColorImage(false);
+        setColorUploadProgress(0);
       } else {
         setUploadingImage(false);
+        setUploadProgress(0);
       }
+    }
+  };
+
+  const handleExistingColorImageUpload = async (file: File, colorIndex: number) => {
+    if (!validateUploadImage(file)) return;
+
+    try {
+      setUploadingImage(true);
+      setUploadProgress(0);
+      setError(null);
+      const result = await productsAPI.upload(file, setUploadProgress);
+      setFormData((prev) => ({
+        ...prev,
+        colors: prev.colors.map((c, i) =>
+          i === colorIndex
+            ? { ...c, images: [...c.images, result.url] }
+            : c
+        ),
+      }));
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setUploadingImage(false);
+      setUploadProgress(0);
     }
   };
 
@@ -644,36 +687,20 @@ export function Products() {
                               type="button"
                               onClick={() => {
                                 const fileInput = document.createElement('input');
-                                fileInput.type = 'file';
-                                fileInput.accept = 'image/*';
-                                fileInput.onchange = async (e: any) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    try {
-                                      setUploadingImage(true);
-                                      setError(null);
-                                      const result = await productsAPI.upload(file);
-                                      setFormData({
-                                        ...formData,
-                                        colors: formData.colors.map((c, i) =>
-                                          i === idx
-                                            ? { ...c, images: [...c.images, result.url] }
-                                            : c
-                                        )
-                                      });
-                                    } catch (err: any) {
-                                      setError(err.message);
-                                    } finally {
-                                      setUploadingImage(false);
-                                    }
-                                  }
-                                };
-                                fileInput.click();
-                              }}
-                              disabled={uploadingImage}
-                              className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 disabled:bg-gray-400 whitespace-nowrap"
-                            >
-                              {uploadingImage ? 'Upload...' : 'Télécharger'}
+                              fileInput.type = 'file';
+                              fileInput.accept = 'image/*';
+                              fileInput.onchange = async (e: any) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  await handleExistingColorImageUpload(file, idx);
+                                }
+                              };
+                              fileInput.click();
+                            }}
+                            disabled={uploadingImage}
+                            className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 disabled:bg-gray-400 whitespace-nowrap"
+                          >
+                              {uploadingImage ? `Upload... ${uploadProgress}%` : 'Télécharger'}
                             </button>
                             <button
                               type="button"
@@ -757,9 +784,16 @@ export function Products() {
                             disabled={uploadingColorImage}
                             className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:bg-gray-400 whitespace-nowrap"
                           >
-                            {uploadingColorImage ? 'Upload...' : 'Télécharger'}
+                            {uploadingColorImage ? `Upload... ${colorUploadProgress}%` : 'Télécharger'}
                           </button>
                         </div>
+                        {uploadingColorImage && (
+                          <div className="mt-2">
+                            <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                              <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${colorUploadProgress}%` }} />
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-1 items-end">
                         <button
@@ -883,13 +917,18 @@ export function Products() {
                         )}
                       </div>
                       {uploadingImage ? (
-                        <p className="text-sm text-gray-600">Téléchargement en cours...</p>
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">Téléchargement en cours... {uploadProgress}%</p>
+                          <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                            <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                        </div>
                       ) : (
                         <>
                           <p className="text-sm font-medium text-gray-700">
                             Glissez-déposez une image ici ou cliquez pour sélectionner
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF jusqu'à 5MB</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF. Avertissement &gt; 3 Mo, max 5 Mo.</p>
                         </>
                       )}
                     </label>
@@ -938,13 +977,18 @@ export function Products() {
                         )}
                       </div>
                       {uploadingImage ? (
-                        <p className="text-sm text-gray-600">Téléchargement en cours...</p>
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">Téléchargement en cours... {uploadProgress}%</p>
+                          <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                            <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                        </div>
                       ) : (
                         <>
                           <p className="text-sm font-medium text-gray-700">
                             Glissez-déposez une image ici ou cliquez pour sélectionner
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF jusqu'à 5MB</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF. Avertissement &gt; 3 Mo, max 5 Mo.</p>
                         </>
                       )}
                     </label>
@@ -983,13 +1027,18 @@ export function Products() {
                         <div className="text-4xl text-gray-400 mb-3">🖼️</div>
                       </div>
                       {uploadingImage ? (
-                        <p className="text-sm text-gray-600">Téléchargement en cours...</p>
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">Téléchargement en cours... {uploadProgress}%</p>
+                          <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                            <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                        </div>
                       ) : (
                         <>
                           <p className="text-sm font-medium text-gray-700">
                             Glissez-déposez des images ici ou cliquez pour sélectionner
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF jusqu'à 5MB</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF. Avertissement &gt; 3 Mo, max 5 Mo.</p>
                         </>
                       )}
                     </label>
@@ -1189,36 +1238,20 @@ export function Products() {
                               type="button"
                               onClick={() => {
                                 const fileInput = document.createElement('input');
-                                fileInput.type = 'file';
-                                fileInput.accept = 'image/*';
-                                fileInput.onchange = async (e: any) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    try {
-                                      setUploadingImage(true);
-                                      setError(null);
-                                      const result = await productsAPI.upload(file);
-                                      setFormData({
-                                        ...formData,
-                                        colors: formData.colors.map((c, i) =>
-                                          i === idx
-                                            ? { ...c, images: [...c.images, result.url] }
-                                            : c
-                                        )
-                                      });
-                                    } catch (err: any) {
-                                      setError(err.message);
-                                    } finally {
-                                      setUploadingImage(false);
-                                    }
-                                  }
-                                };
-                                fileInput.click();
-                              }}
-                              disabled={uploadingImage}
-                              className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 disabled:bg-gray-400 whitespace-nowrap"
-                            >
-                              {uploadingImage ? 'Upload...' : 'Télécharger'}
+                              fileInput.type = 'file';
+                              fileInput.accept = 'image/*';
+                              fileInput.onchange = async (e: any) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  await handleExistingColorImageUpload(file, idx);
+                                }
+                              };
+                              fileInput.click();
+                            }}
+                            disabled={uploadingImage}
+                            className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 disabled:bg-gray-400 whitespace-nowrap"
+                          >
+                              {uploadingImage ? `Upload... ${uploadProgress}%` : 'Télécharger'}
                             </button>
 
                           </div>
@@ -1303,9 +1336,16 @@ export function Products() {
                             disabled={uploadingColorImage}
                             className="px-4 py-2 bg-[#007B8A] text-white text-sm font-medium rounded-md hover:bg-[#006270] disabled:bg-gray-400 transition-colors whitespace-nowrap shadow-sm hover:shadow-md"
                           >
-                            {uploadingColorImage ? '⏳ Upload...' : '📁 Télécharger'}
+                            {uploadingColorImage ? `⏳ Upload... ${colorUploadProgress}%` : '📁 Télécharger'}
                           </button>
                         </div>
+                        {uploadingColorImage && (
+                          <div className="mt-2">
+                            <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                              <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${colorUploadProgress}%` }} />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1444,13 +1484,18 @@ export function Products() {
                         )}
                       </div>
                       {uploadingImage ? (
-                        <p className="text-sm text-gray-600">Téléchargement en cours...</p>
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">Téléchargement en cours... {uploadProgress}%</p>
+                          <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                            <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                        </div>
                       ) : (
                         <>
                           <p className="text-sm font-medium text-gray-700">
                             Glissez-déposez une image ici ou cliquez pour sélectionner
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF jusqu'à 5MB</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF. Avertissement &gt; 3 Mo, max 5 Mo.</p>
                         </>
                       )}
                     </label>
@@ -1509,13 +1554,18 @@ export function Products() {
                         )}
                       </div>
                       {uploadingImage ? (
-                        <p className="text-sm text-gray-600">Téléchargement en cours...</p>
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">Téléchargement en cours... {uploadProgress}%</p>
+                          <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                            <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                        </div>
                       ) : (
                         <>
                           <p className="text-sm font-medium text-gray-700">
                             Glissez-déposez une image ici ou cliquez pour sélectionner
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF jusqu'à 5MB</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF. Avertissement &gt; 3 Mo, max 5 Mo.</p>
                         </>
                       )}
                     </label>
@@ -1559,13 +1609,18 @@ export function Products() {
                         <div className="text-4xl text-gray-400 mb-3">🖼️</div>
                       </div>
                       {uploadingImage ? (
-                        <p className="text-sm text-gray-600">Téléchargement en cours...</p>
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">Téléchargement en cours... {uploadProgress}%</p>
+                          <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                            <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                        </div>
                       ) : (
                         <>
                           <p className="text-sm font-medium text-gray-700">
                             Glissez-déposez des images ici ou cliquez pour sélectionner
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF jusqu'à 5MB</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF. Avertissement &gt; 3 Mo, max 5 Mo.</p>
                         </>
                       )}
                     </label>

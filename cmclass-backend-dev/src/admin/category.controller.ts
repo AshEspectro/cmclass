@@ -1,8 +1,5 @@
 import { Controller, Get, Query, Param, Post, Body, Patch, Delete, UseGuards, UploadedFile, UseInterceptors, Req, BadRequestException, ParseIntPipe } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -11,18 +8,15 @@ import { BulkCategoriesDto } from './dto/bulk-categories.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Request } from 'express';
-
-function filename(req: Request, file: any, cb: (err: any, name: string) => void) {
-  const ext = file.originalname.split('.').pop();
-  const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  cb(null, name);
-}
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Controller('admin/categories')
-@Roles('ADMIN','SUPER_ADMIN')
+@Roles('ADMIN', 'SUPER_ADMIN')
 export class CategoryController {
-  constructor(private svc: CategoryService) {}
+  constructor(
+    private svc: CategoryService,
+    private cloudinaryService: CloudinaryService
+  ) { }
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -59,19 +53,14 @@ export class CategoryController {
   @Post('upload')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: (req, file, cb) => {
-        const dest = join(process.cwd(), 'public', 'uploads', 'categories');
-        if (!existsSync(dest)) mkdirSync(dest, { recursive: true });
-        cb(null, dest);
-      },
-      filename: filename as any,
-    }),
-    limits: { fileSize: 5 * 1024 * 1024 },
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   }))
-  async upload(@UploadedFile() file: any, @Req() req: Request) {
+  async upload(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
-    const url = `${req.protocol}://${req.get('host')}/uploads/categories/${file.filename}`;
+
+    // Upload to Cloudinary
+    const url = await this.cloudinaryService.uploadFile(file, 'categories');
+
     return { url };
   }
 

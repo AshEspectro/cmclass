@@ -10,6 +10,12 @@ import { brandAPI } from '../../services/api';
 import { consumePendingQuickAction } from '../../services/quickActions';
 import { motion } from 'motion/react';
 
+const HERO_MEDIA_WARN_BYTES = 8 * 1024 * 1024;
+const HERO_MEDIA_MAX_BYTES = 16 * 1024 * 1024;
+const SERVICE_IMAGE_WARN_BYTES = 3 * 1024 * 1024;
+const SERVICE_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+const formatFileSizeMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+
 const contentBlocks = [
   { id: 1, type: 'Bannière Héro', title: 'Collection Printemps 2025', active: true },
   { id: 2, type: 'Produits Vedettes', title: 'Nouveautés', active: true },
@@ -29,6 +35,7 @@ export function ContentManager() {
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -46,6 +53,7 @@ export function ContentManager() {
   const [serviceForm, setServiceForm] = useState<AdminService>({ title: '', description: '', imageUrl: '', link: '', order: 0, isActive: true });
   const serviceFileRef = useRef<HTMLInputElement | null>(null);
   const [serviceImageUploading, setServiceImageUploading] = useState(false);
+  const [serviceUploadProgress, setServiceUploadProgress] = useState(0);
   const [serviceDragActive, setServiceDragActive] = useState(false);
   const [serviceImagePreview, setServiceImagePreview] = useState<string | null>(null);
   // Services header (editable block in Content Manager)
@@ -261,19 +269,32 @@ export function ContentManager() {
       file = e;
     }
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('❌ Veuillez sélectionner une image valide pour ce service.');
+      return;
+    }
+    if (file.size > SERVICE_IMAGE_MAX_BYTES) {
+      alert(`❌ Image trop volumineuse (max ${formatFileSizeMb(SERVICE_IMAGE_MAX_BYTES)}).`);
+      return;
+    }
+    if (file.size > SERVICE_IMAGE_WARN_BYTES) {
+      alert(`⚠️ Image volumineuse (${formatFileSizeMb(file.size)}). L’upload peut être plus lent.`);
+    }
 
     const preview = URL.createObjectURL(file);
     setServiceImagePreview(preview);
     setServiceImageUploading(true);
+    setServiceUploadProgress(0);
     try {
       // reuse hero upload endpoint for images
-      const uploadedUrl = await heroApi.uploadBackgroundImage(file);
+      const uploadedUrl = await heroApi.uploadBackgroundImage(file, setServiceUploadProgress);
       setServiceForm(prev => ({ ...prev, imageUrl: uploadedUrl }));
     } catch (err) {
       console.error('Service image upload failed', err);
       alert('Erreur lors du téléchargement de l\'image');
     } finally {
       setServiceImageUploading(false);
+      setServiceUploadProgress(0);
     }
   }
 
@@ -431,16 +452,29 @@ export function ContentManager() {
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/');
+    if (!isVideo && !isImage) {
+      alert('❌ Veuillez sélectionner une image ou une vidéo valide.');
+      return;
+    }
+    if (file.size > HERO_MEDIA_MAX_BYTES) {
+      alert(`❌ Fichier trop volumineux (max ${formatFileSizeMb(HERO_MEDIA_MAX_BYTES)}).`);
+      return;
+    }
+    if (file.size > HERO_MEDIA_WARN_BYTES) {
+      alert(`⚠️ Fichier volumineux (${formatFileSizeMb(file.size)}). L’upload peut être plus lent.`);
+    }
 
     setUploading(true);
+    setUploadProgress(0);
     try {
-      const isVideo = file.type.startsWith('video/');
       let uploadedUrl: string;
 
       if (isVideo) {
-        uploadedUrl = await heroApi.uploadBackgroundVideo(file);
+        uploadedUrl = await heroApi.uploadBackgroundVideo(file, setUploadProgress);
       } else {
-        uploadedUrl = await heroApi.uploadBackgroundImage(file);
+        uploadedUrl = await heroApi.uploadBackgroundImage(file, setUploadProgress);
       }
 
       // Update hero with new media URL
@@ -464,6 +498,7 @@ export function ContentManager() {
       alert('❌ Erreur lors du téléchargement du fichier.');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -584,8 +619,15 @@ export function ContentManager() {
                 >
                   <Upload size={32} className="mx-auto mb-3 text-gray-400" strokeWidth={1.5} />
                   <p className="text-sm text-gray-600">Cliquez pour télécharger ou glisser-déposer</p>
-                  <p className="text-xs text-gray-400 mt-1">PNG, JPG, WebP, MP4, WebM jusqu'à 16 Mo</p>
-                  {uploading && <p className="text-xs text-[#007B8A] mt-2">Téléchargement en cours...</p>}
+                  <p className="text-xs text-gray-400 mt-1">PNG, JPG, WebP, MP4, WebM. Avertissement &gt; 8 Mo, max 16 Mo.</p>
+                  {uploading && (
+                    <div className="mt-3">
+                      <p className="text-xs text-[#007B8A]">Téléchargement en cours... {uploadProgress}%</p>
+                      <div className="h-2 w-full rounded bg-gray-200 overflow-hidden mt-1">
+                        <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${uploadProgress}%` }} />
+                      </div>
+                    </div>
+                  )}
                   {dragActive && <p className="text-xs text-[#007B8A] mt-2 font-semibold">Relâchez le fichier ici</p>}
                 </div>
               </div>
@@ -744,8 +786,15 @@ export function ContentManager() {
                           className={`border-2 border-dashed rounded p-4 text-center transition-all cursor-pointer ${serviceDragActive ? 'border-[#007B8A] bg-blue-50' : 'border-gray-300 hover:border-[#007B8A] hover:bg-gray-50'}`}>
                           <Upload size={28} className="mx-auto mb-2 text-gray-400" strokeWidth={1.5} />
                           <p className="text-sm text-gray-600">Cliquez ou glissez-déposez une image</p>
-                          <p className="text-xs text-gray-400 mt-1">PNG, JPG, WebP jusqu'à 8 Mo</p>
-                          {serviceImageUploading && <p className="text-xs text-[#007B8A] mt-2">Téléchargement...</p>}
+                          <p className="text-xs text-gray-400 mt-1">PNG, JPG, WebP. Avertissement &gt; 3 Mo, max 8 Mo.</p>
+                          {serviceImageUploading && (
+                            <div className="mt-2">
+                              <p className="text-xs text-[#007B8A]">Téléchargement... {serviceUploadProgress}%</p>
+                              <div className="h-2 w-full rounded bg-gray-200 overflow-hidden mt-1">
+                                <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${serviceUploadProgress}%` }} />
+                              </div>
+                            </div>
+                          )}
                           {serviceDragActive && <p className="text-xs text-[#007B8A] mt-2 font-semibold">Relâchez pour télécharger</p>}
                           {serviceImagePreview && (
                             // eslint-disable-next-line @next/next/no-img-element

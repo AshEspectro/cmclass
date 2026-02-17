@@ -14,6 +14,8 @@ process.on('exit', (code) => console.log('main.ts: process exit', code));
 async function bootstrap() {
   try {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
+    // Respect reverse-proxy headers (x-forwarded-*) on Railway.
+    app.set('trust proxy', 1);
     // parse cookies to support HttpOnly refresh token cookies
     app.use(require('cookie-parser')());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
@@ -47,8 +49,8 @@ async function bootstrap() {
 
     app.enableShutdownHooks();
 
-    // serve uploaded assets from /public
-    app.useStaticAssets(join(__dirname, '..', 'public'));
+    // Serve uploads from the same absolute directory used by upload handlers.
+    app.useStaticAssets(join(process.cwd(), 'public'));
 
     const port = process.env.PORT ? Number(process.env.PORT) : 3000;
     const host = process.env.HOST || '0.0.0.0';

@@ -23,11 +23,12 @@ import { PublicLegalController } from './public/legal.controller';
 import { MaxicashModule } from './maxicash/maxicash.module';
 import { NotificationModule } from './notification/notification.module';
 import { HealthController } from './health.controller';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 
 
 @Module({
-  imports: [PrismaModule, AuthModule, AdminModule, UsersModule, CartModule, WishlistModule, OrdersModule, LegalModule, MaxicashModule, NotificationModule],
+  imports: [CloudinaryModule, PrismaModule, AuthModule, AdminModule, UsersModule, CartModule, WishlistModule, OrdersModule, LegalModule, MaxicashModule, NotificationModule],
   controllers: [HealthController, PublicBrandController, PublicCategoryController, PublicHeroController, PublicProductController, CampaignsController, PublicServicesController, PublicAboutController, PublicContactController, PublicFooterController, PublicLegalController],
   providers: [FooterService, MailReceiverService],
 })

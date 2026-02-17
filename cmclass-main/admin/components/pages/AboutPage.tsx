@@ -5,6 +5,10 @@ import { Upload, Save, Plus, Trash2 } from 'lucide-react';
 import { aboutApi, type AboutData, type AboutValue } from '../../services/aboutApi';
 import { heroApi } from '../../services/heroApi';
 
+const ABOUT_IMAGE_WARN_BYTES = 3 * 1024 * 1024;
+const ABOUT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const formatFileSizeMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+
 const DEFAULT_ABOUT: AboutData = {
   heroTitle: "L'ATELIER DE GOMA",
   heroImageUrl:
@@ -93,6 +97,8 @@ export function AboutPage() {
   const [saving, setSaving] = useState(false);
   const [heroUploading, setHeroUploading] = useState(false);
   const [craftUploading, setCraftUploading] = useState(false);
+  const [heroUploadProgress, setHeroUploadProgress] = useState(0);
+  const [craftUploadProgress, setCraftUploadProgress] = useState(0);
   const heroFileRef = useRef<HTMLInputElement | null>(null);
   const craftFileRef = useRef<HTMLInputElement | null>(null);
 
@@ -151,18 +157,33 @@ export function AboutPage() {
     setForm((prev) => ({ ...prev, values: prev.values.filter((_, i) => i !== index) }));
   };
 
+  const validateAboutImage = (file: File, label: string) => {
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Veuillez sélectionner une image valide');
+    }
+    if (file.size > ABOUT_IMAGE_MAX_BYTES) {
+      throw new Error(`${label} dépasse la limite (${formatFileSizeMb(ABOUT_IMAGE_MAX_BYTES)})`);
+    }
+    if (file.size > ABOUT_IMAGE_WARN_BYTES) {
+      alert(`⚠️ ${label} est volumineuse (${formatFileSizeMb(file.size)}). L’upload peut être plus lent.`);
+    }
+  };
+
   const handleHeroImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setHeroUploading(true);
+    setHeroUploadProgress(0);
     try {
-      const url = await heroApi.uploadBackgroundImage(file);
+      validateAboutImage(file, 'L’image héros');
+      const url = await heroApi.uploadBackgroundImage(file, setHeroUploadProgress);
       updateField('heroImageUrl', url);
     } catch (error) {
       console.error('Hero image upload failed:', error);
       alert('❌ Erreur lors du téléchargement de l’image héros');
     } finally {
       setHeroUploading(false);
+      setHeroUploadProgress(0);
       if (heroFileRef.current) heroFileRef.current.value = '';
     }
   };
@@ -171,14 +192,17 @@ export function AboutPage() {
     const file = event.target.files?.[0];
     if (!file) return;
     setCraftUploading(true);
+    setCraftUploadProgress(0);
     try {
-      const url = await heroApi.uploadBackgroundImage(file);
+      validateAboutImage(file, 'L’image artisanat');
+      const url = await heroApi.uploadBackgroundImage(file, setCraftUploadProgress);
       updateField('craftImageUrl', url);
     } catch (error) {
       console.error('Craft image upload failed:', error);
       alert('❌ Erreur lors du téléchargement de l’image artisanat');
     } finally {
       setCraftUploading(false);
+      setCraftUploadProgress(0);
       if (craftFileRef.current) craftFileRef.current.value = '';
     }
   };
@@ -270,6 +294,15 @@ export function AboutPage() {
                   <Upload size={16} />
                   {heroUploading ? 'Téléchargement...' : 'Télécharger une image'}
                 </Button>
+                {heroUploading && (
+                  <div className="mt-2 max-w-xs">
+                    <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                      <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${heroUploadProgress}%` }} />
+                    </div>
+                    <p className="text-xs text-[#007B8A] mt-1">{heroUploadProgress}%</p>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-2">Avertissement &gt; 3 Mo, max 5 Mo.</p>
               </div>
             </div>
             <div className="bg-gray-100 rounded overflow-hidden">
@@ -381,6 +414,15 @@ export function AboutPage() {
                   <Upload size={16} />
                   {craftUploading ? 'Téléchargement...' : 'Télécharger une image'}
                 </Button>
+                {craftUploading && (
+                  <div className="mt-2 max-w-xs">
+                    <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                      <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${craftUploadProgress}%` }} />
+                    </div>
+                    <p className="text-xs text-[#007B8A] mt-1">{craftUploadProgress}%</p>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-2">Avertissement &gt; 3 Mo, max 5 Mo.</p>
               </div>
             </div>
             <div className="bg-gray-100 rounded overflow-hidden">

@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { Plus, Edit, Trash2, MoveVertical, Upload, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { uploadWithAuth } from '../../services/api';
+import { optimizeImageForUpload } from '../../services/uploadUtils';
+
+const BACKEND_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const CATEGORY_IMAGE_WARN_BYTES = 2 * 1024 * 1024;
+const CATEGORY_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const formatFileSizeMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 
 export function Categories() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -18,6 +25,20 @@ export function Categories() {
   const [editFormData, setEditFormData] = useState<{ name: string; description: string; parentId: string; imageUrl: string }>({ name: '', description: '', parentId: '', imageUrl: '' });
   const [uploadingNew, setUploadingNew] = useState(false);
   const [uploadingEdit, setUploadingEdit] = useState(false);
+  const [uploadingNewProgress, setUploadingNewProgress] = useState(0);
+  const [uploadingEditProgress, setUploadingEditProgress] = useState(0);
+
+  const validateCategoryImage = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Veuillez sélectionner une image valide');
+    }
+    if (file.size > CATEGORY_IMAGE_MAX_BYTES) {
+      throw new Error(`L'image dépasse la taille maximale (${formatFileSizeMb(CATEGORY_IMAGE_MAX_BYTES)})`);
+    }
+    if (file.size > CATEGORY_IMAGE_WARN_BYTES) {
+      alert(`⚠️ Image volumineuse (${formatFileSizeMb(file.size)}). L’upload peut être plus lent.`);
+    }
+  };
 
   // Handle image upload for new category
   const handleNewCategoryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,24 +46,21 @@ export function Categories() {
     if (!file) return;
 
     setUploadingNew(true);
+    setUploadingNewProgress(0);
     try {
+      validateCategoryImage(file);
+      const optimized = await optimizeImageForUpload(file);
       const formData = new FormData();
-      formData.append('file', file);
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/categories/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
+      formData.append('file', optimized);
+      const data = await uploadWithAuth<{ url: string }>(`${BACKEND_URL}/admin/categories/upload`, formData, {
+        onProgress: setUploadingNewProgress,
       });
-      if (!response.ok) throw new Error('Failed to upload image');
-      const data = await response.json();
       setNewCategoryForm(prev => ({ ...prev, imageUrl: data.url }));
     } catch (err) {
       alert('Erreur lors du téléchargement: ' + (err as Error).message);
     } finally {
       setUploadingNew(false);
+      setUploadingNewProgress(0);
     }
   };
 
@@ -52,24 +70,21 @@ export function Categories() {
     if (!file) return;
 
     setUploadingEdit(true);
+    setUploadingEditProgress(0);
     try {
+      validateCategoryImage(file);
+      const optimized = await optimizeImageForUpload(file);
       const formData = new FormData();
-      formData.append('file', file);
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/categories/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
+      formData.append('file', optimized);
+      const data = await uploadWithAuth<{ url: string }>(`${BACKEND_URL}/admin/categories/upload`, formData, {
+        onProgress: setUploadingEditProgress,
       });
-      if (!response.ok) throw new Error('Failed to upload image');
-      const data = await response.json();
       setEditFormData(prev => ({ ...prev, imageUrl: data.url }));
     } catch (err) {
       alert('Erreur lors du téléchargement: ' + (err as Error).message);
     } finally {
       setUploadingEdit(false);
+      setUploadingEditProgress(0);
     }
   };
   const token =
@@ -361,7 +376,15 @@ export function Categories() {
                   <label htmlFor="edit-category-image" className="block border-2 border-dashed border-gray-300 rounded p-8 text-center hover:border-[#007B8A] transition-colors cursor-pointer">
                     <Upload size={32} className="mx-auto mb-3 text-gray-400" strokeWidth={1.5} />
                     <p className="text-sm text-gray-600">{uploadingEdit ? 'Téléchargement...' : 'Cliquez pour télécharger'}</p>
-                    <p className="text-xs text-gray-400 mt-2">PNG, JPG, WebP jusqu'à 5 Mo</p>
+                    {uploadingEdit && (
+                      <div className="mt-3">
+                        <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                          <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${uploadingEditProgress}%` }} />
+                        </div>
+                        <p className="text-xs text-[#007B8A] mt-1">{uploadingEditProgress}%</p>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-400 mt-2">PNG, JPG, WebP. Avertissement &gt; 2 Mo, max 5 Mo.</p>
                   </label>
                 </div>
               </div>
@@ -450,7 +473,15 @@ export function Categories() {
                 <label htmlFor="new-category-image" className="block border-2 border-dashed border-gray-300 rounded p-12 text-center hover:border-[#007B8A] transition-colors cursor-pointer h-64 flex flex-col items-center justify-center">
                   <Upload size={48} className="mx-auto mb-4 text-gray-400" strokeWidth={1.5} />
                   <p className="text-sm text-gray-600">{uploadingNew ? 'Téléchargement...' : 'Cliquez pour télécharger'}</p>
-                  <p className="text-xs text-gray-400 mt-2">PNG, JPG, WebP jusqu'à 5 Mo</p>
+                  {uploadingNew && (
+                    <div className="mt-3 w-full max-w-xs">
+                      <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                        <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${uploadingNewProgress}%` }} />
+                      </div>
+                      <p className="text-xs text-[#007B8A] mt-1">{uploadingNewProgress}%</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-400 mt-2">PNG, JPG, WebP. Avertissement &gt; 2 Mo, max 5 Mo.</p>
                 </label>
               </div>
             </div>

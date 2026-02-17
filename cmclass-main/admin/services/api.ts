@@ -1,4 +1,8 @@
+import { optimizeImageForUpload } from './uploadUtils';
+
 const BACKEND_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const TOKEN_REFRESH_SKEW_MS = 2 * 60 * 1000;
+export type UploadProgressCallback = (progress: number) => void;
 
 
 
@@ -50,6 +54,27 @@ export const setAuthToken = (token: string) => {
   sessionStorage.setItem('access_token', token);
 };
 
+const decodeTokenPayload = (token: string): Record<string, unknown> | null => {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+    const json = atob(padded);
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+};
+
+const tokenExpiresSoon = (token: string) => {
+  const payload = decodeTokenPayload(token);
+  const exp = payload?.exp;
+  if (typeof exp !== 'number') return false;
+  const expiryMs = exp * 1000;
+  return Date.now() >= expiryMs - TOKEN_REFRESH_SKEW_MS;
+};
+
 const notifyUnauthorized = () => {
   try {
     window.dispatchEvent(new Event('cmclass:unauthorized'));
@@ -83,22 +108,133 @@ export const createFetchOptions = (method: string = 'GET', body?: any, contentTy
   return options;
 };
 
+let refreshPromise: Promise<string | null> | null = null;
+
 export const refreshAccessToken = async () => {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!response.ok) return null;
+      const json = await response.json();
+      const token = json?.access_token;
+      if (!token) return null;
+      setAuthToken(token);
+      return token as string;
+    } catch (e) {
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
   try {
-    const response = await fetch(`${BACKEND_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    });
-    if (!response.ok) return null;
-    const json = await response.json();
-    const token = json?.access_token;
-    if (!token) return null;
-    setAuthToken(token);
-    return token as string;
+    return await refreshPromise;
   } catch (e) {
     return null;
   }
+};
+
+const getUsableToken = async () => {
+  const token = getAuthToken() || undefined;
+  if (!token) return undefined;
+  if (!tokenExpiresSoon(token)) return token;
+  const refreshed = await refreshAccessToken();
+  return refreshed || token;
+};
+
+const toProgressPercent = (loaded: number, total: number) => {
+  if (!Number.isFinite(loaded) || !Number.isFinite(total) || total <= 0) return 0;
+  return Math.max(0, Math.min(100, Math.round((loaded / total) * 100)));
+};
+
+const parseJsonSafe = (raw: string) => {
+  if (!raw || !raw.trim()) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+const getResponseErrorMessage = (status: number, payload: any) => {
+  const fromPayload = payload?.message || payload?.error;
+  if (typeof fromPayload === 'string' && fromPayload.trim()) return fromPayload;
+  return `Request failed (${status})`;
+};
+
+const xhrUpload = (
+  url: string,
+  formData: FormData,
+  token?: string,
+  onProgress?: UploadProgressCallback,
+  method: string = 'POST',
+): Promise<{ status: number; body: string }> =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, url, true);
+    xhr.withCredentials = true;
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
+    xhr.upload.onprogress = (event) => {
+      if (!onProgress) return;
+      if (!event.lengthComputable) return;
+      onProgress(toProgressPercent(event.loaded, event.total));
+    };
+
+    xhr.onload = () => {
+      resolve({
+        status: xhr.status,
+        body: xhr.responseText || '',
+      });
+    };
+    xhr.onerror = () => reject(new Error('Upload failed due to a network error'));
+    xhr.onabort = () => reject(new Error('Upload was aborted'));
+
+    try {
+      xhr.send(formData);
+    } catch (error) {
+      reject(error);
+    }
+  });
+
+export const uploadWithAuth = async <T = any>(
+  url: string,
+  formData: FormData,
+  options: { onProgress?: UploadProgressCallback; method?: string } = {},
+): Promise<T> => {
+  const { onProgress, method = 'POST' } = options;
+  onProgress?.(0);
+
+  const token = await getUsableToken();
+  let result = await xhrUpload(url, formData, token, onProgress, method);
+
+  if (result.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (!refreshed) {
+      notifyUnauthorized();
+    } else {
+      result = await xhrUpload(url, formData, refreshed, onProgress, method);
+    }
+  }
+
+  if (result.status === 401) {
+    notifyUnauthorized();
+  }
+
+  const payload = parseJsonSafe(result.body);
+  if (result.status < 200 || result.status >= 300) {
+    throw new Error(getResponseErrorMessage(result.status, payload));
+  }
+
+  onProgress?.(100);
+  return (payload ?? ({} as T)) as T;
 };
 
 export const fetchWithAuth = async (input: RequestInfo | URL, init: RequestInit = {}) => {
@@ -120,7 +256,7 @@ export const fetchWithAuth = async (input: RequestInfo | URL, init: RequestInit 
     };
   };
 
-  const token = getAuthToken() || undefined;
+  const token = await getUsableToken();
   let response = await fetch(input, makeInit(token));
   if (response.status !== 401) return response;
 
@@ -261,25 +397,13 @@ export const productsAPI = {
     return response.json();
   },
 
-  upload: async (file: File) => {
+  upload: async (file: File, onProgress?: UploadProgressCallback) => {
+    const optimized = await optimizeImageForUpload(file);
     const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetchWithAuth(`${BACKEND_URL}/admin/products/upload`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
+    formData.append('file', optimized);
+    return uploadWithAuth<{ url: string }>(`${BACKEND_URL}/admin/products/upload`, formData, {
+      onProgress,
     });
-    if (!response.ok) {
-      let errorMsg = 'Failed to upload product image';
-      try {
-        const error = await response.json();
-        errorMsg = error.message || error.error || errorMsg;
-      } catch (e) {
-        // Ignore JSON parse errors
-      }
-      throw new Error(errorMsg);
-    }
-    return response.json();
   },
 };
 

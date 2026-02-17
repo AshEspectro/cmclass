@@ -5,6 +5,8 @@ import { Upload, Save, Plus, Trash2 } from 'lucide-react';
 import { footerApi, type FooterSection as AdminFooterSection, type FooterLink as AdminFooterLink } from '../../services/footerApi';
 import { serviceApi, type AdminService } from '../../services/serviceApi';
 import { notificationApi, type AdminNotification } from '../../services/notificationApi';
+import { uploadWithAuth } from '../../services/api';
+import { optimizeImageForUpload } from '../../services/uploadUtils';
 
 const roleMap: { [key: string]: string } = {
   SUPER_ADMIN: 'Administrateur',
@@ -20,6 +22,14 @@ const roleBackendMap: { [key: string]: string } = {
   'Support': 'SUPPORT',
   'Visualiseur': 'USER',
 };
+
+const BACKEND_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const BRAND_ASSET_WARN_BYTES = 2 * 1024 * 1024;
+const BRAND_ASSET_MAX_BYTES = 5 * 1024 * 1024;
+const FAVICON_WARN_BYTES = 400 * 1024;
+const FAVICON_MAX_BYTES = 2 * 1024 * 1024;
+
+const formatFileSizeMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
 interface SettingsProps {
   brand?: { 
@@ -67,6 +77,9 @@ export function Settings({ brand }: SettingsProps) {
   const [logoLightUploading, setLogoLightUploading] = useState(false);
   const [logoDarkUploading, setLogoDarkUploading] = useState(false);
   const [faviconUploading, setFaviconUploading] = useState(false);
+  const [logoLightProgress, setLogoLightProgress] = useState(0);
+  const [logoDarkProgress, setLogoDarkProgress] = useState(0);
+  const [faviconProgress, setFaviconProgress] = useState(0);
   const [brandLogoLight, setBrandLogoLight] = useState(brand?.logoLightUrl || '');
   const [brandLogoDark, setBrandLogoDark] = useState(brand?.logoDarkUrl || '');
   const [footerSections, setFooterSections] = useState<AdminFooterSection[]>([]);
@@ -148,19 +161,38 @@ export function Settings({ brand }: SettingsProps) {
     setBrandForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const uploadBrandAsset = async (file: File) => {
+  const uploadBrandAsset = async (
+    file: File,
+    options?: {
+      maxBytes?: number;
+      warnBytes?: number;
+      assetLabel?: string;
+      onProgress?: (progress: number) => void;
+    },
+  ) => {
+    const {
+      maxBytes = BRAND_ASSET_MAX_BYTES,
+      warnBytes = BRAND_ASSET_WARN_BYTES,
+      assetLabel = 'Le fichier',
+      onProgress,
+    } = options || {};
+
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Veuillez sélectionner un fichier image valide');
+    }
+    if (file.size > maxBytes) {
+      throw new Error(`${assetLabel} dépasse la taille maximale (${formatFileSizeMb(maxBytes)})`);
+    }
+    if (file.size > warnBytes) {
+      alert(`⚠️ ${assetLabel} est volumineux (${formatFileSizeMb(file.size)}). L’upload peut être plus lent.`);
+    }
+
+    const optimized = await optimizeImageForUpload(file);
     const formData = new FormData();
-    formData.append('file', file);
-    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-    const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/brand/upload', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
+    formData.append('file', optimized);
+    const data = await uploadWithAuth<{ url: string }>(`${BACKEND_URL}/admin/brand/upload`, formData, {
+      onProgress,
     });
-    if (!response.ok) throw new Error('Failed to upload asset');
-    const data = await response.json();
     return data.url as string;
   };
 
@@ -187,13 +219,18 @@ export function Settings({ brand }: SettingsProps) {
     if (!file) return;
 
     setLogoLightUploading(true);
+    setLogoLightProgress(0);
     try {
-      const url = await uploadBrandAsset(file);
+      const url = await uploadBrandAsset(file, {
+        assetLabel: 'Le logo clair',
+        onProgress: setLogoLightProgress,
+      });
       setBrandLogoLight(url);
     } catch (error) {
       alert('Erreur lors du téléchargement du logo clair: ' + (error as Error).message);
     } finally {
       setLogoLightUploading(false);
+      setLogoLightProgress(0);
     }
   };
 
@@ -203,13 +240,18 @@ export function Settings({ brand }: SettingsProps) {
     if (!file) return;
 
     setLogoDarkUploading(true);
+    setLogoDarkProgress(0);
     try {
-      const url = await uploadBrandAsset(file);
+      const url = await uploadBrandAsset(file, {
+        assetLabel: 'Le logo sombre',
+        onProgress: setLogoDarkProgress,
+      });
       setBrandLogoDark(url);
     } catch (error) {
       alert('Erreur lors du téléchargement du logo sombre: ' + (error as Error).message);
     } finally {
       setLogoDarkUploading(false);
+      setLogoDarkProgress(0);
     }
   };
 
@@ -219,13 +261,20 @@ export function Settings({ brand }: SettingsProps) {
     if (!file) return;
 
     setFaviconUploading(true);
+    setFaviconProgress(0);
     try {
-      await uploadBrandAsset(file);
+      await uploadBrandAsset(file, {
+        assetLabel: 'Le favicon',
+        maxBytes: FAVICON_MAX_BYTES,
+        warnBytes: FAVICON_WARN_BYTES,
+        onProgress: setFaviconProgress,
+      });
       alert('Favicon téléchargé avec succès');
     } catch (error) {
       alert('Erreur lors du téléchargement du favicon: ' + (error as Error).message);
     } finally {
       setFaviconUploading(false);
+      setFaviconProgress(0);
     }
   };
 
@@ -244,7 +293,7 @@ export function Settings({ brand }: SettingsProps) {
       const logoLightUrl = brandLogoLight.trim();
       const logoDarkUrl = brandLogoDark.trim();
       const fallbackLogo = logoDarkUrl || logoLightUrl || brand?.logoUrl || '';
-      const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/admin/brand', {
+      const response = await fetch(`${BACKEND_URL}/admin/brand`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -751,7 +800,15 @@ export function Settings({ brand }: SettingsProps) {
                   <label htmlFor="brand-logo-light" className="block border-2 border-dashed border-gray-300 rounded p-8 text-center hover:border-[#007B8A] transition-colors cursor-pointer">
                     <Upload size={32} className="mx-auto mb-3 text-gray-400" strokeWidth={1.5} />
                     <p className="text-sm text-gray-600">{logoLightUploading ? 'Téléchargement...' : 'Télécharger le Logo Clair'}</p>
-                    <p className="text-xs text-gray-400 mt-1">PNG ou SVG, 500x500px recommandé</p>
+                    {logoLightUploading && (
+                      <div className="mt-3">
+                        <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                          <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${logoLightProgress}%` }} />
+                        </div>
+                        <p className="text-xs text-[#007B8A] mt-1">{logoLightProgress}%</p>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">PNG ou SVG recommandé. Avertissement au-dessus de 2 Mo, max 5 Mo.</p>
                   </label>
                   </div>
                   <div>
@@ -772,7 +829,15 @@ export function Settings({ brand }: SettingsProps) {
                   <label htmlFor="brand-logo-dark" className="block border-2 border-dashed border-gray-300 rounded p-8 text-center hover:border-[#007B8A] transition-colors cursor-pointer">
                     <Upload size={32} className="mx-auto mb-3 text-gray-400" strokeWidth={1.5} />
                     <p className="text-sm text-gray-600">{logoDarkUploading ? 'Téléchargement...' : 'Télécharger le Logo Sombre'}</p>
-                    <p className="text-xs text-gray-400 mt-1">PNG ou SVG, 500x500px recommandé</p>
+                    {logoDarkUploading && (
+                      <div className="mt-3">
+                        <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                          <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${logoDarkProgress}%` }} />
+                        </div>
+                        <p className="text-xs text-[#007B8A] mt-1">{logoDarkProgress}%</p>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">PNG ou SVG recommandé. Avertissement au-dessus de 2 Mo, max 5 Mo.</p>
                   </label>
                   </div>
                   <div>
@@ -788,7 +853,15 @@ export function Settings({ brand }: SettingsProps) {
                     <label htmlFor="brand-favicon" className="block border-2 border-dashed border-gray-300 rounded p-8 text-center hover:border-[#007B8A] transition-colors cursor-pointer">
                       <Upload size={32} className="mx-auto mb-3 text-gray-400" strokeWidth={1.5} />
                       <p className="text-sm text-gray-600">{faviconUploading ? 'Téléchargement...' : 'Télécharger le Favicon'}</p>
-                      <p className="text-xs text-gray-400 mt-1">ICO ou PNG, 32x32px</p>
+                      {faviconUploading && (
+                        <div className="mt-3">
+                          <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                            <div className="h-full bg-[#007B8A] transition-all" style={{ width: `${faviconProgress}%` }} />
+                          </div>
+                          <p className="text-xs text-[#007B8A] mt-1">{faviconProgress}%</p>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">ICO ou PNG 32x32 recommandé. Avertissement au-dessus de 0,4 Mo, max 2 Mo.</p>
                     </label>
                   </div>
                 </div>

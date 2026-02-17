@@ -1,8 +1,5 @@
 import { Controller, Get, Query, Param, Post, Body, Patch, Delete, UseGuards, UploadedFile, UseInterceptors, Req, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -11,19 +8,15 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Request } from 'express';
 import { NotificationService } from '../notification/notification.service';
-
-function filename(req: Request, file: any, cb: (err: any, name: string) => void) {
-  const ext = file.originalname.split('.').pop();
-  const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  cb(null, name);
-}
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Controller('admin/products')
 @Roles('ADMIN')
 export class ProductController {
   constructor(
     private svc: ProductService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private cloudinaryService: CloudinaryService
   ) { }
 
   @Get()
@@ -84,19 +77,14 @@ export class ProductController {
   @Post('upload')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: (req, file, cb) => {
-        const dest = join(process.cwd(), 'public', 'uploads', 'products');
-        if (!existsSync(dest)) mkdirSync(dest, { recursive: true });
-        cb(null, dest);
-      },
-      filename: filename as any,
-    }),
-    limits: { fileSize: 5 * 1024 * 1024 },
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   }))
-  async upload(@UploadedFile() file: any, @Req() req: Request) {
+  async upload(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
-    const url = `${req.protocol}://${req.get('host')}/uploads/products/${file.filename}`;
+
+    // Upload to Cloudinary
+    const url = await this.cloudinaryService.uploadFile(file, 'products');
+
     return { url };
   }
 }
