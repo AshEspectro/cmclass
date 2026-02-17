@@ -11,6 +11,16 @@ export class OrdersController {
     private notificationService: NotificationService
   ) { }
 
+  private getUrl(url: string | null) {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+
+    // Prefer VITE_API_URL or PUBLIC_ASSET_URL for production
+    const base = process.env.VITE_API_URL || process.env.PUBLIC_ASSET_URL || `http://localhost:${process.env.PORT || 3000}`;
+
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+
   @Get('me')
   async listMine(@Req() req) {
     const orders = await this.prisma.order.findMany({
@@ -34,12 +44,12 @@ export class OrdersController {
         items: order.items.map((item) => ({
           id: item.id,
           productId: item.productId,
-          name: item.product?.name || `Produit ${item.productId}`,
+          name: item.product?.name || `Product ${item.productId}`,
           quantity: item.quantity,
           price: item.priceCents / 100,
           size: item.size,
           color: item.color,
-          image: item.product?.productImage || item.product?.mannequinImage || null,
+          image: this.getUrl(item.product?.productImage || item.product?.mannequinImage),
         })),
       })),
     };

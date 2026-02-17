@@ -91,6 +91,7 @@ function AppWrapper() {
                       <Route path="/accessibilite" element={<Accessibilite />} />
                       <Route path="/cookies" element={<Cookies />} />
                       <Route path="/faq" element={<FAQ />} />
+                      <Route path="/mes-commandes" element={<SuiviCommande />} />
                       <Route path="/suivi" element={<SuiviCommande />} />
                       <Route path="/forgot-password" element={<ForgotPwd />} />
                       <Route path="/verify-email" element={<VerifyEmail />} />

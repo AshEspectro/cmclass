@@ -213,11 +213,18 @@ export const Account = ({ onClose }: AccountProps) => {
           <div className="px-8 md:px-16 lg:px-32">
             
             {isAuthenticated ? (
-              <Link to="/monprofil" onClick={onClose}>
-                <button className="w-full border-2 border-[#007B8A] py-2 rounded-3xl hover:bg-[#f0fafa] transition">
-                  Consulter mon profil CMclass
-                </button>
-              </Link>
+              <div className="space-y-3">
+                <Link to="/mes-commandes" onClick={onClose}>
+                  <button className="w-full border-2 border-[#007B8A] py-2 rounded-3xl hover:bg-[#f0fafa] transition">
+                    Voir mes commandes
+                  </button>
+                </Link>
+                <Link to="/monprofil" onClick={onClose}>
+                  <button className="w-full border-2 border-[#007B8A] py-2 rounded-3xl hover:bg-[#f0fafa] transition">
+                    Consulter mon profil CMclass
+                  </button>
+                </Link>
+              </div>
             ) : (
               <Link to="/compte" onClick={onClose}>
                 <button className="w-full border-2 border-[#007B8A] py-2 rounded-3xl hover:bg-[#f0fafa] transition">
