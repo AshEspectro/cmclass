@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Force canonical HTTPS domain
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+  RewriteRule ^ https://cmclass.com%{REQUEST_URI} [L,R=302]
+
+  # Optional: redirect www to root domain
+  RewriteCond %{HTTP_HOST} ^www\.cmclass\.com$ [NC]
+  RewriteRule ^ https://cmclass.com%{REQUEST_URI} [L,R=302]
+
+  # Serve existing files/directories directly.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Fallback to index.html for client-side routes (React Router).
+  RewriteRule ^ index.html [L]
+</IfModule>
