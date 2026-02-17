@@ -6,6 +6,7 @@ import { useCart } from "../contexts/CartContext";
 import { useWishlist } from "../contexts/WishlistContext";
 import { useAuth } from "../contexts/AuthContext";
 import { AuthRequired } from "../components/AuthRequired";
+import { useCurrency } from "../contexts/CurrencyContext";
 
 
 interface CMClassOverlayProps {
@@ -59,6 +60,7 @@ export default function Cartpage() {
   const { items: cartItems } = useCart();            // <-- YOUR CART DATA
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
+  const { formatPrice } = useCurrency();
 
   const [openOverlay, setOpenOverlay] = useState(false);
   const [activeService, setActiveService] = useState<any>(null);
@@ -334,7 +336,7 @@ export default function Cartpage() {
 
                     </div>
                     <div className="flex justify-between items-center xl:flex-col md:justify-between md:items-end pr-3  w-full">
-                      <p className="text-sm py-0 md:py-2 sm:text-base  ">{item.price.toLocaleString('fr-FR')} USD </p>
+                      <p className="text-sm py-0 md:py-2 sm:text-base  ">{formatPrice(item.price)}</p>
 
                       {/* Quantity Controls */}
                       <div className="flex items-center gap-2 sm:gap-3">
@@ -413,15 +415,15 @@ export default function Cartpage() {
         {!cartIsEmpty && <div className="border-b bg-white  mt-0 mb-2 lg:mb-0 border-black/5 py-6 px-8 md:px-4 lg:px-6 xl:px-18 space-y-4">
           <div className="flex justify-between   text-sm sm:text-base">
             <span>Sous-Total</span>
-            <span>{total.toLocaleString('fr-FR')} USD </span>
+            <span>{formatPrice(total)}</span>
           </div>
           <div className="flex justify-between   text-sm sm:text-base">
             <span>Livraison</span>
-            <span>{total.toLocaleString('fr-FR')} USD </span>
+            <span>{formatPrice(total)}</span>
           </div>
           <div className="flex justify-between  pt-6 text-sm sm:text-base">
             <span>Total</span>
-            <span>{total.toLocaleString('fr-FR')} USD </span>
+            <span>{formatPrice(total)}</span>
           </div>
           <div>
             <button

@@ -152,6 +152,7 @@ model Brand {
   name           String?
   slogan         String?
   description    String?
+  storefrontCurrency String @default("FC")
   servicesHeaderTitle String?
   servicesHeaderDescription String?
   contactEmail   String?

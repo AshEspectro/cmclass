@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useWishlist } from '../contexts/WishlistContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 const normalizeAssetUrl = (url?: string | null) => {
   if (!url) return '';
@@ -14,19 +15,18 @@ const normalizeAssetUrl = (url?: string | null) => {
 export interface ApiProduct {
   id: number | string;
   name: string;
-  price?: number;
+  price?: number | string;
   priceCents?: number;
   productImage?: string;
   mannequinImage?: string;
   label?: string;
   description?: string;
-  colors?: Array<{ name: string; hex: string; images?: string[] }> | string[];
+  colors?: Array<{ name?: string; hex: string; images?: string[] }> | string[];
   sizes?: string[];
   stock?: number;
   inStock?: boolean;
   categoryId?: number;
   images?: string[];
-  [key: string]: unknown;
 }
 
 interface ProductCardProps {
@@ -36,15 +36,18 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
-  const inWishlist = isInWishlist(product.id as string | number);
+  const { formatPrice } = useCurrency();
+  const inWishlist = isInWishlist(String(product.id));
   const imageSrc = normalizeAssetUrl(
     product.productImage || (Array.isArray(product.images) ? product.images[0] : undefined)
   );
+  const priceValue =
+    product.price ?? (typeof product.priceCents === 'number' ? product.priceCents / 100 : 0);
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (inWishlist) {
-      removeFromWishlist(product.id as string | number);
+      removeFromWishlist(String(product.id));
     } else {
       addToWishlist(product as any);
     }
@@ -93,7 +96,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         {/* Product Info */}
         <div className="mt-4">
   <p className="text-sm font-medium">{product.name}</p>
-  <p className="hidden text-cyan-700 text-sm md:block">{((product.price || product.priceCents) ? (product.price || (product.priceCents as number) / 100) : 0).toLocaleString('fr-FR')} FC</p>
+  <p className="hidden text-cyan-700 text-sm md:block">{formatPrice(priceValue)}</p>
 </div>
 
       </Link>

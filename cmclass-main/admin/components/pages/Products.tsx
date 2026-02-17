@@ -2,8 +2,14 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { Plus, Edit, Trash2, Search, X, Eye } from 'lucide-react';
-import { productsAPI, categoriesAPI } from '../../services/api';
+import { productsAPI, categoriesAPI, brandAPI } from '../../services/api';
 import { consumePendingQuickAction } from '../../services/quickActions';
+import {
+  currencyDisplayLabel,
+  formatStorePriceFromCents,
+  normalizeStorefrontCurrency,
+  type StorefrontCurrency,
+} from '../../../src/utils/currency';
 
 interface Product {
   id: number;
@@ -72,11 +78,13 @@ export function Products() {
   const [uploadingColorImage, setUploadingColorImage] = useState(false);
   const [colorUploadProgress, setColorUploadProgress] = useState(0);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [storeCurrency, setStoreCurrency] = useState<StorefrontCurrency>('FC');
 
   // Fetch products on mount and when search/page changes
   useEffect(() => {
     loadProducts();
     loadCategories();
+    loadStoreCurrency();
   }, []);
 
   useEffect(() => {
@@ -108,6 +116,16 @@ export function Products() {
       setCategories(result.data || []);
     } catch (err) {
       console.error('Error fetching categories:', err);
+    }
+  };
+
+  const loadStoreCurrency = async () => {
+    try {
+      const brand = await brandAPI.get();
+      setStoreCurrency(normalizeStorefrontCurrency(brand?.storefrontCurrency));
+    } catch (err) {
+      console.error('Error fetching storefront currency:', err);
+      setStoreCurrency('FC');
     }
   };
 
@@ -184,10 +202,7 @@ export function Products() {
   };
 
   const formatPrice = (priceCents: number) => {
-    return (priceCents / 100).toLocaleString('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    });
+    return formatStorePriceFromCents(priceCents, storeCurrency);
   };
 
   const getProductStatus = (product: Product) => {
@@ -512,7 +527,7 @@ export function Products() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm mb-2 text-gray-700">Prix (USD)</label>
+                    <label className="block text-sm mb-2 text-gray-700">Prix ({currencyDisplayLabel(storeCurrency)})</label>
                     <input
                       type="number"
                       value={formData.priceCents / 100}
@@ -1095,7 +1110,7 @@ export function Products() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm mb-2 text-gray-700">Prix (USD)</label>
+                    <label className="block text-sm mb-2 text-gray-700">Prix ({currencyDisplayLabel(storeCurrency)})</label>
                     <input
                       type="number"
                       value={formData.priceCents / 100}

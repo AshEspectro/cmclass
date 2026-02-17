@@ -5,11 +5,13 @@ import { AuthRequired } from "../components/AuthRequired";
 import { useWishlist } from "../contexts/WishlistContext";
 import { ProductGrid } from "../components/Hero_cat";
 import { ShoppingBag,  X } from "lucide-react";
+import { useCurrency } from "../contexts/CurrencyContext";
 
 
 export default function WishlistPage() {
   const { isAuthenticated } = useAuth();
   const { items, removeFromWishlist } = useWishlist();
+  const { formatPrice } = useCurrency();
   
 
   if (!isAuthenticated) {
@@ -107,7 +109,7 @@ export default function WishlistPage() {
         >
           <p className="text-xs text-gray-500">{product.label}</p>
           <p className="text-sm font-medium w-36 md:w-40 mt-1">{product.name}</p>
-          <p className="text-sm font-medium mt-1">{product.price}</p>
+          <p className="text-sm font-medium mt-1">{formatPrice(product.price)}</p>
         </div>
         <Link
   to={`/product/${product.id}`}

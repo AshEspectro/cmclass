@@ -4,6 +4,7 @@ import { X, Search } from 'lucide-react';
 import { motion } from 'motion/react';
 import { publicApi } from '../services/publicApi';
 import type { ApiProduct } from './ProductCard';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface SearchPanelProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
   const [results, setResults] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     const q = searchQuery.trim();
@@ -148,12 +150,10 @@ export const SearchPanel = ({ onClose }: SearchPanelProps) => {
                         </h4>
                         <p className="text-xs text-gray-600 mb-1">{(product as any).category || ''}</p>
                         <p className="text-sm">
-                          {product.price
-                            ? product.price.toLocaleString('fr-FR')
-                            : product.priceCents
-                            ? (product.priceCents / 100).toLocaleString('fr-FR')
-                            : 0}{' '}
-                          FC
+                          {formatPrice(
+                            product.price ??
+                              (typeof product.priceCents === 'number' ? product.priceCents / 100 : 0),
+                          )}
                         </p>
                       </div>
                     </Link>

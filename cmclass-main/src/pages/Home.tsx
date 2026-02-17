@@ -11,6 +11,7 @@ import { Services } from '../components/ServiceSection';
 import { campaignsApi, type Campaign } from '../services/campaignsApi';
 import { publicApi } from '../services/publicApi';
 import { Skeleton, SkeletonProductCard, SkeletonCategoryItem } from '../components/Skeleton';
+import { parsePriceValue } from '../utils/currency';
 
 const RETRY_DELAY_MS = 3000;
 
@@ -90,7 +91,14 @@ export const Home = () => {
           id: Number(p.id),
           label: p.label || "",
           name: p.name || "",
-          price: typeof p.price === "string" ? p.price : typeof p.price === "number" ? `${p.price.toFixed(2)}$` : "0.00$",
+          price:
+            typeof p.price === "number"
+              ? p.price
+              : typeof p.price === "string"
+              ? parsePriceValue(p.price)
+              : typeof p.priceCents === "number"
+              ? p.priceCents / 100
+              : 0,
           longDescription: p.longDescription || p.description || "",
           productImage: p.productImage || (Array.isArray(p.images) ? p.images[0] : "") || "",
           mannequinImage: p.mannequinImage || (Array.isArray(p.images) ? p.images[1] : "") || p.productImage || "",
@@ -272,7 +280,11 @@ export const Home = () => {
                     Array.from({ length: 4 }).map((_, i) => <SkeletonProductCard key={i} />)
                   ) : campaignProducts.length > 0 ? (
                     campaignProducts.slice(0, 4).map((product) => (
-                      <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onQuickView={(item) => setQuickViewProduct(item as Product_cat)}
+                      />
                     ))
                   ) : (
                     <p className="col-span-full text-center text-gray-400 italic">Aucune pièce sélectionnée pour cette exposition</p>
@@ -319,7 +331,12 @@ export const Home = () => {
       )}
 
       <AnimatePresence>
-        {quickViewProduct && <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />}
+        {quickViewProduct && (
+          <QuickViewModal
+            product={quickViewProduct}
+            onClose={() => setQuickViewProduct(null)}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

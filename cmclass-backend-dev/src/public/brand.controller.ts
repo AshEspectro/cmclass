@@ -3,32 +3,37 @@ import { BrandService } from '../brand/brand.service'
 
 @Controller('brand')
 export class PublicBrandController {
-  constructor(private readonly brandService: BrandService) {}
+  constructor(private readonly brandService: BrandService) { }
 
   @Get()
   async getPublic() {
     const brand = await this.brandService.get()
-    const base = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3000}`;
 
-    const logo = brand.logoUrl && brand.logoUrl.startsWith('/') ? `${base}${brand.logoUrl}` : brand.logoUrl;
-    const logoLight = brand.logoLightUrl && brand.logoLightUrl.startsWith('/') ? `${base}${brand.logoLightUrl}` : brand.logoLightUrl;
-    const logoDark = brand.logoDarkUrl && brand.logoDarkUrl.startsWith('/') ? `${base}${brand.logoDarkUrl}` : brand.logoDarkUrl;
-    const favicon = brand.faviconUrl && brand.faviconUrl.startsWith('/') ? `${base}${brand.faviconUrl}` : brand.faviconUrl;
+    // Prefer VITE_API_URL or PUBLIC_ASSET_URL for production
+    const base = process.env.VITE_API_URL || process.env.PUBLIC_ASSET_URL || `http://localhost:${process.env.PORT || 3000}`;
+
+    // Helper to normalize URLs
+    const getUrl = (url: string | null) => {
+      if (!url) return null;
+      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
 
     return {
       name: brand.name,
       slogan: brand.slogan || null,
       description: brand.description || null,
+      storefrontCurrency: brand.storefrontCurrency === 'USD' ? 'USD' : 'FC',
       contactEmail: brand.contactEmail || null,
       instagramUrl: brand.instagramUrl || null,
       facebookUrl: brand.facebookUrl || null,
       twitterUrl: brand.twitterUrl || null,
       pinterestUrl: brand.pinterestUrl || null,
       footerText: brand.footerText || null,
-      logoUrl: logo,
-      logoLightUrl: logoLight || null,
-      logoDarkUrl: logoDark || null,
-      faviconUrl: favicon,
+      logoUrl: getUrl(brand.logoUrl),
+      logoLightUrl: getUrl(brand.logoLightUrl),
+      logoDarkUrl: getUrl(brand.logoDarkUrl),
+      faviconUrl: getUrl(brand.faviconUrl),
       servicesHeaderTitle: brand.servicesHeaderTitle || null,
       servicesHeaderDescription: brand.servicesHeaderDescription || null,
     }

@@ -12,6 +12,7 @@ import { Customers } from './components/pages/Customers';
 import { Settings } from './components/pages/Settings';
 import { Inbox } from './components/pages/Inbox';
 import { LegalPageManager } from './components/pages/LegalPageManager';
+import { Currency } from './components/pages/Currency';
 import { Login } from './components/auth/Login';
 import { Signup } from './components/auth/Signup';
 
@@ -101,6 +102,11 @@ function Index() {
       title: 'Pages Légales',
       subtitle: 'Gérer les mentions légales, CGV et confidentialité',
       component: <LegalPageManager />
+    },
+    currency: {
+      title: 'Devise',
+      subtitle: 'Choisir la devise d’affichage des prix produits',
+      component: <Currency />
     },
     settings: {
       title: 'Paramètres',

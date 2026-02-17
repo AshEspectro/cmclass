@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEmail } from 'class-validator';
+import { IsOptional, IsString, IsEmail, IsIn } from 'class-validator';
 
 export class UpdateBrandDto {
   @IsOptional()
@@ -72,4 +72,9 @@ export class UpdateBrandDto {
   @IsOptional()
   @IsString()
   servicesHeaderDescription?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['FC', 'USD'])
+  storefrontCurrency?: 'FC' | 'USD';
 }

@@ -79,6 +79,8 @@ export  function HeroProduct({
 }
 import { useEffect, useState } from "react";
 import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { useCurrency } from "../contexts/CurrencyContext";
+import { parsePriceValue } from "../utils/currency";
 
 
 // -------------------------
@@ -106,13 +108,13 @@ export function ProductGrid({ limit }: ProductGridProps) {
         const mapped: Product_cat[] = Array.isArray(data)
           ? data.map((p: any) => {
               const price =
-                typeof p.price === "string"
+                typeof p.price === "number"
                   ? p.price
-                  : typeof p.price === "number"
-                  ? `${p.price.toFixed(2)}$`
+                  : typeof p.price === "string"
+                  ? parsePriceValue(p.price)
                   : typeof p.priceCents === "number"
-                  ? `${(p.priceCents / 100).toFixed(2)}$`
-                  : "0.00$";
+                  ? p.priceCents / 100
+                  : 0;
 
               const colors = Array.isArray(p.colors)
                 ? p.colors.map((c: any) =>
@@ -192,6 +194,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product_cat }: ProductCardProps) {
+  const { formatPrice } = useCurrency();
   const [selectedColor, setSelectedColor] = useState(
     product_cat.colors?.[0]?.hex || "#000000"
   );
@@ -298,7 +301,7 @@ export function ProductCard({ product_cat }: ProductCardProps) {
           <p className="text-xs text-gray-500">{product_cat.label}</p>
           {/* IMAGE AREA */}
 <p className="text-sm font-medium ">{product_cat.name}</p>
-          <p className="text-sm">{product_cat.price}</p>
+          <p className="text-sm">{formatPrice(product_cat.price)}</p>
         </Link>
 
         {/* COLOR SELECTOR */}

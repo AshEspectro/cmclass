@@ -33,7 +33,8 @@ export class CloudinaryService {
                 {
                     folder: `cmclass/${folder}`,
                     resource_type: 'auto', // Automatically detect the resource type
-                    transformation: [
+                    // Skip transformations for SVGs to preserve vector quality
+                    transformation: file.mimetype === 'image/svg+xml' ? undefined : [
                         { quality: 'auto:good' }, // Automatic quality optimization
                         { fetch_format: 'auto' }, // Automatic format optimization (WebP, AVIF)
                     ],

@@ -5,6 +5,16 @@ import { PrismaService } from '../prisma/prisma.service';
 export class PublicProductController {
   constructor(private readonly prisma: PrismaService) { }
 
+  private getUrl(url: string | null) {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+
+    // Prefer VITE_API_URL or PUBLIC_ASSET_URL for production
+    const base = process.env.VITE_API_URL || process.env.PUBLIC_ASSET_URL || `http://localhost:${process.env.PORT || 3000}`;
+
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+
   @Get()
   async list(
     @Query('page') page = '1',
@@ -12,8 +22,6 @@ export class PublicProductController {
     @Query('categoryId') categoryId?: string,
     @Query('search') search = ''
   ) {
-    const ASSET_BASE = process.env.PUBLIC_ASSET_URL || 'http://localhost:3000';
-
     const where: any = { status: 'ACTIVE' };
     if (categoryId) {
       const parsedCategoryId = Number(categoryId);
@@ -40,21 +48,32 @@ export class PublicProductController {
     });
 
     // Transform to match frontend Product_cat interface
-    const data = products.map((p) => ({
-      id: p.id,
-      label: p.label || null,
-      name: p.name,
-      price: p.priceCents ? p.priceCents / 100 : 0,
-      sizes: p.sizes || [],
-      longDescription: p.longDescription || null,
-      productImage: p.productImage || null,
-      mannequinImage: p.mannequinImage || null,
-      colors: p.colors ? (Array.isArray(p.colors) ? p.colors : JSON.parse(p.colors as any)) : [],
-      images: p.images || [],
-      inStock: p.inStock,
-      categoryId: p.categoryId,
-      category: p.category?.name || null,
-    }));
+    const data = products.map((p) => {
+      // Parse colors if stored as JSON string
+      let parsedColors = [];
+      try {
+        parsedColors = p.colors ? (Array.isArray(p.colors) ? p.colors : JSON.parse(p.colors as any)) : [];
+      } catch (e) {
+        console.error(`Error parsing colors for product ${p.id}`, e);
+        parsedColors = [];
+      }
+
+      return {
+        id: p.id,
+        label: p.label || null,
+        name: p.name,
+        price: p.priceCents ? p.priceCents / 100 : 0,
+        sizes: p.sizes || [],
+        longDescription: p.longDescription || null,
+        productImage: this.getUrl(p.productImage),
+        mannequinImage: this.getUrl(p.mannequinImage),
+        colors: parsedColors,
+        images: (p.images || []).map(img => this.getUrl(img)),
+        inStock: p.inStock,
+        categoryId: p.categoryId,
+        category: p.category?.name || null,
+      };
+    });
 
     return { data, meta: { total, page: Number(page), pageSize: Number(pageSize) } };
   }
@@ -70,6 +89,15 @@ export class PublicProductController {
       return { error: 'Product not found' };
     }
 
+    // Parse colors
+    let parsedColors = [];
+    try {
+      parsedColors = product.colors ? (Array.isArray(product.colors) ? product.colors : JSON.parse(product.colors as any)) : [];
+    } catch (e) {
+      console.error(`Error parsing colors for product ${product.id}`, e);
+      parsedColors = [];
+    }
+
     // Transform to match frontend Product_cat interface
     const data = {
       id: product.id,
@@ -78,10 +106,10 @@ export class PublicProductController {
       price: product.priceCents ? product.priceCents / 100 : 0,
       sizes: product.sizes || [],
       longDescription: product.longDescription || null,
-      productImage: product.productImage || null,
-      mannequinImage: product.mannequinImage || null,
-      colors: product.colors ? (Array.isArray(product.colors) ? product.colors : JSON.parse(product.colors as any)) : [],
-      images: product.images || [],
+      productImage: this.getUrl(product.productImage),
+      mannequinImage: this.getUrl(product.mannequinImage),
+      colors: parsedColors,
+      images: (product.images || []).map(img => this.getUrl(img)),
       inStock: product.inStock,
       categoryId: product.categoryId,
       category: product.category?.name || null,
@@ -106,21 +134,32 @@ export class PublicProductController {
       orderBy: { createdAt: 'desc' },
     });
 
-    const data = products.map((p) => ({
-      id: p.id,
-      label: p.label || null,
-      name: p.name,
-      price: p.priceCents ? p.priceCents / 100 : 0,
-      sizes: p.sizes || [],
-      longDescription: p.longDescription || null,
-      productImage: p.productImage || null,
-      mannequinImage: p.mannequinImage || null,
-      colors: p.colors ? (Array.isArray(p.colors) ? p.colors : JSON.parse(p.colors as any)) : [],
-      images: p.images || [],
-      inStock: p.inStock,
-      categoryId: p.categoryId,
-      category: category.name,
-    }));
+    const data = products.map((p) => {
+      // Parse colors
+      let parsedColors = [];
+      try {
+        parsedColors = p.colors ? (Array.isArray(p.colors) ? p.colors : JSON.parse(p.colors as any)) : [];
+      } catch (e) {
+        console.error(`Error parsing colors for product ${p.id}`, e);
+        parsedColors = [];
+      }
+
+      return {
+        id: p.id,
+        label: p.label || null,
+        name: p.name,
+        price: p.priceCents ? p.priceCents / 100 : 0,
+        sizes: p.sizes || [],
+        longDescription: p.longDescription || null,
+        productImage: this.getUrl(p.productImage),
+        mannequinImage: this.getUrl(p.mannequinImage),
+        colors: parsedColors,
+        images: (p.images || []).map(img => this.getUrl(img)),
+        inStock: p.inStock,
+        categoryId: p.categoryId,
+        category: category.name,
+      };
+    });
 
     return { data };
   }

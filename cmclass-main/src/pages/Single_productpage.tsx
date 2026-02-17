@@ -12,9 +12,11 @@ import { Link, useParams } from "react-router-dom";
 import { useWishlist } from "../contexts/WishlistContext";
 import { useCart } from "../contexts/CartContext";
 import type { CartItem } from "../contexts/CartContext";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { ProductGrid } from "../components/Hero_cat";
 import { publicApi } from "../services/publicApi";
 import { Skeleton } from "../components/Skeleton";
+import { parsePriceValue } from "../utils/currency";
 
 // Product shape returned by the public API
 export interface ApiProduct {
@@ -260,6 +262,7 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
 
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { formatPrice } = useCurrency();
   const inWishlist = isInWishlist(product.id.toString());
 
   const prev = () =>
@@ -284,7 +287,7 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
 
   const handleAddToCart = () => {
     if (!effectiveSize || !selectedColor) return;
-    const parsedPrice = Number(String(product.price ?? 0).replace(/[^0-9.-]+/g, ""));
+    const parsedPrice = parsePriceValue(product.price ?? 0);
     addToCart(
       { ...(product as unknown as Partial<CartItem>), price: parsedPrice } as Partial<CartItem>,
       effectiveSize,
@@ -367,7 +370,7 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
                   <p className="text-xs text-gray-500">{product.label}</p>
                 ) : null}
                 <p className="text-lg text-black">{product.name}</p>
-                <p className="text-lg text-black/70 pb-4 mb-4">{product.price}</p>
+                <p className="text-lg text-black/70 pb-4 mb-4">{formatPrice(product.price)}</p>
               </div>
 
               {/* Color selector */}
@@ -525,7 +528,7 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
                               <span className="text-xs text-black">Taille :</span>{" "}
                               {effectiveSize}
                             </p>
-                            <p className="text-xs text-black">{product.price}</p>
+                            <p className="text-xs text-black">{formatPrice(product.price)}</p>
                           </div>
                         </div>
                       </div>

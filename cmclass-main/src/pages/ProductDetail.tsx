@@ -9,6 +9,7 @@ import { useWishlist } from '../contexts/WishlistContext';
 import { ProductCard } from '../components/ProductCard';
 import { QuickViewModal } from '../components/QuickViewModal';
 import type { Product } from '../data/products';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 export const ProductDetail = () => {
   const { id } = useParams();
@@ -19,6 +20,7 @@ export const ProductDetail = () => {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+  const { formatPrice } = useCurrency();
 
   if (!product) {
     return (
@@ -109,7 +111,7 @@ export const ProductDetail = () => {
               transition={{ duration: 0.6 }}
             >
               <h1 className="mb-3 sm:mb-4">{product.name}</h1>
-              <p className="text-2xl sm:text-3xl mb-4 sm:mb-6">{product.price.toLocaleString('fr-FR')} FC</p>
+              <p className="text-2xl sm:text-3xl mb-4 sm:mb-6">{formatPrice(product.price)}</p>
 
               <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">{product.description}</p>
 

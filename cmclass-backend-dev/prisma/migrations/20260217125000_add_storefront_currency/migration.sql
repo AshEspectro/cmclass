@@ -1,0 +1,1 @@
+ALTER TABLE "Brand" ADD COLUMN "storefrontCurrency" TEXT NOT NULL DEFAULT 'FC';

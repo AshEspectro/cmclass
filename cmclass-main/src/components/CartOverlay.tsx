@@ -5,6 +5,7 @@ import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthRequired } from './AuthRequired';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface CartOverlayProps {
   onClose: () => void;
@@ -13,8 +14,8 @@ interface CartOverlayProps {
 export const CartOverlay = ({ onClose }: CartOverlayProps) => {
   const { isAuthenticated } = useAuth();
   const { items, removeFromCart, updateQuantity, total } = useCart();
-   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { formatPrice } = useCurrency();
 
   return (
     <>
@@ -127,7 +128,7 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
 
                   </div>
                   <div className="flex flex-row justify-between items-center  w-full">
-                      <p className="text-sm sm:text-base  ">{item.price.toLocaleString('fr-FR')} FC</p>
+                      <p className="text-sm sm:text-base  ">{formatPrice(item.price)}</p>
 
                       {/* Quantity Controls */}
                       <div className="flex items-center gap-2 sm:gap-3">
@@ -206,7 +207,7 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
           <div className="border-t border-gray-200 p-4 sm:p-6">
             <div className="flex justify-between mb-4 sm:mb-6 text-sm sm:text-base">
               <span>TOTAL</span>
-              <span>{total.toLocaleString('fr-FR')} FC</span>
+              <span>{formatPrice(total)}</span>
             </div>
             <Link to="/panier" className="w-full bg-[#007B8A] text-white py-3 sm:py-4 px-16 text-sm sm:text-base rounded-full mb-2 sm:mb-3 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg">
               Valider la commande

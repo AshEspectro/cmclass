@@ -17,7 +17,7 @@ export interface Product_cat {
   id: number;
   label: string;
   name: string;
-  price: string;
+  price: string | number;
   sizes?: string[];
   longDescription?: string;
 

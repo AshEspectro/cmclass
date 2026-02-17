@@ -4,23 +4,23 @@ import { motion } from 'motion/react';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { Link } from 'react-router-dom';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 export interface ApiProduct {
   id: number | string;
   name: string;
-  price?: number;
+  price?: number | string;
   priceCents?: number;
   productImage?: string;
   mannequinImage?: string;
   label?: string;
   description?: string;
-  colors?: Array<{ name: string; hex: string; images?: string[] }> | string[];
+  colors?: Array<{ name?: string; hex: string; images?: string[] }> | string[];
   sizes?: string[];
   stock?: number;
   inStock?: boolean;
   categoryId?: number;
   images?: string[];
-  [key: string]: unknown;
 }
 
 interface QuickViewModalProps {
@@ -37,7 +37,10 @@ export const QuickViewModal = ({ product, onClose }: QuickViewModalProps) => {
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
-  const inWishlist = isInWishlist(product.id as string | number);
+  const { formatPrice } = useCurrency();
+  const inWishlist = isInWishlist(String(product.id));
+  const priceValue =
+    product.price ?? (typeof product.priceCents === 'number' ? product.priceCents / 100 : 0);
   void quantity;
 void setQuantity;
 
@@ -53,7 +56,7 @@ void setQuantity;
 
   const handleWishlistClick = () => {
     if (inWishlist) {
-      removeFromWishlist(product.id as string | number);
+      removeFromWishlist(String(product.id));
     } else {
       addToWishlist(product as any);
     }
@@ -96,7 +99,7 @@ void setQuantity;
               {/* Details */}
               <div>
                 <h2 className="mb-3 sm:mb-4 text-xl sm:text-2xl">{product.name}</h2>
-                <p className="text-xl sm:text-2xl mb-4 sm:mb-6">{((product.price || product.priceCents) ? (product.price || (product.priceCents as number) / 100) : 0).toLocaleString('fr-FR')} FC</p>
+                <p className="text-xl sm:text-2xl mb-4 sm:mb-6">{formatPrice(priceValue)}</p>
 
                 <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">{product.description}</p>
 

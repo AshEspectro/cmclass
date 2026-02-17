@@ -7,6 +7,7 @@ import {
   ShoppingCart,
   Users,
   Settings,
+  DollarSign,
   Mail,
   Info,
   LogOut,
@@ -33,6 +34,7 @@ const menuItems = [
   { id: 'customers', label: 'Clients', icon: Users },
   { id: 'inbox', label: 'Boîte Mail', icon: Mail },
   { id: 'legal', label: 'Pages Légales', icon: FileText },
+  { id: 'currency', label: 'Devise', icon: DollarSign },
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ];
 

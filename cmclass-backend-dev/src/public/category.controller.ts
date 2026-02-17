@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('categories')
 export class PublicCategoryController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   @Get()
   async list() {
@@ -27,10 +27,10 @@ export class PublicCategoryController {
         link: `/${ch.slug || ch.name.toLowerCase().replace(/\s+/g, '-')}`,
         imageUrl: ch.imageUrl || null,
         description: ch.description || null,
-        children: ch.children?.map((g) => ({ 
-          id: g.id, 
-          name: g.name, 
-          slug: g.slug, 
+        children: ch.children?.map((g) => ({
+          id: g.id,
+          name: g.name,
+          slug: g.slug,
           link: `/${g.slug || g.name.toLowerCase().replace(/\s+/g, '-')}`,
           imageUrl: g.imageUrl || null,
           description: g.description || null,
@@ -39,44 +39,48 @@ export class PublicCategoryController {
     }));
 
     // Build heroContent map for all categories (top-level + children)
-    const ASSET_BASE =
-  process.env.PUBLIC_ASSET_URL || 'http://localhost:3000';
+    const ASSET_BASE = process.env.VITE_API_URL || process.env.PUBLIC_ASSET_URL || `http://localhost:${process.env.PORT || 3000}`;
 
-const heroContent: Record<
-  string,
-  { img: string | null; title: string; text: string | null }
-> = {};
+    const heroContent: Record<
+      string,
+      { img: string | null; title: string; text: string | null }
+    > = {};
 
-for (const c of cats) {
-  if (c.slug) {
-    heroContent[c.slug] = {
-      img: c.imageUrl ? `${ASSET_BASE}${c.imageUrl}` : null,
-      title: c.name,
-      text: c.description,
+    const getImageUrl = (url: string | null) => {
+      if (!url) return null;
+      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      return `${ASSET_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
     };
-  }
 
-  for (const ch of c.children || []) {
-    if (ch.slug) {
-      heroContent[ch.slug] = {
-        img: ch.imageUrl ? `${ASSET_BASE}${ch.imageUrl}` : null,
-        title: ch.name,
-        text: ch.description,
-      };
-    }
-
-    for (const g of ch.children || []) {
-      if (g.slug) {
-        heroContent[g.slug] = {
-          img: g.imageUrl ? `${ASSET_BASE}${g.imageUrl}` : null,
-          title: g.name,
-          text: g.description,
+    for (const c of cats) {
+      if (c.slug) {
+        heroContent[c.slug] = {
+          img: getImageUrl(c.imageUrl),
+          title: c.name,
+          text: c.description,
         };
       }
-    }
-  }
-}
 
+      for (const ch of c.children || []) {
+        if (ch.slug) {
+          heroContent[ch.slug] = {
+            img: getImageUrl(ch.imageUrl),
+            title: ch.name,
+            text: ch.description,
+          };
+        }
+
+        for (const g of ch.children || []) {
+          if (g.slug) {
+            heroContent[g.slug] = {
+              img: getImageUrl(g.imageUrl),
+              title: g.name,
+              text: g.description,
+            };
+          }
+        }
+      }
+    }
 
     return { mainCategories, heroContent };
   }

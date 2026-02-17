@@ -32,6 +32,7 @@ import Cartpage from './pages/Cartpage';
 import WishlistPage from './pages/Wishlist';
 import { AuthProvider } from './contexts/AuthContext';
 import { LocaleProvider } from './contexts/LocaleContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 import PlanDuSite from './pages/PlanDuSite';
 import LegalPage from './pages/LegalPage';
 import Accessibilite from './pages/Accessibilite';
@@ -53,60 +54,62 @@ function AppWrapper() {
 
   return (
     <LocaleProvider>
-      <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <ProtectedRoute>
-              <div className="flex flex-col min-h-screen">
-                {/* Navbar par défaut */}
-                {!hideNavAndFooter && <Navbar />}
+      <CurrencyProvider>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <ProtectedRoute>
+                <div className="flex flex-col min-h-screen">
+                  {/* Navbar par défaut */}
+                  {!hideNavAndFooter && <Navbar />}
 
-                {/* Contenu */}
-                <main className="flex-1">
-                  <Routes>
-                    <Route path="/" element={<Coming_soon />} />
-                    <Route path="/home" element={<Home />} />
-                    <Route path="/homme" element={<Category />} />
-                    <Route path="/homme/:subcategory" element={<BagsPage />} />
-                    <Route path="/produit/:id" element={<SingleProductPage />} />
-                    <Route path="/stories" element={<Stories />} />
-                    <Route path="/alternative-login" element={<AccountPage_A />} />
-                    <Route path="/a-propos" element={<About />} />
-                    <Route path="/LoginPage" element={<AccountPage />} />
-                    <Route path="/bagsPage" element={<BagsPage />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/compte" element={<CreateAccount />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/category" element={<Category />} />
-                    <Route path="/panier" element={<Cartpage />} />
-                    <Route path="/femme" element={<Category />} />
-                    <Route path="/accessoires" element={<Category />} />
-                    <Route path="/nouveautes" element={<Category />} />
-                    <Route path="/wishlist" element={<WishlistPage />} />
-                    <Route path="/plan-du-site" element={<PlanDuSite />} />
-                    <Route path="/legal/:type" element={<LegalPage />} />
-                    <Route path="/mentions-legales" element={<LegalPage />} />
-                    <Route path="/accessibilite" element={<Accessibilite />} />
-                    <Route path="/cookies" element={<Cookies />} />
-                    <Route path="/faq" element={<FAQ />} />
-                    <Route path="/suivi" element={<SuiviCommande />} />
-                    <Route path="/forgot-password" element={<ForgotPwd />} />
-                    <Route path="/verify-email" element={<VerifyEmail />} />
-                    <Route path="/monprofil" element={<MonProfile />} />
-                    <Route path="*" element={<Home />} />
-                    <Route path="/admin" element={<Index />} />
+                  {/* Contenu */}
+                  <main className="flex-1">
+                    <Routes>
+                      <Route path="/" element={<Coming_soon />} />
+                      <Route path="/home" element={<Home />} />
+                      <Route path="/homme" element={<Category />} />
+                      <Route path="/homme/:subcategory" element={<BagsPage />} />
+                      <Route path="/produit/:id" element={<SingleProductPage />} />
+                      <Route path="/stories" element={<Stories />} />
+                      <Route path="/alternative-login" element={<AccountPage_A />} />
+                      <Route path="/a-propos" element={<About />} />
+                      <Route path="/LoginPage" element={<AccountPage />} />
+                      <Route path="/bagsPage" element={<BagsPage />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/compte" element={<CreateAccount />} />
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/category" element={<Category />} />
+                      <Route path="/panier" element={<Cartpage />} />
+                      <Route path="/femme" element={<Category />} />
+                      <Route path="/accessoires" element={<Category />} />
+                      <Route path="/nouveautes" element={<Category />} />
+                      <Route path="/wishlist" element={<WishlistPage />} />
+                      <Route path="/plan-du-site" element={<PlanDuSite />} />
+                      <Route path="/legal/:type" element={<LegalPage />} />
+                      <Route path="/mentions-legales" element={<LegalPage />} />
+                      <Route path="/accessibilite" element={<Accessibilite />} />
+                      <Route path="/cookies" element={<Cookies />} />
+                      <Route path="/faq" element={<FAQ />} />
+                      <Route path="/suivi" element={<SuiviCommande />} />
+                      <Route path="/forgot-password" element={<ForgotPwd />} />
+                      <Route path="/verify-email" element={<VerifyEmail />} />
+                      <Route path="/monprofil" element={<MonProfile />} />
+                      <Route path="*" element={<Home />} />
+                      <Route path="/admin" element={<Index />} />
 
-                    <Route path="/product/:id" element={<SingleProductPage />} />
-                  </Routes>
-                </main>
+                      <Route path="/product/:id" element={<SingleProductPage />} />
+                    </Routes>
+                  </main>
 
-                {/* Footer */}
-                {!hideNavAndFooter && <Footer />}
-              </div>
-            </ProtectedRoute>
-          </WishlistProvider>
-        </CartProvider>
-      </AuthProvider>
+                  {/* Footer */}
+                  {!hideNavAndFooter && <Footer />}
+                </div>
+              </ProtectedRoute>
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
+      </CurrencyProvider>
     </LocaleProvider>
   );
 }
