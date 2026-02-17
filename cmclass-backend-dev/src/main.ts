@@ -11,6 +11,18 @@ const logger = new Logger('Bootstrap');
 console.log('main.ts: starting process');
 process.on('exit', (code) => console.log('main.ts: process exit', code));
 
+const normalizeOrigin = (value: string) =>
+  value
+    .trim()
+    .replace(/^['"]+|['"]+$/g, '')
+    .replace(/\/+$/, '');
+
+const parseEnvOrigins = (...values: Array<string | undefined>) =>
+  values
+    .flatMap((value) => (value ? value.split(',') : []))
+    .map((value) => normalizeOrigin(value))
+    .filter(Boolean);
+
 async function bootstrap() {
   try {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -19,10 +31,11 @@ async function bootstrap() {
     // parse cookies to support HttpOnly refresh token cookies
     app.use(require('cookie-parser')());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-    const envOrigins = [
+    const envOrigins = parseEnvOrigins(
       process.env.FRONTEND_URL,
       process.env.ADMIN_URL,
-    ].filter(Boolean) as string[];
+      process.env.CORS_ORIGINS,
+    );
     const localOrigins = [
       'http://localhost:5173',
       'http://127.0.0.1:5173',
@@ -30,11 +43,13 @@ async function bootstrap() {
       'http://127.0.0.1:5174',
     ];
     const allowedOrigins = Array.from(new Set([...envOrigins, ...localOrigins]));
+    logger.log(`CORS allowed origins: ${allowedOrigins.join(', ')}`);
 
     app.enableCors({
       origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
+        const normalizedOrigin = normalizeOrigin(origin);
+        if (allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
         if (process.env.NODE_ENV !== 'production') {
           if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
             return callback(null, true);
