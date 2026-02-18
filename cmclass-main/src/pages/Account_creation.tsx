@@ -117,7 +117,7 @@ export default function CreateAccount() {
 
           {/* Google Button */}
           <GoogleSignInButton
-            className="bg-gray-100 border border-gray-300 rounded-4xl hover:bg-gray-200 transition py-3 mb-6"
+            className=" transition py-3 mb-6"
             text="signup_with"
             onCredential={handleGoogleCredential}
             onError={(msg) => setMessage({ type: "error", text: msg })}
@@ -127,7 +127,7 @@ export default function CreateAccount() {
             Créez votre compte pour profiter d'une expérience personnalisée.
           </p>
           <p className="text-sm mb-8">
-            Vous avez déjà un compte MyLV ?{" "}
+            Vous avez déjà un compte Cmclass ?{" "}
             <Link to="/login" className="text-[#007B8A] hover:underline">
               Connectez-vous ici.
             </Link>

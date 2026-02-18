@@ -19,6 +19,18 @@ export class UpdateBrandDto {
 
   @IsOptional()
   @IsString()
+  contactPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  contactAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  openingHours?: string;
+
+  @IsOptional()
+  @IsString()
   instagramUrl?: string;
 
   @IsOptional()

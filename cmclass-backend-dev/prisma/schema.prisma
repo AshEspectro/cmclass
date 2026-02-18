@@ -156,6 +156,9 @@ model Brand {
   servicesHeaderTitle String?
   servicesHeaderDescription String?
   contactEmail   String?
+  contactPhone   String?
+  contactAddress String?
+  openingHours   String?
   instagramUrl   String?
   facebookUrl    String?
   twitterUrl     String?

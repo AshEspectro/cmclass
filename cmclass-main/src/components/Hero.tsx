@@ -111,7 +111,7 @@ export const Hero = (props: HeroProps = {}) => {
 
         {displaySubtitle && (
           <motion.p
-            className="text-white/90 font-light text-sm sm:text-xl md:text-xl lg:text-xl mb-4 sm:mb-8 md:mb-16 lg:mb-2"
+            className="text-white/90 font-light uppercase text-[0.8rem] sm:text-xs md:text-xs lg:text-xs mb-4 sm:mb-8 md:mb-16 lg:mb-2"
             style={{ letterSpacing: '0.05em' }}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -136,7 +136,7 @@ export const Hero = (props: HeroProps = {}) => {
         >
           <Link
             to={displayCtaLink || '/'}
-            className="inline-block px-8 mb-12 py-2 lg:py-2 sm:px-10 sm:py-4 text-sm md:text-base tracking-wide font-medium text-white border border-white hover:bg-white hover:text-black transition-all duration-500"
+            className="inline-block underline  underline-offset-6 px-8 mb-12 py-2 lg:py-2 sm:px-10 sm:py-4 text-sm md:text-base tracking-wide font-regular text-white hover:bg-white hover:text-black transition-all duration-500"
           >
             {displayCtaText}
           </Link>

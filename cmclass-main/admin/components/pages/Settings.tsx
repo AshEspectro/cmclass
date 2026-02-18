@@ -38,6 +38,9 @@ interface SettingsProps {
     slogan?: string;
     description?: string;
     contactEmail?: string;
+    contactPhone?: string;
+    contactAddress?: string;
+    openingHours?: string;
     instagramUrl?: string;
     facebookUrl?: string;
     twitterUrl?: string;
@@ -64,6 +67,9 @@ export function Settings({ brand }: SettingsProps) {
     slogan: brand?.slogan || 'Élégance Intemporelle',
     description: brand?.description || 'Une maison de haute couture dédiée à l\'excellence artisanale et au design intemporel.',
     contactEmail: brand?.contactEmail || 'contact@maison.com',
+    contactPhone: brand?.contactPhone || '',
+    contactAddress: brand?.contactAddress || '',
+    openingHours: brand?.openingHours || '',
     instagramUrl: brand?.instagramUrl || '',
     facebookUrl: brand?.facebookUrl || '',
     twitterUrl: brand?.twitterUrl || '',
@@ -141,6 +147,9 @@ export function Settings({ brand }: SettingsProps) {
         slogan: brand.slogan || 'Élégance Intemporelle',
         description: brand.description || 'Une maison de haute couture dédiée à l\'excellence artisanale et au design intemporel.',
         contactEmail: brand.contactEmail || 'contact@maison.com',
+        contactPhone: brand.contactPhone || '',
+        contactAddress: brand.contactAddress || '',
+        openingHours: brand.openingHours || '',
         instagramUrl: brand.instagramUrl || '',
         facebookUrl: brand.facebookUrl || '',
         twitterUrl: brand.twitterUrl || '',
@@ -285,6 +294,9 @@ export function Settings({ brand }: SettingsProps) {
       const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
       const normalizedBrandForm = {
         ...brandForm,
+        contactPhone: brandForm.contactPhone.trim(),
+        contactAddress: brandForm.contactAddress.trim(),
+        openingHours: brandForm.openingHours.trim(),
         instagramUrl: normalizeSocialUrl('instagram', brandForm.instagramUrl),
         facebookUrl: normalizeSocialUrl('facebook', brandForm.facebookUrl),
         twitterUrl: normalizeSocialUrl('twitter', brandForm.twitterUrl),
@@ -766,6 +778,39 @@ export function Settings({ brand }: SettingsProps) {
                     value={brandForm.contactEmail}
                     onChange={(e) => handleBrandInputChange('contactEmail', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2 text-gray-700">Téléphone de Contact</label>
+                  <input
+                    type="text"
+                    value={brandForm.contactPhone}
+                    onChange={(e) => handleBrandInputChange('contactPhone', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
+                    placeholder="+243XXXXXXXXX"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2 text-gray-700">Adresse de Contact</label>
+                  <textarea
+                    rows={3}
+                    value={brandForm.contactAddress}
+                    onChange={(e) => handleBrandInputChange('contactAddress', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
+                    placeholder={'Avenue de la Révolution\nGoma, Nord-Kivu\nRépublique Démocratique du Congo'}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-2 text-gray-700">Horaires d&apos;Ouverture</label>
+                  <textarea
+                    rows={3}
+                    value={brandForm.openingHours}
+                    onChange={(e) => handleBrandInputChange('openingHours', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded focus:outline-none focus:border-[#007B8A] transition-colors"
+                    placeholder={'Lundi - Vendredi : 9h00 - 18h00\nSamedi : 10h00 - 16h00\nDimanche : Fermé'}
                   />
                 </div>
 

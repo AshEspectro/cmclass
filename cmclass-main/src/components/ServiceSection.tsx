@@ -41,8 +41,8 @@ export const Services = ({ title, description, items }: ServicesProps) => {
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12">
-          <h3 className="text-xl sm:text-xl md:text-2xl font-semibold mb-2">{title}</h3>
-          <p className="text-gray-500 text-xs sm:text-sm max-w-md mx-auto">{description}</p>
+          <h3 className="text-[1.1rem] sm:text-xl md:text-2xl font-semibold mb-2">{title}</h3>
+          <p className="text-gray-500 text-xs sm:text-sm max-w-md mx-auto tracking-wider leading-relaxed">{description}</p>
         </div>
 
         {/* Cards — responsive carousel */}
@@ -71,10 +71,10 @@ export const Services = ({ title, description, items }: ServicesProps) => {
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                <h4 className="text-sm md:text-sm lg:text-lg font-medium mb-1">{item.title}</h4>
+                <h4 className="text-[0.8rem] md:text-sm lg:text-lg font-medium mb-1">{item.title}</h4>
                 <a
                   href={item.link}
-                  className="text-xs md:text-xs py-4 lg:text-sm underline underline-offset-4 hover:text-[#007B8A] transition-colors"
+                  className="text-[0.8rem] md:text-xs py-4 lg:text-sm underline underline-offset-4 hover:text-[#007B8A] transition-colors"
                 >
                   {item.description}
                 </a>
@@ -88,8 +88,8 @@ export const Services = ({ title, description, items }: ServicesProps) => {
           {items.map((_, index) => (
             <div
               key={index}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                index === activeIndex ? "bg-gray-800 scale-110" : "bg-gray-300"
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                index === activeIndex ? "bg-gray-800 scale-110 w-3" : "bg-gray-300"
               }`}
             />
           ))}

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { MapPin, Phone, Mail, Instagram, Facebook, Twitter } from 'lucide-react';
+import { publicApi } from '../services/publicApi';
 
 const API_BASE_URL =
   import.meta.env.VITE_BACKEND_URL ||
@@ -8,6 +9,22 @@ const API_BASE_URL =
   'http://localhost:3000';
 
 export const Contact = () => {
+  const defaultAddress = `Avenue de la Révolution
+Goma, Nord-Kivu
+République Démocratique du Congo`;
+  const defaultOpeningHours = `Lundi - Vendredi : 9h00 - 18h00
+Samedi : 10h00 - 16h00
+Dimanche : Fermé`;
+
+  const [brandContact, setBrandContact] = useState({
+    contactEmail: 'contact@cmclass.cd',
+    contactPhone: '+243 XXX XXX XXX',
+    contactAddress: defaultAddress,
+    openingHours: defaultOpeningHours,
+    instagramUrl: '',
+    facebookUrl: '',
+    twitterUrl: '',
+  });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -17,6 +34,34 @@ export const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const brand = await publicApi.getBrand();
+        if (!active || !brand) return;
+
+        setBrandContact((prev) => ({
+          contactEmail: String(brand.contactEmail || prev.contactEmail || '').trim() || prev.contactEmail,
+          contactPhone: String(brand.contactPhone || prev.contactPhone || '').trim() || prev.contactPhone,
+          contactAddress:
+            String(brand.contactAddress || prev.contactAddress || '').trim() || prev.contactAddress,
+          openingHours:
+            String(brand.openingHours || prev.openingHours || '').trim() || prev.openingHours,
+          instagramUrl: String(brand.instagramUrl || '').trim(),
+          facebookUrl: String(brand.facebookUrl || '').trim(),
+          twitterUrl: String(brand.twitterUrl || '').trim(),
+        }));
+      } catch (error) {
+        // Keep fallback values when API is unavailable.
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +99,18 @@ export const Contact = () => {
       [e.target.name]: e.target.value
     }));
   };
+
+  const addressLines = (brandContact.contactAddress || defaultAddress)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const openingHourLines = (brandContact.openingHours || defaultOpeningHours)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const normalizedPhone = (brandContact.contactPhone || '').replace(/\s+/g, '');
 
   return (
     <div className="pt-20 sm:pt-24">
@@ -93,9 +150,12 @@ export const Contact = () => {
                   <div>
                     <h4 className="mb-2">ADRESSE</h4>
                     <p className="text-gray-600">
-                      Avenue de la Révolution<br />
-                      Goma, Nord-Kivu<br />
-                      République Démocratique du Congo
+                      {addressLines.map((line, index) => (
+                        <React.Fragment key={`${line}-${index}`}>
+                          {line}
+                          {index < addressLines.length - 1 ? <br /> : null}
+                        </React.Fragment>
+                      ))}
                     </p>
                   </div>
                 </div>
@@ -105,8 +165,11 @@ export const Contact = () => {
                   <div>
                     <h4 className="mb-2">TÉLÉPHONE</h4>
                     <p className="text-gray-600">
-                      <a href="tel:+243" className="hover:text-[#007B8A] transition-colors duration-300">
-                        +243 XXX XXX XXX
+                      <a
+                        href={`tel:${normalizedPhone}`}
+                        className="hover:text-[#007B8A] transition-colors duration-300"
+                      >
+                        {brandContact.contactPhone}
                       </a>
                     </p>
                   </div>
@@ -117,8 +180,11 @@ export const Contact = () => {
                   <div>
                     <h4 className="mb-2">EMAIL</h4>
                     <p className="text-gray-600">
-                      <a href="mailto:contact@cmclass.cd" className="hover:text-[#007B8A] transition-colors duration-300">
-                        contact@cmclass.cd
+                      <a
+                        href={`mailto:${brandContact.contactEmail}`}
+                        className="hover:text-[#007B8A] transition-colors duration-300"
+                      >
+                        {brandContact.contactEmail}
                       </a>
                     </p>
                   </div>
@@ -129,9 +195,9 @@ export const Contact = () => {
               <div className="mt-12 pt-12 border-t border-gray-200">
                 <h4 className="mb-4">HORAIRES D'OUVERTURE</h4>
                 <div className="space-y-2 text-gray-600">
-                  <p>Lundi - Vendredi : 9h00 - 18h00</p>
-                  <p>Samedi : 10h00 - 16h00</p>
-                  <p>Dimanche : Fermé</p>
+                  {openingHourLines.map((line, index) => (
+                    <p key={`${line}-${index}`}>{line}</p>
+                  ))}
                 </div>
               </div>
 
@@ -140,22 +206,28 @@ export const Contact = () => {
                 <h4 className="mb-4">SUIVEZ-NOUS</h4>
                 <div className="flex gap-4">
                   <a
-                    href="#"
-                    className="w-12 h-12 border border-gray-300 flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
+                    href={brandContact.instagramUrl || '#'}
+                    target={brandContact.instagramUrl ? '_blank' : undefined}
+                    rel={brandContact.instagramUrl ? 'noreferrer' : undefined}
+                    className=" flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
                     aria-label="Instagram"
                   >
                     <Instagram size={20} />
                   </a>
                   <a
-                    href="#"
-                    className="w-12 h-12 border border-gray-300 flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
+                    href={brandContact.facebookUrl || '#'}
+                    target={brandContact.facebookUrl ? '_blank' : undefined}
+                    rel={brandContact.facebookUrl ? 'noreferrer' : undefined}
+                    className=" flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
                     aria-label="Facebook"
                   >
                     <Facebook size={20} />
                   </a>
                   <a
-                    href="#"
-                    className="w-12 h-12 border border-gray-300 flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
+                    href={brandContact.twitterUrl || '#'}
+                    target={brandContact.twitterUrl ? '_blank' : undefined}
+                    rel={brandContact.twitterUrl ? 'noreferrer' : undefined}
+                    className=" flex items-center justify-center hover:border-[#007B8A] hover:bg-[#007B8A] hover:text-white transition-all duration-300"
                     aria-label="Twitter"
                   >
                     <Twitter size={20} />
@@ -241,7 +313,7 @@ export const Contact = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-[#007B8A] text-white py-4 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+                  className="w-full border border-[#007B8A] text-black rounded-full py-3 hover:border-2 transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
                 >
                   {submitting ? 'ENVOI...' : 'ENVOYER'}
                 </button>

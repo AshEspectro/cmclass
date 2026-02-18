@@ -211,6 +211,7 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
 
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [imageIndex, setImageIndex] = useState(0);
+  const [mobileImageIndex, setMobileImageIndex] = useState(0);
   const [hoveringImage, setHoveringImage] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [showCartCard, setShowCartCard] = useState(false);
@@ -225,6 +226,7 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
     setSelectedColor(normalized[0]?.hex || "#000000");
     setSelectedSize(product.sizes && product.sizes.length > 0 ? product.sizes[0] : "Unique");
     setImageIndex(0);
+    setMobileImageIndex(0);
     setDropdownOpen(false);
     setQuantity(1);
   }, [product?.id]);
@@ -259,6 +261,21 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
   const effectiveSize = selectedSize || (sizes.length === 0 ? "Unique" : "");
   const mainImage = normalizedProductImage || normalizedImages[0] || "";
   const mannequinImage = normalizedMannequinImage || normalizedImages[1] || mainImage;
+  const mobileCarouselImages = [
+    mainImage,
+    mannequinImage,
+    ...colorImages,
+    ...normalizedImages,
+  ].filter(Boolean);
+  const mobileCarouselLength = mobileCarouselImages.length;
+  const safeMobileIndex =
+    mobileCarouselLength > 0
+      ? ((mobileImageIndex % mobileCarouselLength) + mobileCarouselLength) % mobileCarouselLength
+      : 0;
+  const mobileCarouselImage =
+    mobileCarouselLength > 0
+      ? mobileCarouselImages[safeMobileIndex]
+      : mainImage;
 
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
@@ -266,9 +283,13 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
   const inWishlist = isInWishlist(product.id.toString());
 
   const prev = () =>
-    setImageIndex((i) => (i === 0 ? colorImages.length - 1 : i - 1));
+    setMobileImageIndex((i) =>
+      mobileCarouselLength <= 1 ? 0 : i === 0 ? mobileCarouselLength - 1 : i - 1
+    );
   const next = () =>
-    setImageIndex((i) => (i === colorImages.length - 1 ? 0 : i + 1));
+    setMobileImageIndex((i) =>
+      mobileCarouselLength <= 1 ? 0 : i === mobileCarouselLength - 1 ? 0 : i + 1
+    );
 
   const toggleWishlist = () => {
     if (inWishlist) {
@@ -305,8 +326,13 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
           {/* Image container for mobile: overlap */}
           <div className="relative w-full aspect-[4/5]">
             <img
+              src={mobileCarouselImage}
+              className="absolute inset-0 w-full h-full aspect-4/5 object-cover md:hidden"
+              alt={`${product.name} carousel`}
+            />
+            <img
               src={mainImage}
-              className={`absolute inset-0 w-full bg-black/10 h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto ${
+              className={`hidden md:block absolute inset-0 w-full bg-black/10 h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto ${
                 hoveringImage ? "opacity-0" : "opacity-100"
               }`}
               onMouseEnter={() => setHoveringImage(true)}
@@ -315,7 +341,7 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
             />
             <img
               src={mannequinImage}
-              className={`absolute inset-0 w-full h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto ${
+              className={`hidden md:block absolute inset-0 w-full h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto ${
                 hoveringImage ? "opacity-100" : "opacity-0"
               }`}
               alt={`${product.name} mannequin`}
@@ -324,23 +350,25 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
             {colorImages.length > 0 && (
               <img
                 src={colorImages[imageIndex]}
-                className="absolute inset-0 w-full h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto"
+                className="hidden md:block absolute inset-0 w-full h-full aspect-4/5 md:aspect-1/1 object-cover transition-opacity duration-500 md:relative md:opacity-100 md:w-full md:h-auto"
                 alt={`${product.name} variant`}
               />
             )}
 
             {/* Chevrons (keep only for mobile) */}
-            {colorImages.length > 1 && (
+            {mobileCarouselLength > 1 && (
               <>
                 <button
+                  type="button"
                   onClick={prev}
-                  className="absolute top-1/2 -translate-y-1/2 left-2 bg-white/30 hover:bg-white/50 rounded-full p-1 md:hidden"
+                  className="absolute top-1/2 -translate-y-1/2 left-2 z-10   p-1 md:hidden"
                 >
                   <ChevronLeft size={24} />
                 </button>
                 <button
+                  type="button"
                   onClick={next}
-                  className="absolute top-1/2 -translate-y-1/2 right-2 bg-white/30 hover:bg-white/50 rounded-full p-1 md:hidden"
+                  className="absolute top-1/2 -translate-y-1/2 right-2 z-10  p-1 md:hidden"
                 >
                   <ChevronRight size={24} />
                 </button>
@@ -350,9 +378,9 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
         </div>
 
         {/* Product Info */}
-        <div className="md:sticky md:top-24 flex-col items-center h-fit z-20 bg-white flex justify-center">
+        <div className="md:sticky md:top-24 lg:top-40 flex-col items-center h-fit z-20 bg-white flex justify-center">
           <div className="px-4 md:px-8 w-full md:w-sm flex-row justify-center md:gap-8">
-            <div className="gap-2 pt-8 md:pt-0">
+            <div className="gap-2 pt-8 md:pt-0"> 
               <div className="items-center">
                 <div className="flex w-full justify-between pb-6">
                   <h1 className="text-sm self-center">{product.id}</h1>
@@ -393,6 +421,7 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
                         onClick={() => {
                           setSelectedColor(c.hex);
                           setImageIndex(0);
+                          setMobileImageIndex(0);
                         }}
                         className={`w-12 h-12 hover:border hover:border-[#007B8A] rounded-sm ${
                           selectedColor === c.hex ? "ring-2 ring-[#007B8A]" : "border-gray-300"
@@ -555,16 +584,18 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
             </div>
 
             <div className="flex justify-center mb-6">
-              <Link to="" className="text-xs underline underline-offset-4">
+              <Link to="/contact" className="text-xs underline underline-offset-4">
                 Contacter un conseiller
               </Link>
             </div>
 
             {/* Optional product description or details */}
-            <p className="text-sm leading-relaxed text-gray-600 pb-12">
-              Livraison avant Noël pour toute commande passée avant le 23 décembre à 11h59 selon la
-              disponibilité produit.
-            </p>
+            {product.description && (
+               
+              
+            <p className="text-sm leading-relaxed text-gray-600 pb-8">
+              {product.description}
+            </p>)}
             <div className="flex justify-center border-b pb-4 border-black/5">
               {product.longDescription && (
                 <ExpandableText maxLines={2}>{product.longDescription}</ExpandableText>
@@ -573,7 +604,7 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
           </div>
         </div>
 
-        <div className="w-full md:w-sm px-8">
+        <div className="w-full bg-white  z-20 md:w-sm px-8">
           <ExpandableSection title="Caractéristiques environnementales">
             <p>Traçabilité</p>
             <ul className="text-sm mb-2">

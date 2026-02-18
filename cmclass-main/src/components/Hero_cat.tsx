@@ -35,7 +35,7 @@ export default function HeroSection({
       </div>
 
       {/* TEXT OUTSIDE IMAGE FOR MOBILE */}
-      <div className="md:hidden mt-6 px-12">
+      <div className="md:hidden mt-6 px-4">
         <h1 className="text-lg  mb-4">{title}</h1>
         <p className="text-sm text-gray-700 leading-relaxed mb-6">{description}</p>
 
@@ -226,64 +226,98 @@ export function ProductCard({ product_cat }: ProductCardProps) {
     .filter(Boolean);
   const productImage = normalizeAssetUrl(product_cat.productImage);
   const mannequinImage = normalizeAssetUrl(product_cat.mannequinImage);
+  const primaryImage = productImage || mannequinImage || colorImages[0] || "";
+
+  const mobileCarouselImages = Array.from(
+    new Set([primaryImage, mannequinImage, ...colorImages].filter(Boolean))
+  );
+  const mobileCarouselLength = mobileCarouselImages.length;
+  const safeMobileIndex =
+    mobileCarouselLength > 0
+      ? ((index % mobileCarouselLength) + mobileCarouselLength) % mobileCarouselLength
+      : 0;
+  const mobileCarouselImage =
+    mobileCarouselLength > 0 ? mobileCarouselImages[safeMobileIndex] : primaryImage;
+
+  const desktopHoverImages = Array.from(
+    new Set([mannequinImage, ...colorImages, primaryImage].filter(Boolean))
+  );
+  const desktopHoverLength = desktopHoverImages.length;
+  const safeDesktopIndex =
+    desktopHoverLength > 0
+      ? ((index % desktopHoverLength) + desktopHoverLength) % desktopHoverLength
+      : 0;
+  const desktopHoverImage =
+    desktopHoverLength > 0 ? desktopHoverImages[safeDesktopIndex] : primaryImage;
 
   const prev = () =>
-    setIndex((i) => (i === 0 ? colorImages.length - 1 : i - 1));
+    setIndex((i) => (mobileCarouselLength <= 1 ? 0 : i === 0 ? mobileCarouselLength - 1 : i - 1));
   const next = () =>
-    setIndex((i) => (i === colorImages.length - 1 ? 0 : i + 1));
+    setIndex((i) =>
+      mobileCarouselLength <= 1 ? 0 : i === mobileCarouselLength - 1 ? 0 : i + 1
+    );
 
   return (
-    <div className="relative w-full aspect-4/5 overflow-hidden group">
-     
+    <div className="relative w-full aspect-[4/5] overflow-hidden group">
       <div
         className="w-full h-full relative"
         onMouseEnter={() => setHoveringImage(true)}
         onMouseLeave={() => setHoveringImage(false)}
       >
-        {/* Default image */} <Link to={`/product/${product_cat.id}`} >{/* IMAGE AREA */}
+        <Link
+          to={`/product/${product_cat.id}`}
+          className="absolute inset-0 z-10"
+          aria-label={`Voir ${product_cat.name}`}
+        />
+
+        {/* Mobile image carousel */}
         <img
-          src={productImage}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+          src={mobileCarouselImage}
+          alt={product_cat.name}
+          className="absolute inset-0 w-full h-full object-cover md:hidden"
+        />
+
+        {/* Desktop default image */}
+        <img
+          src={primaryImage}
+          alt={product_cat.name}
+          className={`hidden md:block absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
             hoveringImage ? "opacity-0" : "opacity-100"
           }`}
-        /></Link>
-        {/* Mannequin image on hover */}
+        />
+
+        {/* Desktop hover/carousel image */}
         <img
-          src={mannequinImage}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+          src={desktopHoverImage}
+          alt={`${product_cat.name} vue`}
+          className={`hidden md:block absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
             hoveringImage ? "opacity-100" : "opacity-0"
           }`}
         />
 
-        {/* Browsable images per color */}
-        {colorImages.length > 0 && (
-          <img
-            src={colorImages[index]}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-              hoveringImage ? "opacity-100" : "opacity-0"
-            }`}
-          />
-        )}
-
-        {/* Top gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white/50 via-black/5 to-transparent" />
+        {/* Bottom-to-top gradient for legibility */}
+        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-white/80 via-white/40 to-transparent" />
 
         {/* CHEVRONS */}
-        {colorImages.length > 1 && (
+        {mobileCarouselLength > 1 && (
           <>
             <button
+              type="button"
               onClick={prev}
-              className={`absolute top-1/2 -translate-y-1/2 left-2 text-black transition-opacity duration-300 ${
-                hoveringImage ? "opacity-100" : "opacity-0"
+              className={`absolute top-1/2 -translate-y-1/2 left-2 z-20  p-1 text-black transition-opacity duration-300 ${
+                hoveringImage ? "opacity-100" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
               }`}
+              aria-label="Image precedente"
             >
               <ChevronLeft size={20} />
             </button>
             <button
+              type="button"
               onClick={next}
-              className={`absolute top-1/2 -translate-y-1/2 right-2 text-black transition-opacity duration-300 ${
-                hoveringImage ? "opacity-100" : "opacity-0"
+              className={`absolute top-1/2 -translate-y-1/2 right-2 z-20  p-1 text-black transition-opacity duration-300 ${
+                hoveringImage ? "opacity-100" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
               }`}
+              aria-label="Image suivante"
             >
               <ChevronRight size={20} />
             </button>
@@ -293,27 +327,27 @@ export function ProductCard({ product_cat }: ProductCardProps) {
 
       {/* BOTTOM INFO */}
       <div
-        className={`absolute bottom-0 flex justify-between left-0 right-0 px-4 pb-6 text-black transition-opacity duration-300 ${
+        className={`absolute bottom-0 z-20 flex justify-between left-0 right-0 px-4 pb-6 text-white transition-opacity duration-300 ${
           hoveringImage ? "opacity-0" : "opacity-100"
         }`}
       >
-        <Link to={`/product/${product_cat.id}`} >
-          <p className="text-xs text-gray-500">{product_cat.label}</p>
-          {/* IMAGE AREA */}
-<p className="text-sm font-medium ">{product_cat.name}</p>
-          <p className="text-sm">{formatPrice(product_cat.price)}</p>
+        <Link to={`/product/${product_cat.id}`}>
+          <p className="text-xs text-black/70">{product_cat.label}</p>
+          <p className="text-sm text-black font-medium">{product_cat.name}</p>
+          <p className="text-sm text-black">{formatPrice(product_cat.price)}</p>
         </Link>
 
         {/* COLOR SELECTOR */}
         <div className="flex items-end gap-1 mt-2">
           {product_cat.colors.map((c, i) => (
             <button
+              type="button"
               key={i}
               onClick={() => {
                 setSelectedColor(c.hex);
                 setIndex(0);
               }}
-              className={`w-3 h-3 rounded-full ${
+              className={`w-3 h-3 rounded-full border border-black ${
                 selectedColor === c.hex ? "ring-1 ring-black scale-110" : ""
               }`}
               style={{ backgroundColor: c.hex }}
@@ -324,8 +358,9 @@ export function ProductCard({ product_cat }: ProductCardProps) {
     
       {/* WISHLIST BUTTON */}
       <button
+        type="button"
         onClick={toggleWishlist}
-        className="absolute top-2 right-2 p-2 transition-colors"
+        className="absolute top-2 right-2 z-20 p-2 transition-colors"
       >
         <Heart
           size={18}
@@ -339,7 +374,7 @@ export function ProductCard({ product_cat }: ProductCardProps) {
     <div className="bg-[#007B8A] mx-4 md:mx-16 text-white rounded-lg shadow-lg flex items-center gap-3 transition-opacity duration-300 pointer-events-auto">
       {/* Image du produit */}
       <img
-        src={product_cat.productImage}
+        src={primaryImage}
         alt={product_cat.name}
         className="w-16 md:w-24 h-16 md:h-24 rounded-l-lg object-cover"
       />

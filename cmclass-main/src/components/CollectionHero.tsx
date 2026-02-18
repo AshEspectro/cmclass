@@ -31,7 +31,7 @@ export const CategoryHero = ({
           {genreText}
         </p>
         <div className="mt-2 sm:mt-3">
-          <h3 className="text-xl sm:text-3xl md:text-3xl lg:text-3xl font-semibold hover:text-[#007B8A] transition-colors duration-300 cursor-pointer">
+          <h3 className="text-[1.1rem] sm:text-md md:text-md lg:text-3xl font-semibold hover:text-[#007B8A] transition-colors duration-300 cursor-pointer tracking-widest">
             {campaignTitle}
           </h3>
         </div>

@@ -133,6 +133,8 @@ export function ContentManager() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<BackendProduct[]>([]);
   const [campaignLoading, setCampaignLoading] = useState(false);
+  const [campaignImageUploading, setCampaignImageUploading] = useState(false);
+  const [campaignImageProgress, setCampaignImageProgress] = useState(0);
   
   const [campaignForm, setCampaignForm] = useState({
     id: undefined as number | undefined,
@@ -254,11 +256,35 @@ export function ContentManager() {
     setEditingCampaignId(null);
   }
 
-  function handleCampaignImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleCampaignImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setCampaignForm(prev => ({ ...prev, imageFile: file, imagePreview: url }));
+    if (!file.type.startsWith('image/')) {
+      alert('❌ Veuillez sélectionner une image valide pour la campagne.');
+      return;
+    }
+
+    const localPreviewUrl = URL.createObjectURL(file);
+    setCampaignForm(prev => ({ ...prev, imageFile: file, imagePreview: localPreviewUrl }));
+    setCampaignImageUploading(true);
+    setCampaignImageProgress(0);
+
+    try {
+      const uploadedUrl = await heroApi.uploadBackgroundImage(file, setCampaignImageProgress);
+      setCampaignForm(prev => ({
+        ...prev,
+        imageUrl: uploadedUrl,
+        imagePreview: uploadedUrl,
+        imageFile: null,
+      }));
+      URL.revokeObjectURL(localPreviewUrl);
+    } catch (error) {
+      console.error('Campaign image upload failed:', error);
+      alert('❌ Erreur lors du téléchargement de l\'image de campagne.');
+    } finally {
+      setCampaignImageUploading(false);
+      setCampaignImageProgress(0);
+    }
   }
 
   async function handleServiceFileSelect(e: React.ChangeEvent<HTMLInputElement> | File) {
@@ -349,10 +375,20 @@ export function ContentManager() {
 
   async function saveCampaign() {
     try {
+      const campaignImageUrl = String(campaignForm.imageUrl || '').trim();
+      const isLocalPreviewUrl = /^(blob:|file:|https?:\/\/localhost|https?:\/\/127\.0\.0\.1)/i.test(
+        campaignImageUrl
+      );
+
+      if (!campaignImageUrl || isLocalPreviewUrl) {
+        alert('❌ Téléchargez une image publique de campagne avant de sauvegarder.');
+        return;
+      }
+
       setCampaignLoading(true);
       const payload: Campaign = {
         title: campaignForm.title,
-        imageUrl: campaignForm.imagePreview || campaignForm.imageUrl,
+        imageUrl: campaignImageUrl,
         buttonText: campaignForm.buttonText,
         genreText: campaignForm.genreText,
         selectedCategories: campaignForm.selectedCategories,
@@ -909,6 +945,19 @@ export function ContentManager() {
                         ) : (
                           <p className="text-sm text-gray-500">Cliquez pour télécharger une image de campagne</p>
                         )}
+                        {campaignImageUploading && (
+                          <div className="mt-3">
+                            <p className="text-xs text-[#007B8A]">
+                              Téléchargement... {campaignImageProgress}%
+                            </p>
+                            <div className="h-2 w-full rounded bg-gray-200 overflow-hidden mt-1">
+                              <div
+                                className="h-full bg-[#007B8A] transition-all"
+                                style={{ width: `${campaignImageProgress}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -969,7 +1018,7 @@ export function ContentManager() {
                         {filteredProducts.map((p) => (
                           <div key={p.id} className={`border rounded p-2 flex items-center gap-2 ${campaignForm.selectedProductIds.includes(p.id) ? 'ring-2 ring-[#007B8A]' : ''}`}>
                             <input type="checkbox" checked={campaignForm.selectedProductIds.includes(p.id)} onChange={() => toggleProduct(p.id)} />
-                            <img src={p.productImage || '/public/homme.jfif'} alt={p.name} className="w-12 h-12 object-cover rounded" />
+                            <img src={p.productImage || '/homme.jfif'} alt={p.name} className="w-12 h-12 object-cover rounded" />
                             <div className="text-xs">
                               <div className="font-medium line-clamp-1">{p.name}</div>
                               <div className="text-gray-500">{(p.priceCents / 100).toFixed(2)} €</div>

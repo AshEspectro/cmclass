@@ -1,0 +1,1 @@
+const net=require('net');const s=net.createConnection({host:'mainline.proxy.rlwy.net',port:17349});s.setTimeout(8000);s.on('connect',()=;s.end();});s.on('timeout',()=;s.destroy();});s.on('error',(e)=,e.code

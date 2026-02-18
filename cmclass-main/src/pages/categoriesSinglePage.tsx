@@ -4,7 +4,7 @@ import HeaderPage from "../components/CardLayout";
 import HeroSection, { HeroProduct, ProductGrid } from "../components/Hero_cat";
 import { ViewMoreButton } from "../components/ViewMoreBttn";
 import { publicApi } from "../services/publicApi";
-import { ProductCard, type ApiProduct } from "../components/ProductCard";
+import { ProductCard, type ApiProduct } from "../components/ProductCard1";
 import { Skeleton, SkeletonProductCard } from "../components/Skeleton";
 
 type StatusError = Error & { status?: number };
@@ -31,6 +31,9 @@ export default function Category() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [productsByCategory, setProductsByCategory] = useState<Record<string, ApiProduct[]>>({});
   const [campaignCategories, setCampaignCategories] = useState<Array<Record<string, unknown>>>([]);
+  const [filteredCampaignCategoryIds, setFilteredCampaignCategoryIds] = useState<number[] | null>(
+    null
+  );
   const [isStandaloneCategory, setIsStandaloneCategory] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -68,6 +71,7 @@ export default function Category() {
               setIsStandaloneCategory(false);
               setSingleCategory(null);
               setProducts([]);
+              setFilteredCampaignCategoryIds(null);
               setLoading(false);
               return;
             }
@@ -78,6 +82,7 @@ export default function Category() {
               setIsStandaloneCategory(false);
               setSingleCategory(null);
               setProducts([]);
+              setFilteredCampaignCategoryIds(null);
               setLoading(false);
               return;
             }
@@ -87,6 +92,7 @@ export default function Category() {
           setCampaign(null);
           setCampaignCategories([]);
           setProductsByCategory({});
+          setFilteredCampaignCategoryIds(null);
 
           const categoryPromise = resolvedCategory
             ? Promise.resolve(resolvedCategory)
@@ -123,6 +129,7 @@ export default function Category() {
               setCampaignCategories([]);
               setProductsByCategory({});
               setProducts([]);
+              setFilteredCampaignCategoryIds(null);
               setLoading(false);
               return;
             }
@@ -172,6 +179,11 @@ export default function Category() {
           if (!mounted) return;
           setCampaign(campaignObj);
           setCampaignCategories(cats as Record<string, unknown>[]);
+          setFilteredCampaignCategoryIds(
+            (cats || [])
+              .map((c: any) => Number(c?.id))
+              .filter((id: number) => !isNaN(id) && id > 0)
+          );
           setProductsByCategory(byCatMap);
           const firstList = Object.values(byCatMap)[0] || [];
           setProducts((firstList as ApiProduct[]).slice(0, 9));
@@ -185,6 +197,7 @@ export default function Category() {
         setCampaignCategories([]);
         setProductsByCategory({});
         setProducts([]);
+        setFilteredCampaignCategoryIds(null);
         setLoading(false);
       } catch (err) {
         if (!mounted) return;
@@ -266,6 +279,13 @@ export default function Category() {
     );
   }
 
+  const visibleCampaignCategories =
+    filteredCampaignCategoryIds === null
+      ? campaignCategories
+      : campaignCategories.filter((cat: any) =>
+          filteredCampaignCategoryIds.includes(Number(cat?.id))
+        );
+
   return (
     <div className=" mt-8  ">
       {/* Standalone category view (no campaign) */}
@@ -276,8 +296,8 @@ export default function Category() {
             title={String((singleCategory as any).name || 'Collection')}
             description={String((singleCategory as any).description || '')}
           />
-          <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <section className="max-w-[1440px] mx-auto md:px-4 sm:px-6 lg:px-12 py-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-0 md:gap-6">
               {products.length === 0 ? (
                 <div className="col-span-full text-center text-gray-500">Aucun produit pour cette catégorie</div>
               ) : (
@@ -289,11 +309,15 @@ export default function Category() {
       ) : campaign ? (
         <>
           {/* Render HeaderPage with campaign categories at the top */}
-          <HeaderPage campaignCategories={campaignCategories} />
+          <HeaderPage
+            campaignCategories={campaignCategories}
+            onFilteredCategoryIdsChange={setFilteredCampaignCategoryIds}
+          />
           
           {/* If campaign contains categories, render one section per category */}
           {campaignCategories && campaignCategories.length > 0 ? (
-            campaignCategories.map((cat: any, idx: number) => {
+            visibleCampaignCategories.length > 0 ? (
+              visibleCampaignCategories.map((cat: any, idx: number) => {
               const cid = Number(cat?.id);
               const matched = campaignCategories.find((c: any) => Number((c as any).id) === cid) || cat;
               const catTitle = String(matched?.title || matched?.name || matched?.slug || (campaignCategories as any).title || 'Collection');
@@ -325,6 +349,11 @@ export default function Category() {
                 </section></>
               );
             })
+            ) : (
+              <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-10 text-center text-gray-500">
+                Aucune categorie ne correspond aux filtres selectionnes.
+              </div>
+            )
           ) : (
             // No categories on campaign: render campaign hero and generic products (first 9)
             <>
@@ -334,8 +363,8 @@ export default function Category() {
                 description={String((campaign as any).description || (campaign as any).subtitle || '')}
               />
 
-              <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-8">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <section className="max-w-[1440px] py-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {products.length === 0 ? (
                     <div className="col-span-full text-center text-gray-500">Aucun produit pour cette campagne</div>
                   ) : (

@@ -21,6 +21,7 @@ export interface ApiProduct {
   mannequinImage?: string;
   label?: string;
   description?: string;
+  longDescription?: string | null;
   colors?: Array<{ name?: string; hex: string; images?: string[] }> | string[];
   sizes?: string[];
   stock?: number;
@@ -43,6 +44,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   );
   const priceValue =
     product.price ?? (typeof product.priceCents === 'number' ? product.priceCents / 100 : 0);
+  const productDescription = product.description;
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -63,7 +65,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     >
       <Link to={`/product/${product.id}`} className="block relative overflow-hidden">
         {/* Image */}
-        <div className="aspect-3/4 bg-gray-100 relative">
+        <div className="aspect-[3/4] bg-gray-100 relative">
           {imageSrc && (
             <img
               src={imageSrc}
@@ -85,18 +87,21 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             />
           </button>
 
-          {/* Out of Stock Badge
+          {/* Out of Stock Badge*/}
           {!product.inStock && (
-            <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs">
+            <div className="absolute top-2 left-2  text-black  text-xs">
               ÉPUISÉ
             </div>
-          )} */}
+          )} 
         </div>
 
         {/* Product Info */}
         <div className="mt-4">
-  <p className="text-xs md:text-sm tracking-widest mb-1">{product.name}</p>
-  <p className=" text-cyan-700 text-[0.9rem] md:block">{formatPrice(priceValue)}</p>
+  <p className="text-[#007B8A] text-[0.8rem] md:text-sm tracking-widest mb-1">{product.name}</p>
+  {productDescription ? (
+    <p className="text-[0.78rem] md:text-sm tracking-wider mb-1">{productDescription}</p>
+  ) : null}
+  <p className="text-[0.9rem] md:block">{formatPrice(priceValue)}</p>
 </div>
 
       </Link>

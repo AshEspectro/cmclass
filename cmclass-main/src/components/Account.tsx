@@ -75,12 +75,12 @@ export const Account = ({ onClose }: AccountProps) => {
   // INFO BLOCK
   const MyLVInfo = () => (
     <div className=" mt-8 py-8 px-8 bg-gray-100 style-none rounded-md text-sm text-gray-700 space-y-2">
-      <p className="font-medium text-xs">What you will find in your MyLV account:</p>
+      <p className="font-medium text-xs">Ce que vous allez trouver dans votre compte Cmclass</p>
       <ul className="list-disc list-inside space-y-2 pl-8">
-        <li className=" py-2 text-xs">Access your order history</li>
-        <li className="border-t border-gray-200 py-2 text-xs">Manage your personal information</li>
-        <li className="border-t border-gray-200 py-2 text-xs">Receive Louis Vuitton's digital communications</li>
-        <li className="border-t border-gray-200 py-2 text-xs">Register your wishlist</li>
+        <li className=" py-2 text-xs">Accès à votre historique de commandes</li>
+        <li className="border-t border-gray-200 py-2 text-xs">Gérer vos informations personnelles</li>
+        <li className="border-t border-gray-200 py-2 text-xs">Récevoir des communications digitales de Cmclass</li>
+        <li className="border-t border-gray-200 py-2 text-xs">Enregitrer votre liste d'envies</li>
       </ul>
     </div>
   );
@@ -136,7 +136,7 @@ export const Account = ({ onClose }: AccountProps) => {
               )}
               <h2 className="t font-medium text-sm py-6">Identification</h2>
 
-              <p className="py-6 font-medium text-xs">I already have an account.</p>
+              <p className="py-6 font-medium text-xs">J'ai déja un compte</p>
 
               {/* Google Login */}
               <GoogleSignInButton
@@ -148,13 +148,13 @@ export const Account = ({ onClose }: AccountProps) => {
 
               <div className="flex items-center my-4">
                 <span className="flex-1 border-b border-gray-300" />
-                <span className="px-2 my-6 text-gray-500">OR</span>
+                <span className="px-2 my-6 text-gray-500">OU</span>
                 <span className="flex-1 border-b border-gray-300" />
               </div>
 
               <form onSubmit={handleLogin}>
-                <p className="font-regular flex justify-end text-xs ">Required Fields*</p>
-                <p className="font-regular pb-2 text-xs ">login*</p>
+                <p className="font-regular flex justify-end text-xs ">champs obligatoires*</p>
+                <p className="font-regular pb-2 text-xs ">adresse mail*</p>
                 <input
                   type="email"
                   placeholder="Login*"
@@ -165,7 +165,7 @@ export const Account = ({ onClose }: AccountProps) => {
                   className="w-full border border-gray-300 px-4 py-3 mb-6 rounded-md focus:border-[#007B8A]"
                   required
                 />
-                <p className="font-regular pb-2 text-xs ">Password*</p>
+                <p className="font-regular pb-2 text-xs ">Mot de passe*</p>
                 <input
                   type="password"
                   placeholder="Password*"
@@ -183,14 +183,14 @@ export const Account = ({ onClose }: AccountProps) => {
                     onClick={onClose}
                     className="text-[#007B8A] hover:underline text-xs"
                   >
-                    Forgot your password?
+                    J'ai oublier mon mot de passe?
                   </Link>
                   <Link
                     to="/alternative-login"
                     onClick={onClose}
                     className="text-xs text-gray-500 hover:underline"
                   >
-                    Email me the link
+                    M'envoyer le lien
                   </Link>
                 </div>
 
@@ -201,7 +201,7 @@ export const Account = ({ onClose }: AccountProps) => {
                   disabled={loading}
                   className="w-full bg-[#000000] text-md text-white py-3 my-4 rounded-3xl hover:bg-[#006170] disabled:bg-gray-400"
                 >
-                  {loading ? "Connexion..." : "Sign In"}
+                  {loading ? "Connexion..." : "Se connecter"}
                 </button>
               </form>
 

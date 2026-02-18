@@ -150,7 +150,7 @@ export const Navbar = () => {
 
                             <button
                                 onClick={() => setIsCartOpen(true)}
-                                className="relative hover:text-[#007B8A] transition-colors duration-300  hidden sm:block"
+                                className="relative hover:text-[#007B8A] transition-colors duration-300   sm:block"
                                 aria-label="Panier"
                             >
                                 <ShoppingBag size={22} />

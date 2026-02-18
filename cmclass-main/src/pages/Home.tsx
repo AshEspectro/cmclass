@@ -204,7 +204,7 @@ export const Home = () => {
       <section className="py-8">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
           <motion.h3
-            className="text-center lg:px-20 mb-6 sm:mb-8 text-3xl font-regular  tracking-widest"
+            className="text-center lg:px-20 mb-6 sm:mb-8 text-[1.1rem] lg:text-3xl   tracking-widest"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -233,7 +233,7 @@ export const Home = () => {
                       />
                     </div>
                     <div className="my-4  text-center">
-                      <p className="text-sm font-bold  tracking-widest group-hover:text-[#007B8A] transition-colors">
+                      <p className="text-[0.8rem] sm:text-xs md:text-xs lg:text-xs lg:font-bold  tracking-widest group-hover:text-[#007B8A] transition-colors">
                         {cat.title || cat.name}
                       </p>
                     </div>
@@ -275,7 +275,7 @@ export const Home = () => {
               />
 
               <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 mt-8">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                   {productsLoading ? (
                     Array.from({ length: 4 }).map((_, i) => <SkeletonProductCard key={i} />)
                   ) : campaignProducts.length > 0 ? (
@@ -294,7 +294,7 @@ export const Home = () => {
                 <div className="text-center mt-12">
                   <Link
                     to={`/category?campaign=${campaign.id}`}
-                    className="inline-block border border-black hover:border-2 font-medium px-10 py-4 text-sm transition-all duration-300 rounded-full tracking-widest"
+                    className="inline-block border  hover:border-2  px-8 py-3 text-sm transition-all duration-300 rounded-full tracking-widest"
                   >
                     {campaign.buttonText || 'Découvrir la collection'}
                   </Link>

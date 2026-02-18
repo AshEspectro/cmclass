@@ -17,13 +17,39 @@ import ResponsiveFilter from "./Filter_wrapper";
 import { categoriesData, filtersData } from "../data/products";
 //import { ViewMoreButton } from "./ViewMoreBttn";
 
-interface FilterNavbarProps {
-  categories: typeof categoriesData;
-  selectedCategory: string | null;
-  onSelect: (category: string | null) => void;
+type SelectedFilters = Record<string, unknown>;
+
+interface CategoryItem {
+  category: string;
+  image: string;
+  categoryId?: number;
+  description?: string;
+  slug?: string;
+  productCount?: number;
 }
 
-const FilterNavbar: FC<FilterNavbarProps> = ({ categories, selectedCategory, onSelect }) => {
+const mapCampaignCategory = (c: Record<string, unknown>): CategoryItem => ({
+  category: String(c.name || c.title || c.label || "Collection"),
+  image: String(c.imageUrl || c.image || "/homme.jfif"),
+  categoryId: typeof c.id === "number" ? c.id : undefined,
+  description: c.description ? String(c.description) : undefined,
+  slug: c.slug ? String(c.slug) : undefined,
+  productCount: typeof c.productCount === "number" ? c.productCount : undefined,
+});
+
+interface FilterNavbarProps {
+  categories: CategoryItem[];
+  selectedCategory: string | null;
+  onSelect: (category: string | null) => void;
+  onApplyFilters: (selected: SelectedFilters) => void;
+}
+
+const FilterNavbar: FC<FilterNavbarProps> = ({
+  categories,
+  selectedCategory,
+  onSelect,
+  onApplyFilters,
+}) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterCount, setFilterCount] = useState(0);
@@ -102,7 +128,7 @@ const FilterNavbar: FC<FilterNavbarProps> = ({ categories, selectedCategory, onS
         filters={filtersData}
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
-        onApply={(selected) => console.log("Filters:", selected)}
+        onApply={(selected) => onApplyFilters(selected)}
         onCountChange={setFilterCount} // updates filter count badge
       />
     </div>
@@ -247,23 +273,59 @@ const CarouselSection: FC<CarouselSectionProps> = ({ cards }) => {
 
 interface HeaderPageProps {
   campaignCategories?: Array<Record<string, unknown>>;
+  onFilteredCategoryIdsChange?: (categoryIds: number[]) => void;
 }
 
 /** PARENT COMPONENT */
-const HeaderPage: FC<HeaderPageProps> = ({ campaignCategories: propCampaignCategories }) => {
+const HeaderPage: FC<HeaderPageProps> = ({
+  campaignCategories: propCampaignCategories,
+  onFilteredCategoryIdsChange,
+}) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({});
   const location = useLocation();
-  const [remoteCategories, setRemoteCategories] = useState<typeof categoriesData | null>(null);
+  const [remoteCategories, setRemoteCategories] = useState<CategoryItem[] | null>(null);
+
+  const categoryMatchesFilters = (category: CategoryItem, applied: SelectedFilters) => {
+    const searchText = `${category.category} ${category.description || ""} ${category.slug || ""}`
+      .toLowerCase()
+      .trim();
+
+    const activeEntries = Object.entries(applied).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return value === true;
+    });
+
+    if (activeEntries.length === 0) return true;
+
+    for (const [label, value] of activeEntries) {
+      const normalizedLabel = label.toLowerCase();
+
+      if (Array.isArray(value)) {
+        // "Sort by" affects ordering, not inclusion.
+        if (normalizedLabel.includes("sort")) continue;
+
+        const matchesAnyOption = value.some((option) =>
+          searchText.includes(String(option).toLowerCase())
+        );
+        if (!matchesAnyOption) return false;
+        continue;
+      }
+
+      if (value === true && normalizedLabel.includes("available")) {
+        // If explicit availability metadata exists on category, enforce it.
+        const availability = (category as Record<string, unknown>).availableOnline;
+        if (typeof availability === "boolean" && !availability) return false;
+      }
+    }
+
+    return true;
+  };
 
   useEffect(() => {
     // If campaign categories are passed as props, use them directly
     if (propCampaignCategories && propCampaignCategories.length > 0) {
-      const mapped = propCampaignCategories.map((c: Record<string, unknown>) => ({
-        category: String(c.name || c.title || c.label || 'Collection'),
-        image: String(c.imageUrl || c.image || '/homme.jfif'),
-        categoryId: typeof c.id === 'number' ? c.id : undefined,
-      }));
-      setRemoteCategories(mapped as typeof categoriesData);
+      setRemoteCategories(null);
       return;
     }
 
@@ -283,13 +345,9 @@ const HeaderPage: FC<HeaderPageProps> = ({ campaignCategories: propCampaignCateg
           const body = await resp.json();
           const cats = Array.isArray(body.data) ? body.data : (body.data || []);
 
-const mapped = cats.map((c: Record<string, unknown>) => ({
-            category: String(c.name || c.title || c.label || 'Collection'),
-            image: String(c.imageUrl || c.image || '/homme.jfif'),
-            categoryId: typeof c.id === 'number' ? c.id : undefined,
-          }));
+const mapped = cats.map(mapCampaignCategory);
 
-        if (mounted) setRemoteCategories(mapped as typeof categoriesData);
+        if (mounted) setRemoteCategories(mapped);
         }
       } catch {
         // ignore and keep fallback
@@ -300,20 +358,40 @@ const mapped = cats.map((c: Record<string, unknown>) => ({
   }, [location.search, propCampaignCategories]);
 
   // Determine source categories (remote when available)
-  const sourceCategories = remoteCategories || categoriesData;
+  const propMappedCategories = Array.isArray(propCampaignCategories)
+    ? propCampaignCategories.map(mapCampaignCategory)
+    : [];
 
-  // If requested for a single category (via query) or the campaign has only one category, hide the FilterNavbar
+  const sourceCategories: CategoryItem[] =
+    (propMappedCategories.length > 0 ? propMappedCategories : remoteCategories) ||
+    categoriesData.map((item) => ({
+      category: item.category,
+      image: item.image,
+    }));
+
+  // If a single category is requested via query, hide the FilterNavbar.
   const params = new URLSearchParams(location.search);
   const singleCategoryRequested = !!params.get('categoryId');
-  const showFilterNavbar = !singleCategoryRequested && (!remoteCategories || (remoteCategories && remoteCategories.length > 1));
+  const showFilterNavbar = !singleCategoryRequested && sourceCategories.length > 0;
+
+  const filteredSourceCategories = sourceCategories
+    .filter((item) => !selectedCategory || item.category === selectedCategory)
+    .filter((item) => categoryMatchesFilters(item, selectedFilters));
+
+  useEffect(() => {
+    if (!onFilteredCategoryIdsChange) return;
+    const ids = filteredSourceCategories
+      .map((item) => item.categoryId)
+      .filter((id): id is number => typeof id === "number");
+    onFilteredCategoryIdsChange(ids);
+  }, [filteredSourceCategories, onFilteredCategoryIdsChange]);
 
   // Filter cards based on selected category
-  const filteredCards: CardData[] = sourceCategories
-    .filter((item) => !selectedCategory || item.category === selectedCategory)
+  const filteredCards: CardData[] = filteredSourceCategories
     .map((item) => ({
       image: item.image,
       categories: [item.category],
-      categoryId: (item as Record<string, unknown>).categoryId as number | undefined,
+      categoryId: item.categoryId,
     }));
 
   return (
@@ -324,6 +402,7 @@ const mapped = cats.map((c: Record<string, unknown>) => ({
           categories={sourceCategories}
           selectedCategory={selectedCategory}
           onSelect={setSelectedCategory}
+          onApplyFilters={setSelectedFilters}
         />
       )}
     <CarouselSection cards={filteredCards} />
