@@ -62,6 +62,17 @@ export class AuthController {
     return result;
   }
 
+  @Post('admin/oauth')
+  async adminOauth(@Body() dto: OAuthDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.adminOauthLogin(dto.provider, dto.token, !!dto.remember);
+    if ((result as any).refresh_token) {
+      const refresh = (result as any).refresh_token;
+      res.cookie('refresh_token', refresh, this.getCookieOptions());
+      delete (result as any).refresh_token;
+    }
+    return result;
+  }
+
   @Post('refresh')
   async refresh(@Req() req: Request, @Body() body: { refresh_token?: string }) {
     const token = (req as any).cookies?.refresh_token || body?.refresh_token;

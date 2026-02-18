@@ -19,7 +19,7 @@ import { Button } from './Button';
 interface SidebarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
-  brand?: { name?: string; logoDarkUrl?: string } | null;
+  brand?: { name?: string; logoLightUrl?: string } | null;
   onLogout: () => void;
 }
 
@@ -76,8 +76,8 @@ export function Sidebar({ currentPage, onNavigate, brand, onLogout }: SidebarPro
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 flex flex-col">
       <div className="px-8 py-8 border-b border-gray-100">
-        {brand?.logoDarkUrl ? (
-          <img src={brand.logoDarkUrl} alt={brand?.name || 'Brand'} className="h-22 " />
+        {brand?.logoLightUrl ? (
+          <img src={brand.logoLightUrl} alt={brand?.name || 'Brand'} className="h-22 " />
         ) : (
           <h1 className="text-2xl tracking-tight">{brand?.name || 'MAISON'}</h1>
         )}

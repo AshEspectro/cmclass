@@ -136,6 +136,49 @@ export class AuthService {
     return { access_token, refresh_token };
   }
 
+  async adminOauthLogin(provider: string, token: string, remember = false) {
+    if (provider !== 'google') throw new BadRequestException('Unsupported provider');
+
+    const client = this.getGoogleClient();
+    let payload: any;
+    try {
+      const ticket = await client.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
+      payload = ticket.getPayload();
+    } catch (err) {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+
+    const email = payload?.email;
+    if (!email) throw new UnauthorizedException('Google token did not contain email');
+
+    let user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new UnauthorizedException('Access denied. Administrator account required.');
+    }
+
+    const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'MODERATOR', 'SUPPORT'];
+    if (!allowedRoles.includes(user.role)) {
+      throw new UnauthorizedException('Access denied. Administrator privileges required.');
+    }
+
+    if (!user.emailVerified) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: true, emailVerifyToken: null, emailVerifyExpires: null },
+      });
+    }
+
+    const access_token = this.jwtService.sign({ sub: user.id, username: user.username, role: user.role });
+
+    if (!remember) return { access_token };
+
+    const refresh_token = this.jwtService.sign({ sub: user.id, username: user.username, role: user.role }, { expiresIn: '30d' });
+    const hashedRefresh = await bcrypt.hash(refresh_token, 10);
+    await this.prisma.user.update({ where: { id: user.id }, data: { refreshToken: hashedRefresh } });
+
+    return { access_token, refresh_token };
+  }
+
   async generatePasswordResetToken(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new NotFoundException('User not found');

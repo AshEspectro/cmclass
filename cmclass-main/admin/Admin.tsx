@@ -18,6 +18,7 @@ import { Signup } from './components/auth/Signup';
 
 
 function Index() {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -35,7 +36,7 @@ function Index() {
     }
 
     // fetch public brand data (logo/name)
-    fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/brand')
+    fetch(`${API_BASE_URL}/brand`)
       .then(r => r.json())
       .then(b => setBrand(b))
       .catch(() => { });
@@ -56,6 +57,39 @@ function Index() {
       window.removeEventListener('cmclass:unauthorized', handleUnauthorized);
     };
   }, []);
+
+  const persistAccessToken = (token: string, remember: boolean) => {
+    if (remember) {
+      localStorage.setItem('access_token', token);
+      sessionStorage.removeItem('access_token');
+      return;
+    }
+    sessionStorage.setItem('access_token', token);
+    localStorage.removeItem('access_token');
+  };
+
+  const handleAdminGoogleLogin = async (credential: string, remember: boolean) => {
+    setMessage(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/admin/oauth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ provider: 'google', token: credential, remember }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || data?.error || 'Google login failed');
+
+      const token = data?.access_token;
+      if (!token) throw new Error('Google login failed');
+      persistAccessToken(token, remember);
+
+      setMessage({ type: 'success', text: 'Section Administration connectée' });
+      setIsAuthenticated(true);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err?.message || 'Erreur de connexion Google Admin' });
+    }
+  };
 
   const pageConfig = {
     dashboard: {
@@ -140,10 +174,12 @@ function Index() {
         <Login
           brand={brand}
           message={message}
+          onGoogleLogin={handleAdminGoogleLogin}
+          onGoogleError={(text) => setMessage({ type: 'error', text })}
           onLogin={async (payload: { email: string; password: string; remember: boolean }) => {
             setMessage(null);
             try {
-              const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/auth/admin/login', {
+              const res = await fetch(`${API_BASE_URL}/auth/admin/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -155,11 +191,7 @@ function Index() {
               const token = data?.access_token;
               if (token) {
                 console.log('✓ Admin Token received:', token.substring(0, 20) + '...');
-                if (payload.remember) {
-                  localStorage.setItem('access_token', token);
-                } else {
-                  sessionStorage.setItem('access_token', token);
-                }
+                persistAccessToken(token, payload.remember);
               }
               setMessage({ type: 'success', text: 'Section Administration connectée' });
               setIsAuthenticated(true);
@@ -176,10 +208,12 @@ function Index() {
         <Signup
           brand={brand}
           message={message}
+          onGoogleLogin={handleAdminGoogleLogin}
+          onGoogleError={(text) => setMessage({ type: 'error', text })}
           onSignup={async (payload: { name: string; email: string; brandName: string; password: string; acceptTerms: boolean }) => {
             setMessage(null);
             try {
-              const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/auth/signup', {
+              const res = await fetch(`${API_BASE_URL}/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: payload.name, email: payload.email, roleRequested: 'ADMIN', message: payload.brandName, password: payload.password }),
@@ -199,14 +233,14 @@ function Index() {
               pollRef.current = window.setInterval(async () => {
                 polls += 1;
                 try {
-                  const st = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + `/auth/signup-status?email=${encodeURIComponent(payload.email)}`);
+                  const st = await fetch(`${API_BASE_URL}/auth/signup-status?email=${encodeURIComponent(payload.email)}`);
                   const j = await st.json();
                   const status = j?.status;
                   if (status === 'APPROVED') {
                     // attempt auto-login with stored credentials
                     if (pollRef.current) { window.clearInterval(pollRef.current); pollRef.current = null; }
                     try {
-                      const loginRes = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/auth/admin/login', {
+                      const loginRes = await fetch(`${API_BASE_URL}/auth/admin/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
@@ -219,7 +253,7 @@ function Index() {
                         return;
                       }
                       const token = loginData?.access_token;
-                      if (token) localStorage.setItem('access_token', token);
+                      if (token) persistAccessToken(token, true);
                       setMessage({ type: 'success', text: 'Compte approuvé — connecté automatiquement' });
                       setIsAuthenticated(true);
                     } catch (e: any) {
