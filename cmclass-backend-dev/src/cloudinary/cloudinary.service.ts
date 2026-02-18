@@ -27,18 +27,31 @@ export class CloudinaryService {
             throw new BadRequestException('No file provided');
         }
 
+        const mimetype = (file.mimetype || '').toLowerCase();
+        const originalName = (file.originalname || '').toLowerCase();
+        const isSvg =
+            mimetype.includes('svg') ||
+            mimetype === 'text/xml' ||
+            mimetype === 'application/xml' ||
+            originalName.endsWith('.svg');
+
+        const uploadOptions: Record<string, unknown> = {
+            folder: `cmclass/${folder}`,
+            // SVG is better handled explicitly as an image asset.
+            resource_type: isSvg ? 'image' : 'auto',
+        };
+
+        if (!isSvg) {
+            uploadOptions.transformation = [
+                { quality: 'auto:good' },
+                { fetch_format: 'auto' },
+            ];
+        }
+
         return new Promise<string>((resolve, reject) => {
             // Create a readable stream from the buffer
             const uploadStream = cloudinary.uploader.upload_stream(
-                {
-                    folder: `cmclass/${folder}`,
-                    resource_type: 'auto', // Automatically detect the resource type
-                    // Skip transformations for SVGs to preserve vector quality
-                    transformation: file.mimetype === 'image/svg+xml' ? undefined : [
-                        { quality: 'auto:good' }, // Automatic quality optimization
-                        { fetch_format: 'auto' }, // Automatic format optimization (WebP, AVIF)
-                    ],
-                },
+                uploadOptions,
                 (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
                     if (error) {
                         console.error('Cloudinary upload error:', error);

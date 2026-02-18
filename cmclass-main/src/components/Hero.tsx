@@ -78,7 +78,7 @@ export const Hero = (props: HeroProps = {}) => {
   return (
     <div
   ref={ref}
-  className="relative h-[75vh] sm:h-[75vh] md:h-[85vh] lg:h-screen overflow-hidden"
+  className="relative h-[80vh] sm:h-[75vh] md:h-[85vh] mt-20 lg:h-screen overflow-hidden"
 >
 
       {/* Background Video/Image */}

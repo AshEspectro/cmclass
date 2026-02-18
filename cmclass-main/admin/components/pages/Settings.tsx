@@ -54,9 +54,10 @@ interface SettingsProps {
     logoDarkUrl?: string;
     faviconUrl?: string;
   } | null;
+  onBrandUpdated?: (brand: any) => void;
 }
 
-export function Settings({ brand }: SettingsProps) {
+export function Settings({ brand, onBrandUpdated }: SettingsProps) {
   const [activeTab, setActiveTab] = useState<'brand' | 'team' | 'notifications' | 'footer'>('brand');
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
@@ -88,6 +89,7 @@ export function Settings({ brand }: SettingsProps) {
   const [faviconProgress, setFaviconProgress] = useState(0);
   const [brandLogoLight, setBrandLogoLight] = useState(brand?.logoLightUrl || '');
   const [brandLogoDark, setBrandLogoDark] = useState(brand?.logoDarkUrl || '');
+  const [brandFavicon, setBrandFavicon] = useState(brand?.faviconUrl || '');
   const [footerSections, setFooterSections] = useState<AdminFooterSection[]>([]);
   const [footerLoading, setFooterLoading] = useState(false);
   const [footerError, setFooterError] = useState<string | null>(null);
@@ -162,6 +164,7 @@ export function Settings({ brand }: SettingsProps) {
       const fallbackLogo = brand.logoUrl || '';
       setBrandLogoLight(brand.logoLightUrl || fallbackLogo);
       setBrandLogoDark(brand.logoDarkUrl || fallbackLogo);
+      setBrandFavicon(brand.faviconUrl || '');
     }
   }, [brand]);
 
@@ -186,7 +189,16 @@ export function Settings({ brand }: SettingsProps) {
       onProgress,
     } = options || {};
 
-    if (!file.type.startsWith('image/')) {
+    const mimeType = (file.type || '').toLowerCase();
+    const filename = (file.name || '').toLowerCase();
+    const isSvg =
+      filename.endsWith('.svg') ||
+      mimeType.includes('svg') ||
+      mimeType === 'text/xml' ||
+      mimeType === 'application/xml';
+
+    const isImage = mimeType.startsWith('image/') || isSvg;
+    if (!isImage) {
       throw new Error('Veuillez sélectionner un fichier image valide');
     }
     if (file.size > maxBytes) {
@@ -203,6 +215,35 @@ export function Settings({ brand }: SettingsProps) {
       onProgress,
     });
     return data.url as string;
+  };
+
+  const persistBrandAssets = async (assets: {
+    logoUrl?: string | null;
+    logoLightUrl?: string | null;
+    logoDarkUrl?: string | null;
+    faviconUrl?: string | null;
+  }) => {
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('Session expirée. Veuillez vous reconnecter.');
+    }
+    const response = await fetch(`${BACKEND_URL}/admin/brand`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(assets),
+    });
+
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message = payload?.message || payload?.error || 'Erreur lors de la sauvegarde de la marque';
+      throw new Error(Array.isArray(message) ? message.join(', ') : message);
+    }
+
+    onBrandUpdated?.(payload?.data || null);
+    return payload?.data || null;
   };
 
   const loadFooterSections = async () => {
@@ -235,6 +276,14 @@ export function Settings({ brand }: SettingsProps) {
         onProgress: setLogoLightProgress,
       });
       setBrandLogoLight(url);
+      const currentDarkLogo = brandLogoDark.trim();
+      const fallbackLogo = currentDarkLogo || url || brand?.logoUrl || null;
+      await persistBrandAssets({
+        logoUrl: fallbackLogo,
+        logoLightUrl: url,
+        logoDarkUrl: currentDarkLogo || null,
+      });
+      alert('Logo clair téléversé et sauvegardé');
     } catch (error) {
       alert('Erreur lors du téléchargement du logo clair: ' + (error as Error).message);
     } finally {
@@ -256,6 +305,14 @@ export function Settings({ brand }: SettingsProps) {
         onProgress: setLogoDarkProgress,
       });
       setBrandLogoDark(url);
+      const currentLightLogo = brandLogoLight.trim();
+      const fallbackLogo = url || currentLightLogo || brand?.logoUrl || null;
+      await persistBrandAssets({
+        logoUrl: fallbackLogo,
+        logoDarkUrl: url,
+        logoLightUrl: currentLightLogo || null,
+      });
+      alert('Logo sombre téléversé et sauvegardé');
     } catch (error) {
       alert('Erreur lors du téléchargement du logo sombre: ' + (error as Error).message);
     } finally {
@@ -272,13 +329,15 @@ export function Settings({ brand }: SettingsProps) {
     setFaviconUploading(true);
     setFaviconProgress(0);
     try {
-      await uploadBrandAsset(file, {
+      const url = await uploadBrandAsset(file, {
         assetLabel: 'Le favicon',
         maxBytes: FAVICON_MAX_BYTES,
         warnBytes: FAVICON_WARN_BYTES,
         onProgress: setFaviconProgress,
       });
-      alert('Favicon téléchargé avec succès');
+      setBrandFavicon(url);
+      await persistBrandAssets({ faviconUrl: url });
+      alert('Favicon téléversé et sauvegardé');
     } catch (error) {
       alert('Erreur lors du téléchargement du favicon: ' + (error as Error).message);
     } finally {
@@ -316,14 +375,19 @@ export function Settings({ brand }: SettingsProps) {
           logoUrl: fallbackLogo || null,
           logoLightUrl: logoLightUrl || null,
           logoDarkUrl: logoDarkUrl || null,
+          faviconUrl: brandFavicon.trim() || null,
         }),
       });
       
       if (response.ok) {
+        const payload = await response.json().catch(() => null);
         setBrandForm(normalizedBrandForm);
+        onBrandUpdated?.(payload?.data || null);
         alert('Paramètres de marque mis à jour avec succès');
       } else {
-        alert('Erreur lors de la mise à jour');
+        const payload = await response.json().catch(() => null);
+        const message = payload?.message || payload?.error || 'Erreur lors de la mise à jour';
+        alert(Array.isArray(message) ? message.join(', ') : message);
       }
     } catch (error) {
       alert('Erreur lors de la mise à jour: ' + (error as Error).message);
@@ -887,6 +951,11 @@ export function Settings({ brand }: SettingsProps) {
                   </div>
                   <div>
                     <label className="block text-sm mb-2 text-gray-700">Favicon</label>
+                    {brandFavicon && (
+                      <div className="mb-4 w-16 h-16 bg-gray-100 rounded overflow-hidden border border-gray-200">
+                        <img src={brandFavicon} alt="Favicon" className="w-full h-full object-contain p-1" />
+                      </div>
+                    )}
                     <input 
                       type="file" 
                       id="brand-favicon"

@@ -111,7 +111,18 @@ function Index() {
     settings: {
       title: 'Paramètres',
       subtitle: 'Configurer la marque, l\'équipe et les préférences du tableau de bord',
-      component: <Settings brand={brand} />
+      component: (
+        <Settings
+          brand={brand}
+          onBrandUpdated={(updatedBrand) => {
+            if (!updatedBrand) return;
+            setBrand((prev: any) => ({
+              ...(prev || {}),
+              ...updatedBrand,
+            }));
+          }}
+        />
+      )
     },
     inbox: {
       title: 'Boîte Mail',
