@@ -6,6 +6,7 @@ import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { MegaMenu } from './MegaMenu';
 import { SearchPanel } from './SearchPanel';
+import { ContactPanel } from './ContactPanel';
 import { CartOverlay } from './CartOverlay';
 import { UserAccountOverlayWrapper } from "./Account";
 export const Navbar = () => {
@@ -13,6 +14,7 @@ export const Navbar = () => {
     const [isPastHero, setIsPastHero] = useState(false);
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [isContactOpen, setIsContactOpen] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [mobileSearchQuery, setMobileSearchQuery] = useState('');
     const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -53,12 +55,12 @@ export const Navbar = () => {
     }, []);
 
     useEffect(() => {
-        if (isMegaMenuOpen || isSearchOpen || isCartOpen) {
+        if (isMegaMenuOpen || isSearchOpen || isCartOpen || isContactOpen) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
         }
-    }, [isMegaMenuOpen, isSearchOpen, isCartOpen]);
+    }, [isMegaMenuOpen, isSearchOpen, isCartOpen, isContactOpen]);
 
     return (
         <>
@@ -125,7 +127,7 @@ export const Navbar = () => {
                         {/* RIGHT SECTION */}
                         <div className="flex items-center  gap-4 sm:gap-6 xl:gap-8">
                             <button
-                                onClick={() => setIsSearchOpen(true)}
+                                onClick={() => setIsContactOpen(true)}
                                 className="text-sm text-gray-500 hover:text-[#007B8A] transition-colors duration-300 hidden md:block"
                             >
                                 Contactez-nous
@@ -200,6 +202,10 @@ export const Navbar = () => {
 
             <AnimatePresence>
                 {isSearchOpen && <SearchPanel onClose={() => setIsSearchOpen(false)} />}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {isContactOpen && <ContactPanel onClose={() => setIsContactOpen(false)} />}
             </AnimatePresence>
 
             <AnimatePresence>

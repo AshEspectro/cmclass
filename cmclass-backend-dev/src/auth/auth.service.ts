@@ -269,15 +269,17 @@ export class AuthService {
     const hashedVerifyToken = crypto.createHash('sha256').update(verifyToken).digest('hex');
     const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+    const sendVerification = process.env.SEND_VERIFICATION_EMAIL !== 'false';
+
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         password: hashedPassword,
         username: finalUsername,
         role: 'USER',
-        emailVerified: false,
-        emailVerifyToken: hashedVerifyToken,
-        emailVerifyExpires: verifyExpires,
+        emailVerified: !sendVerification,
+        emailVerifyToken: sendVerification ? hashedVerifyToken : null,
+        emailVerifyExpires: sendVerification ? verifyExpires : null,
         title: dto.title,
         firstName: dto.firstName,
         lastName: dto.lastName,
@@ -291,11 +293,15 @@ export class AuthService {
       },
     });
 
-    const frontendBase = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const verifyUrl = `${frontendBase}/verify-email?token=${verifyToken}`;
-    await this.mail.sendEmailVerification(user.email, user.firstName || user.username, verifyUrl);
+    if (sendVerification) {
+      const frontendBase = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const verifyUrl = `${frontendBase}/verify-email?token=${verifyToken}`;
+      await this.mail.sendEmailVerification(user.email, user.firstName || user.username, verifyUrl);
 
-    return { message: 'Verification email sent' };
+      return { message: 'Verification email sent' };
+    }
+
+    return { message: 'Registration successful' };
   }
 
   async verifyEmail(token: string) {
