@@ -19,7 +19,8 @@ export class AuthService {
 
   private getGoogleClient() {
     const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
-    return new OAuth2Client(clientId);
+    const cleanClientId = clientId?.replace(/['"]/g, '').trim();
+    return new OAuth2Client(cleanClientId);
   }
 
   async validateUser(email: string, password: string) {
@@ -101,10 +102,13 @@ export class AuthService {
     const client = this.getGoogleClient();
     let payload: any;
     try {
-      const ticket = await client.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
+      const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+      const cleanClientId = clientId?.replace(/['"]/g, '').trim();
+      const ticket = await client.verifyIdToken({ idToken: token, audience: cleanClientId });
       payload = ticket.getPayload();
-    } catch (err) {
-      throw new UnauthorizedException('Invalid Google token');
+    } catch (err: any) {
+      console.error('Google token verification failed (user):', err);
+      throw new UnauthorizedException(`Invalid Google token: ${err.message}`);
     }
 
     const email = payload?.email;
@@ -142,10 +146,13 @@ export class AuthService {
     const client = this.getGoogleClient();
     let payload: any;
     try {
-      const ticket = await client.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
+      const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+      const cleanClientId = clientId?.replace(/['"]/g, '').trim();
+      const ticket = await client.verifyIdToken({ idToken: token, audience: cleanClientId });
       payload = ticket.getPayload();
-    } catch (err) {
-      throw new UnauthorizedException('Invalid Google token');
+    } catch (err: any) {
+      console.error('Google token verification failed (admin):', err);
+      throw new UnauthorizedException(`Invalid Google token: ${err.message}`);
     }
 
     const email = payload?.email;
