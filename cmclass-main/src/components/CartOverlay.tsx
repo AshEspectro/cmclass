@@ -209,7 +209,7 @@ export const CartOverlay = ({ onClose }: CartOverlayProps) => {
               <span>TOTAL</span>
               <span>{formatPrice(total)}</span>
             </div>
-            <Link to="/panier" className="w-full bg-[#007B8A] text-white py-3 sm:py-4 px-16 text-sm sm:text-base rounded-full mb-2 sm:mb-3 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg">
+            <Link to="/panier" onClick={onClose} className="w-full bg-[#007B8A] text-white py-3 sm:py-4 px-16 text-sm sm:text-base rounded-full mb-2 sm:mb-3 hover:bg-[#006170] transition-all duration-300 hover:scale-105 hover:shadow-lg">
               Valider la commande
             </Link>
             

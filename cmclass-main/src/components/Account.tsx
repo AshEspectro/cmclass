@@ -4,7 +4,7 @@ import { User, LogOut } from "lucide-react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { GoogleSignInButton } from "./GoogleSignInButton";
+import { GoogleSignInButton } from "./GoogleSignInButton"; 
 
 // WRAPPER (User icon trigger)
 export const UserAccountOverlayWrapper = () => {
@@ -210,17 +210,17 @@ export const Account = ({ onClose }: AccountProps) => {
           )}
         </div>
         <div className="mt-8 border-t border-gray-200 pt-6 ">
-          <div className="px-8 md:px-16 lg:px-32">
+          <div className="px-8 md:px-16 py-8 lg:px-32">
             
             {isAuthenticated ? (
-              <div className="space-y-3">
+              <div className="space-y-3 ">
                 <Link to="/mes-commandes" onClick={onClose}>
-                  <button className="w-full border-2 border-[#007B8A] py-2 rounded-3xl hover:bg-[#f0fafa] transition">
+                  <button className="w-full border-2 border-[#007B8A] py-12 rounded-3xl mb-12 hover:bg-[#f0fafa] transition">
                     Voir mes commandes
                   </button>
                 </Link>
                 <Link to="/monprofil" onClick={onClose}>
-                  <button className="w-full border-2 border-[#007B8A] py-2 rounded-3xl hover:bg-[#f0fafa] transition">
+                  <button className="w-full border-2 border-[#007B8A] py-12 rounded-3xl hover:bg-[#f0fafa] transition">
                     Consulter mon profil CMclass
                   </button>
                 </Link>

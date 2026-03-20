@@ -39,6 +39,7 @@ import Accessibilite from './pages/Accessibilite';
 import Cookies from './pages/Cookies';
 import FAQ from './pages/FAQ';
 import SuiviCommande from './pages/SuiviCommande';
+import OrderSuccess from './pages/OrderSuccess';
 
 function AppWrapper() {
   const location = useLocation();
@@ -93,6 +94,7 @@ function AppWrapper() {
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/mes-commandes" element={<SuiviCommande />} />
                       <Route path="/suivi" element={<SuiviCommande />} />
+                      <Route path="/commande-succes" element={<OrderSuccess />} />
                       <Route path="/forgot-password" element={<ForgotPwd />} />
                       <Route path="/verify-email" element={<VerifyEmail />} />
                       <Route path="/monprofil" element={<MonProfile />} />

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ShieldCheck, Truck, RefreshCcw, Store, ChevronRight, Heart, X, Plus, Minus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 import { useWishlist } from "../contexts/WishlistContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -56,6 +56,7 @@ export function CMClassOverlay({ open, onClose, title, children }: CMClassOverla
 
 
 export default function Cartpage() {
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { items: cartItems } = useCart();            // <-- YOUR CART DATA
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
@@ -99,8 +100,10 @@ export default function Cartpage() {
         const payload = await response.json().catch(() => null);
         throw new Error(payload?.message || "Échec de la création de la commande.");
       }
+      const data = await response.json();
+      const orderId = data?.data?.id;
       clearCart();
-      setCheckoutMessage("Commande créée avec succès.");
+      navigate('/commande-succes', { state: { orderId } });
     } catch (err: any) {
       setCheckoutMessage(err?.message || "Une erreur est survenue.");
     } finally {

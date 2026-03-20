@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Phone, MessageCircle, HeadphonesIcon, Mail } from 'lucide-react';
+import { X, Phone, MessageCircle, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
 import { publicApi } from '../services/publicApi';
 
@@ -77,22 +77,22 @@ export const ContactPanel = ({ onClose }: ContactPanelProps) => {
                 <span className="text-sm tracking-wide">{brand.contactEmail}</span>
               </a>
             )}
-            
+
             {brand?.pinterestUrl && (
               <a href={brand.pinterestUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 text-gray-800 hover:text-[#007B8A] transition-colors group">
                 <MessageCircle size={20} className="text-gray-400 group-hover:text-[#007B8A]" />
                 <span className="text-sm tracking-wide">WhatsApp</span>
               </a>
             )}
-            
+
             {brand?.facebookUrl && (
               <a href={brand.facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 text-gray-800 hover:text-[#007B8A] transition-colors group">
                 <MessageCircle size={20} className="text-gray-400 group-hover:text-[#007B8A]" />
                 <span className="text-sm tracking-wide">Facebook</span>
               </a>
             )}
-            
-            
+
+
           </div>
 
           {/* Divider */}
@@ -103,17 +103,17 @@ export const ContactPanel = ({ onClose }: ContactPanelProps) => {
             <div className="space-y-6">
 
               <Link to="/contact" onClick={onClose} className="flex items-center gap-4 text-gray-800 hover:text-[#007B8A] transition-colors group">
-                
+
                 <span className="text-sm tracking-wide">Besoin d'aide ?</span>
               </Link>
 
               <Link to="/faq" onClick={onClose} className="flex items-center gap-4 text-gray-800 hover:text-[#007B8A] transition-colors group">
-                
+
                 <span className="text-sm tracking-wide">Vos questions</span>
               </Link>
-              
+
               <Link to="/a-propos" onClick={onClose} className="flex items-center gap-4 text-gray-800 hover:text-[#007B8A] transition-colors group">
-                
+
                 <span className="text-sm tracking-wide">Magasins</span>
               </Link>
             </div>
