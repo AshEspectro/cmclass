@@ -72,12 +72,16 @@ export class OrdersController {
       return sum + priceCents * item.quantity;
     }, 0);
 
+    const brand = await this.prisma.brand.findFirst();
+    const currency = brand?.storefrontCurrency || 'FC';
+
     const order = await this.prisma.order.create({
       data: {
         userId: req.user.id,
         status: 'PENDING',
         paymentStatus: body?.paymentStatus || 'PENDING',
         totalCents,
+        currency,
         items: {
           create: cartItems.map((item) => ({
             productId: item.productId,

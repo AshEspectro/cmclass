@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { Search, Filter, ExternalLink, Download } from 'lucide-react';
-import { fetchWithAuth, createFetchOptions } from '../../services/api';
+import { fetchWithAuth, createFetchOptions, brandAPI } from '../../services/api';
+import { formatStorePrice, normalizeStorefrontCurrency, type StorefrontCurrency } from '../../../src/utils/currency';
 
 type OrderStatus = 'Livrée' | 'En Transit' | 'En Préparation' | 'Annulée';
 type PaymentStatus = 'Payée' | 'Remboursée' | 'En attente';
@@ -11,6 +12,7 @@ type OrderLine = {
   name: string;
   quantity: number;
   price: number;
+  currency: string;
   size?: string;
   color?: string;
   image?: string | null;
@@ -22,6 +24,7 @@ type Order = {
   email?: string;
   date: string;
   total: number;
+  currency: string;
   status: OrderStatus;
   items: number;
   payment: PaymentStatus;
@@ -37,6 +40,7 @@ export function Orders() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [storeCurrency, setStoreCurrency] = useState<StorefrontCurrency>('FC');
 
   useEffect(() => {
     let active = true;
@@ -64,6 +68,10 @@ export function Orders() {
         if (!active) return;
         setLoading(false);
       });
+
+    brandAPI.get().then(brand => {
+      if (active) setStoreCurrency(normalizeStorefrontCurrency(brand?.storefrontCurrency));
+    }).catch(() => {});
 
     return () => {
       active = false;
@@ -97,9 +105,18 @@ export function Orders() {
   };
 
   const formatCurrency = useMemo(() => {
-    return (value: number) =>
-      new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
-  }, []);
+    return (value: number, currency?: string) => {
+      const code = (currency || storeCurrency).toUpperCase();
+      if (code === 'USD' || code === 'EUR') {
+        return new Intl.NumberFormat('fr-FR', {
+          style: 'currency',
+          currency: code,
+          maximumFractionDigits: 0,
+        }).format(value);
+      }
+      return `${value.toLocaleString('fr-FR')} ${code}`;
+    };
+  }, [storeCurrency]);
 
   const filteredOrders = orders.filter((order) => {
     const term = query.trim().toLowerCase();
@@ -174,7 +191,7 @@ export function Orders() {
         <Card>
           <CardContent>
             <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Valeur Moyenne</p>
-            <p className="text-2xl mb-1">{stats ? formatCurrency(stats.avgOrderValue) : '—'}</p>
+            <p className="text-2xl mb-1">{stats ? formatCurrency(stats.avgOrderValue, orders[0]?.currency || storeCurrency) : '—'}</p>
             <p className="text-sm text-[#007B8A]">↑ 8,2% ce mois</p>
           </CardContent>
         </Card>
@@ -235,7 +252,7 @@ export function Orders() {
                   <td className="px-6 py-4">{order.customer}</td>
                   <td className="px-6 py-4 text-gray-600">{order.date}</td>
                   <td className="px-6 py-4 text-gray-600">{order.items}</td>
-                  <td className="px-6 py-4">{formatCurrency(order.total)}</td>
+                  <td className="px-6 py-4">{formatCurrency(order.total, order.currency)}</td>
                   <td className="px-6 py-4">
                     <span className={`text-xs px-3 py-1 rounded-full ${getStatusColor(order.status)}`}>
                       {order.status}
@@ -315,7 +332,7 @@ export function Orders() {
                             </p>
                           </div>
                         </div>
-                        <p className="font-medium">{formatCurrency(line.price * line.quantity)}</p>
+                        <p className="font-medium">{formatCurrency(line.price * line.quantity, selectedOrder.currency)}</p>
                       </div>
                     ))}
                     {(!selectedOrder.lines || selectedOrder.lines.length === 0) && (
@@ -327,7 +344,7 @@ export function Orders() {
                 <div className="pt-4 border-t border-gray-100 space-y-2">
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Sous-total</span>
-                    <span>{formatCurrency(selectedOrder.total)}</span>
+                    <span>{formatCurrency(selectedOrder.total, selectedOrder.currency)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Livraison</span>
@@ -335,7 +352,7 @@ export function Orders() {
                   </div>
                   <div className="flex justify-between pt-2 border-t border-gray-100 text-lg font-medium">
                     <span>Total</span>
-                    <span className="text-[#007B8A]">{formatCurrency(selectedOrder.total)}</span>
+                    <span className="text-[#007B8A]">{formatCurrency(selectedOrder.total, selectedOrder.currency)}</span>
                   </div>
                 </div>
               </>

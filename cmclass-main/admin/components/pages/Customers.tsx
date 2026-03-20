@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardHeader, CardContent } from "../Card";
 import { Button } from "../Button";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
-import { clientsAPI } from "../../services/api";
+import { clientsAPI, brandAPI } from "../../services/api";
+import { formatStorePrice, normalizeStorefrontCurrency, type StorefrontCurrency } from "../../../src/utils/currency";
 
 type ProductSummary = {
   id: number;
@@ -43,6 +44,7 @@ export function Customers() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [storeCurrency, setStoreCurrency] = useState<StorefrontCurrency>('FC');
 
   const loadClients = async (query = "") => {
     setLoading(true);
@@ -66,6 +68,9 @@ export function Customers() {
 
   useEffect(() => {
     loadClients("");
+    brandAPI.get().then(brand => {
+      setStoreCurrency(normalizeStorefrontCurrency(brand?.storefrontCurrency));
+    }).catch(() => {});
   }, []);
 
   const stats = useMemo(() => {
@@ -228,7 +233,7 @@ export function Customers() {
                                           {item.price !== undefined && (
                                             <p className="text-xs text-gray-500">
                                               {typeof item.price === 'number'
-                                                ? item.price.toLocaleString('fr-FR') + ' FC'
+                                                ? formatStorePrice(item.price, storeCurrency)
                                                 : item.price}
                                             </p>
                                           )}

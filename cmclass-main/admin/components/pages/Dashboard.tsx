@@ -4,8 +4,9 @@ import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { DollarSign, ShoppingBag, Users, TrendingUp, Package, Plus, Edit, Upload, Bell } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { fetchWithAuth, createFetchOptions } from '../../services/api';
+import { fetchWithAuth, createFetchOptions, brandAPI } from '../../services/api';
 import { setPendingQuickAction, type QuickActionKey } from '../../services/quickActions';
+import { formatStorePrice, normalizeStorefrontCurrency, type StorefrontCurrency } from '../../../src/utils/currency';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -65,6 +66,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [storeCurrency, setStoreCurrency] = useState<StorefrontCurrency>('FC');
 
   const roleRank: Record<AdminRole, number> = {
     USER: 0,
@@ -123,6 +125,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         setLoading(false);
       });
 
+    brandAPI.get().then(brand => {
+      if (active) setStoreCurrency(normalizeStorefrontCurrency(brand?.storefrontCurrency));
+    }).catch(() => {});
+
     return () => {
       active = false;
     };
@@ -152,9 +158,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const conversionChange = formatChange(mom?.conversionRate);
 
   const formatCurrency = useMemo(() => {
-    return (value: number) =>
-      new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
-  }, []);
+    return (value: number) => formatStorePrice(value, storeCurrency);
+  }, [storeCurrency]);
 
   const currentRole = useMemo(() => getUserRoleFromToken(), []);
   const availableQuickActions = useMemo(
@@ -232,6 +237,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 <XAxis dataKey="month" stroke="#999" style={{ fontSize: '12px' }} />
                 <YAxis stroke="#999" style={{ fontSize: '12px' }} />
                 <Tooltip 
+                  formatter={(value: number) => formatCurrency(value)}
                   contentStyle={{ 
                     background: 'white', 
                     border: '1px solid #e5e5e5',
