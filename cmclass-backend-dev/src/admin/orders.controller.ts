@@ -23,11 +23,11 @@ import { OrdersService } from '../orders/orders.service';
 // ── French label maps ──────────────────────────────────────────────────────────
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
-  CREATED: 'Commande créée',
-  RESERVED: 'Réservée en boutique',
-  AWAITING_PAYMENT: 'En attente de paiement',
+  CREATED: 'Nouvelle',
+  RESERVED: 'Réservée',
+  AWAITING_PAYMENT: 'Attente de paiement',
   CONFIRMED: 'Confirmée',
-  PREPARING: 'En préparation',
+  PREPARING: 'Préparation',
   READY_FOR_PICKUP: 'Prête au retrait',
   PICKED_UP: 'Retirée',
   EXPIRED: 'Expirée',
@@ -147,6 +147,7 @@ export class AdminOrdersController {
 
       return {
         id: order.id,
+        userId: order.userId,
         displayId: `#CMD-${order.id}`,
         customer:
           `${order.user?.firstName ?? ''} ${order.user?.lastName ?? ''}`.trim() ||
@@ -239,8 +240,10 @@ export class AdminOrdersController {
 
     // ── Special: CANCELLED ─────────────────────────────────────────────────
     if (toStatus === 'CANCELLED') {
-      updateData.cancelledAt = new Date();
-      updateData.cancelReason = body.reason ?? null;
+      const deletedOrder = await this.prisma.order.delete({
+        where: { id },
+      });
+      return { data: { ...deletedOrder, status: 'CANCELLED' }, message: 'Commande supprimée avec succès' };
     }
 
     const updated = await this.prisma.order.update({
