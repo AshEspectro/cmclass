@@ -231,6 +231,11 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
     setQuantity(1);
   }, [product?.id]);
 
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { formatPrice } = useCurrency();
+  const inWishlist = product ? isInWishlist(product.id.toString()) : false;
+
   if (loading) {
     return (
       <div className="max-w-8xl mx-auto px-0 md:px-8 grid grid-cols-1 pt-32 md:pt-24 md:grid-cols-2 gap-6">
@@ -276,11 +281,6 @@ export function SingleProductPage({ product: productProp }: SingleProductPagePro
     mobileCarouselLength > 0
       ? mobileCarouselImages[safeMobileIndex]
       : mainImage;
-
-  const { addToCart } = useCart();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  const { formatPrice } = useCurrency();
-  const inWishlist = isInWishlist(product.id.toString());
 
   const prev = () =>
     setMobileImageIndex((i) =>

@@ -284,19 +284,49 @@ model AboutPage {
   updatedAt         DateTime @updatedAt
 }
 
+// ─── Order domain enums ──────────────────────────────────────────────────────
+
 enum OrderStatus {
-  PENDING
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
+  CREATED           // transitional
+  RESERVED          // PAY_IN_STORE: articles held
+  AWAITING_PAYMENT  // MAXICASH: waiting for webhook
+  CONFIRMED         // MAXICASH: webhook success
+  PREPARING         // admin preparing articles
+  READY_FOR_PICKUP  // WhatsApp sent, pickup window open
+  PICKED_UP         // collected — terminal success
+  EXPIRED           // deadline passed — terminal
+  CANCELLED         // manually cancelled — terminal
 }
 
 enum PaymentStatus {
-  PENDING
-  PAID
-  REFUNDED
+  UNPAID     // PAY_IN_STORE — not yet paid
+  PENDING    // MAXICASH — initiated, no webhook yet
+  PAID       // confirmed paid
+  FAILED     // MaxiCash explicitly failed
+  CANCELLED  // cancelled at gateway
+  REFUNDED   // refund issued
 }
+
+enum PaymentMethod {
+  MAXICASH
+  PAY_IN_STORE
+}
+
+enum FulfillmentMethod {
+  PICKUP
+}
+
+enum NotifChannel {
+  WHATSAPP
+}
+
+enum NotifStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// ─── Admin/system notifications (existing) ───────────────────────────────────
 
 model Notification {
   id        Int      @id @default(autoincrement())
@@ -307,18 +337,41 @@ model Notification {
   createdAt DateTime @default(now())
 }
 
-model Order {
-  id           Int           @id @default(autoincrement())
-  userId       Int
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status       OrderStatus   @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
-  totalCents   Int           @default(0)
-  currency     String        @default("EUR")
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+// ─── Order models ─────────────────────────────────────────────────────────────
 
-  items        OrderItem[]
+model Order {
+  id                Int               @id @default(autoincrement())
+  userId            Int
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Core state
+  status            OrderStatus       @default(RESERVED)
+  paymentStatus     PaymentStatus     @default(UNPAID)
+  paymentMethod     PaymentMethod     @default(PAY_IN_STORE)
+  fulfillmentMethod FulfillmentMethod @default(PICKUP)
+
+  // Financials
+  totalCents        Int               @default(0)
+  currency          String            @default("FC")
+
+  // Pickup specifics
+  pickupCode        String?
+  reservedUntil     DateTime?
+  readyAt           DateTime?
+  pickupExpiresAt   DateTime?
+
+  // Cancellation
+  cancelledAt       DateTime?
+  cancelReason      String?
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  items                OrderItem[]
+  statusHistory        OrderStatusHistory[]
+  orderNotifications   OrderNotification[]
+  maxicashTransactions MaxicashTransaction[]
 }
 
 model OrderItem {
@@ -333,6 +386,52 @@ model OrderItem {
   color      String   @default("")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+// ─── Order status audit trail ─────────────────────────────────────────────────
+
+model OrderStatusHistory {
+  id         Int          @id @default(autoincrement())
+  orderId    Int
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  changedBy  String?      // "SYSTEM" | "WEBHOOK" | "ADMIN:<id>"
+  reason     String?
+  createdAt  DateTime     @default(now())
+}
+
+// ─── Per-order customer notification log ─────────────────────────────────────
+
+model OrderNotification {
+  id                Int          @id @default(autoincrement())
+  orderId           Int
+  order             Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type              String       // "ORDER_READY"
+  channel           NotifChannel @default(WHATSAPP)
+  status            NotifStatus  @default(PENDING)
+  providerMessageId String?
+  payload           Json?
+  errorMessage      String?
+  sentAt            DateTime?
+  createdAt         DateTime     @default(now())
+}
+
+// ─── MaxiCash payment transaction log ────────────────────────────────────────
+
+model MaxicashTransaction {
+  id            Int      @id @default(autoincrement())
+  orderId       Int
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reference     String   @unique  // "ORDER-{orderId}"
+  amountCents   Int
+  currency      String
+  status        String   // raw MaxiCash status string
+  providerTxId  String?
+  rawPayload    Json?
+  failureReason String?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
 }
 
 model FooterSection {

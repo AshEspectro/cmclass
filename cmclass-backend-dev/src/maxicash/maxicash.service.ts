@@ -1,73 +1,166 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class MaxicashService {
-    constructor(private prisma: PrismaService) { }
+  private readonly logger = new Logger(MaxicashService.name);
 
-    async generatePaymentUrl(orderId: number) {
-        const order = await this.prisma.order.findUnique({
-            where: { id: orderId },
-            include: { user: true },
-        });
+  constructor(private prisma: PrismaService) {}
 
-        if (!order) {
-            throw new Error('Order not found');
-        }
+  async generatePaymentUrl(orderId: number): Promise<string> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { user: true },
+    });
 
-        const merchantId = process.env.MAXICASH_MERCHANT_ID || '';
-        const merchantPassword = process.env.MAXICASH_MERCHANT_PASSWORD || '';
-        const gatewayUrl = process.env.MAXICASH_GATEWAY_URL || 'https://sandbox.maxicashapp.com/PayNow';
+    if (!order) throw new Error('Commande introuvable.');
 
-        // MaxiCash expects amount in cents
-        const amount = order.totalCents;
-        const currency = order.currency;
-        const reference = `ORDER-${order.id}`;
+    const merchantId = process.env.MAXICASH_MERCHANT_ID || '';
+    const merchantPassword = process.env.MAXICASH_MERCHANT_PASSWORD || '';
+    const gatewayUrl =
+      process.env.MAXICASH_GATEWAY_URL ||
+      'https://sandbox.maxicashapp.com/PayNow';
 
-        const params = new URLSearchParams({
-            MerchantID: merchantId,
-            MerchantPassword: merchantPassword,
-            Amount: amount.toString(),
-            Currency: currency,
-            Reference: reference,
-            Language: 'fr', // or 'en'
-            Accepturl: process.env.MAXICASH_SUCCESS_URL || 'http://localhost:5173/suivi',
-            Declineurl: process.env.MAXICASH_FAILURE_URL || 'http://localhost:5173/panier',
-            Cancelurl: process.env.MAXICASH_CANCEL_URL || 'http://localhost:5173/panier',
-            Notifyurl: process.env.MAXICASH_NOTIFY_URL || 'http://localhost:3000/maxicash/notify',
-        });
+    const reference = `ORDER-${order.id}`;
+    const amount = order.totalCents;
+    const currency = order.currency;
 
-        // If we have user's phone, we can pre-fill it (though PayNow usually asks for it if not provided)
-        if (order.user?.phoneNumber) {
-            params.append('Telephone', order.user.phoneNumber);
-        }
+    const params = new URLSearchParams({
+      MerchantID: merchantId,
+      MerchantPassword: merchantPassword,
+      Amount: amount.toString(),
+      Currency: currency,
+      Reference: reference,
+      Language: 'fr',
+      Accepturl:
+        process.env.MAXICASH_SUCCESS_URL ||
+        `http://localhost:5173/commande-succes`,
+      Declineurl:
+        process.env.MAXICASH_FAILURE_URL || 'http://localhost:5173/panier',
+      Cancelurl:
+        process.env.MAXICASH_CANCEL_URL || 'http://localhost:5173/panier',
+      Notifyurl:
+        process.env.MAXICASH_NOTIFY_URL ||
+        'http://localhost:3000/maxicash/notify',
+    });
 
-        return `${gatewayUrl}?${params.toString()}`;
+    if (order.user?.phoneNumber) {
+      params.append('Telephone', order.user.phoneNumber);
     }
 
-    async handleNotification(payload: any) {
-        // MaxiCash sends notification with transaction result
-        // Payload usually contains Reference, Status, TransactionID, etc.
-        const reference = payload.Reference;
-        const status = payload.Status; // e.g., 'Success' or 'Failed'
+    const url = `${gatewayUrl}?${params.toString()}`;
 
-        if (reference && reference.startsWith('ORDER-')) {
-            const orderId = parseInt(reference.replace('ORDER-', ''), 10);
+    // Log the transaction attempt
+    await this.prisma.maxicashTransaction.upsert({
+      where: { reference },
+      update: { status: 'INITIATED', rawPayload: { url } },
+      create: {
+        orderId,
+        reference,
+        amountCents: amount,
+        currency,
+        status: 'INITIATED',
+        rawPayload: { url },
+      },
+    });
 
-            if (status === 'Success') {
-                await this.prisma.order.update({
-                    where: { id: orderId },
-                    data: {
-                        paymentStatus: 'PAID',
-                        status: 'PROCESSING', // Move to processing after payment
-                    },
-                });
+    return url;
+  }
 
-                // Trigger notification for admin
-                // (This will be called from the controller which has access to NotificationService)
-            }
-        }
+  /**
+   * Idempotent webhook handler.
+   * Duplicate notifications for an already-PAID order are safely ignored.
+   */
+  async handleNotification(payload: any): Promise<{ status: string }> {
+    const reference = payload?.Reference as string | undefined;
+    const maxiStatus = payload?.Status as string | undefined;
+    const providerTxId = payload?.TransactionID as string | undefined;
 
-        return { status: 'acknowledged' };
+    if (!reference || !reference.startsWith('ORDER-')) {
+      this.logger.warn('MaxiCash webhook: unknown reference', payload);
+      return { status: 'ignored' };
     }
+
+    const orderId = parseInt(reference.replace('ORDER-', ''), 10);
+    if (isNaN(orderId)) return { status: 'ignored' };
+
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      this.logger.warn(`MaxiCash webhook: order #${orderId} not found`);
+      return { status: 'ignored' };
+    }
+
+    // ── Idempotency guard ─────────────────────────────────────────────────
+    if (order.paymentStatus === 'PAID') {
+      this.logger.log(`MaxiCash webhook: order #${orderId} already PAID — skip`);
+      return { status: 'already_processed' };
+    }
+
+    // ── Persist / update transaction record ───────────────────────────────
+    await this.prisma.maxicashTransaction.upsert({
+      where: { reference },
+      update: {
+        status: maxiStatus ?? 'UNKNOWN',
+        providerTxId,
+        rawPayload: payload,
+        completedAt: new Date(),
+      },
+      create: {
+        orderId,
+        reference,
+        amountCents: order.totalCents,
+        currency: order.currency,
+        status: maxiStatus ?? 'UNKNOWN',
+        providerTxId,
+        rawPayload: payload,
+        completedAt: new Date(),
+      },
+    });
+
+    // ── Apply state transitions ───────────────────────────────────────────
+    if (maxiStatus === 'Success') {
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { paymentStatus: 'PAID', status: 'CONFIRMED' },
+      });
+
+      await this.prisma.orderStatusHistory.create({
+        data: {
+          orderId,
+          fromStatus: 'AWAITING_PAYMENT',
+          toStatus: 'CONFIRMED',
+          changedBy: 'WEBHOOK',
+          reason: `MaxiCash TX: ${providerTxId}`,
+        },
+      });
+
+      this.logger.log(`Order #${orderId}: CONFIRMED via MaxiCash webhook`);
+    } else if (maxiStatus === 'Failed') {
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { paymentStatus: 'FAILED' },
+      });
+
+      await this.prisma.maxicashTransaction.update({
+        where: { reference },
+        data: { failureReason: payload?.FailureReason ?? 'MaxiCash: Failed' },
+      });
+
+      this.logger.warn(`Order #${orderId}: payment FAILED`);
+    } else if (maxiStatus === 'Cancelled') {
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { paymentStatus: 'CANCELLED' },
+      });
+
+      this.logger.warn(`Order #${orderId}: payment CANCELLED by customer`);
+    } else {
+      this.logger.log(`Order #${orderId}: unhandled webhook status "${maxiStatus}"`);
+    }
+
+    return { status: 'acknowledged' };
+  }
 }

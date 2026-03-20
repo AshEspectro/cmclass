@@ -20,7 +20,7 @@ import { ServiceService } from './service.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AboutController } from './about.controller';
 import { DashboardController } from './dashboard.controller';
-import { OrdersController } from './orders.controller';
+import { AdminOrdersController } from './orders.controller';
 import { AboutService } from '../about/about.service';
 import { FooterController } from './footer.controller';
 import { FooterService } from '../footer/footer.service';
@@ -30,11 +30,14 @@ import { InboundEmailsController } from './inbound-emails.controller';
 import { InboundEmailService } from '../mail/inbound-email.service';
 import { AdminLegalController } from './legal.controller';
 import { LegalService } from '../legal/legal.service';
+import { WhatsappModule } from '../whatsapp/whatsapp.module';
+import { WhatsappService } from '../whatsapp/whatsapp.service';
+import { OrdersService } from '../orders/orders.service';
 
 @Module({
-  imports: [AuthModule, PrismaModule],
-  controllers: [AdminController, UsersController, AuditController, SignupRequestsController, BrandController, CategoryController, ProductController, HeroController, CampaignController, ServiceController, AboutController, DashboardController, OrdersController, FooterController, NotificationsController, InboundEmailsController, AdminLegalController],
-  providers: [MailService, BrandService, CategoryService, ProductService, HeroService, CampaignService, ServiceService, AboutService, FooterService, NotificationService, InboundEmailService, LegalService],
-  exports: [MailService, BrandService, CategoryService, ProductService, HeroService, CampaignService, ServiceService, AboutService, FooterService, NotificationService, InboundEmailService, LegalService],
+  imports: [AuthModule, PrismaModule, WhatsappModule],
+  controllers: [AdminController, UsersController, AuditController, SignupRequestsController, BrandController, CategoryController, ProductController, HeroController, CampaignController, ServiceController, AboutController, DashboardController, AdminOrdersController, FooterController, NotificationsController, InboundEmailsController, AdminLegalController],
+  providers: [MailService, BrandService, CategoryService, ProductService, HeroService, CampaignService, ServiceService, AboutService, FooterService, NotificationService, InboundEmailService, LegalService, WhatsappService, OrdersService],
+  exports: [MailService, BrandService, CategoryService, ProductService, HeroService, CampaignService, ServiceService, AboutService, FooterService, NotificationService, InboundEmailService, LegalService, WhatsappService, OrdersService],
 })
 export class AdminModule { }
