@@ -78,7 +78,7 @@ export default function Cartpage() {
     import.meta.env.VITE_API_URL ||
     'http://localhost:3000';
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (paymentStatus: 'PENDING' | 'PAID' | 'REFUNDED' = 'PENDING') => {
     if (checkoutLoading) return;
     setCheckoutMessage(null);
     setCheckoutLoading(true);
@@ -94,16 +94,14 @@ export default function Cartpage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ paymentMethod: 'PAY_IN_STORE' }),
+        body: JSON.stringify({ paymentStatus }),
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
         throw new Error(payload?.message || "Échec de la création de la commande.");
       }
-      const data = await response.json();
-      const orderId = data?.data?.id;
       clearCart();
-      navigate('/commande-succes', { state: { orderId } });
+      setCheckoutMessage("Commande créée avec succès.");
     } catch (err: any) {
       setCheckoutMessage(err?.message || "Une erreur est survenue.");
     } finally {
@@ -145,14 +143,14 @@ export default function Cartpage() {
         return;
       }
 
-      // 1. Create the order first (PaymentMethod: MAXICASH)
+      // 1. Create the order first (Status: PENDING, PaymentStatus: PENDING)
       const orderRes = await fetch(`${API_BASE_URL}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ paymentMethod: 'MAXICASH' }),
+        body: JSON.stringify({ paymentStatus: 'PENDING' }),
       });
 
       if (!orderRes.ok) {
@@ -430,11 +428,11 @@ export default function Cartpage() {
           </div>
           <div>
             <button
-              onClick={() => handleCheckout()}
+              onClick={() => handleCheckout('PENDING')}
               disabled={checkoutLoading}
               className="w-full bg-[#007B8A] text-white py-3 mt-6 rounded-full text-sm sm:text-base hover:bg-white hover:text-black border transition-all duration-300 disabled:opacity-60"
             >
-              {checkoutLoading ? "Traitement..." : "Réserver et payer en boutique"}
+              {checkoutLoading ? "Traitement..." : "Passer à la caisse"}
             </button>
             <button
               onClick={openMobileMoney}

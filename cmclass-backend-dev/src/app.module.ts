@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -29,7 +28,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 
 @Module({
-  imports: [ScheduleModule.forRoot(), CloudinaryModule, PrismaModule, AuthModule, AdminModule, UsersModule, CartModule, WishlistModule, OrdersModule, LegalModule, MaxicashModule, NotificationModule],
+  imports: [CloudinaryModule, PrismaModule, AuthModule, AdminModule, UsersModule, CartModule, WishlistModule, OrdersModule, LegalModule, MaxicashModule, NotificationModule],
   controllers: [HealthController, PublicBrandController, PublicCategoryController, PublicHeroController, PublicProductController, CampaignsController, PublicServicesController, PublicAboutController, PublicContactController, PublicFooterController, PublicLegalController],
   providers: [FooterService, MailReceiverService],
 })
