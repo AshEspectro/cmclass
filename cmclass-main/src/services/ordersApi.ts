@@ -18,8 +18,16 @@ export interface CustomerOrder {
   id: number;
   status: string;
   paymentStatus: string;
+  paymentMethod: string;
+  fulfillmentMethod: string;
   total: number;
   currency: string;
+  pickupCode?: string | null;
+  reservedUntil?: string | null;
+  readyAt?: string | null;
+  pickupExpiresAt?: string | null;
+  cancelReason?: string | null;
+  readyNotificationStatus?: string | null;
   createdAt: string;
   items: CustomerOrderItem[];
 }

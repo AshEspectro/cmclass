@@ -78,7 +78,7 @@ export default function Cartpage() {
     import.meta.env.VITE_API_URL ||
     'http://localhost:3000';
 
-  const handleCheckout = async (paymentStatus: 'PENDING' | 'PAID' | 'REFUNDED' = 'PENDING') => {
+  const handleCheckout = async () => {
     if (checkoutLoading) return;
     setCheckoutMessage(null);
     setCheckoutLoading(true);
@@ -94,7 +94,7 @@ export default function Cartpage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ paymentStatus }),
+        body: JSON.stringify({ paymentMethod: 'PAY_IN_STORE' }),
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
@@ -145,14 +145,14 @@ export default function Cartpage() {
         return;
       }
 
-      // 1. Create the order first (Status: PENDING, PaymentStatus: PENDING)
+      // 1. Create the order first (PaymentMethod: MAXICASH)
       const orderRes = await fetch(`${API_BASE_URL}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ paymentStatus: 'PENDING' }),
+        body: JSON.stringify({ paymentMethod: 'MAXICASH' }),
       });
 
       if (!orderRes.ok) {
@@ -430,11 +430,11 @@ export default function Cartpage() {
           </div>
           <div>
             <button
-              onClick={() => handleCheckout('PENDING')}
+              onClick={() => handleCheckout()}
               disabled={checkoutLoading}
               className="w-full bg-[#007B8A] text-white py-3 mt-6 rounded-full text-sm sm:text-base hover:bg-white hover:text-black border transition-all duration-300 disabled:opacity-60"
             >
-              {checkoutLoading ? "Traitement..." : "Passer à la caisse"}
+              {checkoutLoading ? "Traitement..." : "Réserver et payer en boutique"}
             </button>
             <button
               onClick={openMobileMoney}
